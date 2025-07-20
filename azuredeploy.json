@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploy Group Tree Membership Visualizer to Azure Static Web Apps",
+    "author": "Group Tree Membership Visualizer"
+  },
+  "parameters": {
+    "siteName": {
+      "type": "string",
+      "defaultValue": "[concat('group-tree-visualizer-', uniqueString(resourceGroup().id))]",
+      "minLength": 2,
+      "metadata": {
+        "description": "Name of the Static Web App. Must be globally unique."
+      }
+    },
+    "repositoryUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/OfirGavish/Group-Tree-Membership-Visualizer",
+      "metadata": {
+        "description": "GitHub repository URL"
+      }
+    },
+    "branch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "GitHub repository branch"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US 2",
+      "allowedValues": [
+        "East US 2",
+        "Central US",
+        "West US 2",
+        "West Europe"
+      ],
+      "metadata": {
+        "description": "Location for the Static Web App"
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "Free",
+      "allowedValues": [
+        "Free",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "SKU for the Static Web App"
+      }
+    }
+  },
+  "variables": {
+    "staticWebAppName": "[parameters('siteName')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('sku')]",
+        "tier": "[parameters('sku')]"
+      },
+      "properties": {
+        "repositoryUrl": "[parameters('repositoryUrl')]",
+        "branch": "[parameters('branch')]",
+        "buildProperties": {
+          "appLocation": "/",
+          "apiLocation": "",
+          "outputLocation": "out"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))).defaultHostname)]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[variables('staticWebAppName')]"
+    },
+    "deploymentInstructions": {
+      "type": "string",
+      "value": "After deployment completes: 1) Go to your Static Web App in Azure Portal, 2) Navigate to Authentication, 3) Add Microsoft identity provider, 4) Configure Graph API permissions. See DEPLOYMENT_GUIDE.md for detailed steps."
+    }
+  }
+}
