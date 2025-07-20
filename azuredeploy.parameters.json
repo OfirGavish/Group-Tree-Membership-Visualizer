@@ -1,0 +1,39 @@
+# Azure Deployment Parameters
+
+This file contains the parameters for the Azure Resource Manager template.
+
+## Parameters
+
+- **siteName**: Name of the Azure Static Web App (must be globally unique)
+- **repositoryUrl**: GitHub repository URL for the source code
+- **branch**: Git branch to deploy from (default: main)
+- **location**: Azure region for deployment
+- **sku**: Pricing tier (Free or Standard)
+
+## Default Values
+
+The template uses sensible defaults:
+- **siteName**: Auto-generated unique name
+- **repositoryUrl**: This repository
+- **branch**: main
+- **location**: East US 2
+- **sku**: Free
+
+## After Deployment
+
+1. Go to Azure Portal → Your Static Web App
+2. Navigate to "Authentication"
+3. Add Microsoft identity provider
+4. Configure Microsoft Graph permissions
+5. See DEPLOYMENT_GUIDE.md for detailed steps
+
+## Custom Deployment
+
+To deploy with custom parameters, edit this file and use Azure CLI:
+
+```bash
+az deployment group create \
+  --resource-group myResourceGroup \
+  --template-file azuredeploy.json \
+  --parameters @azuredeploy.parameters.json
+```
