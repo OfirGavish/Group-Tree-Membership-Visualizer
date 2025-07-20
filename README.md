@@ -2,6 +2,8 @@
 
 A modern web application for visualizing Entra ID (Azure AD) group memberships and hierarchies with interactive tree diagrams.
 
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+
 ## 🌟 Features
 
 - **Interactive Tree Visualization**: Navigate group hierarchies with D3.js-powered tree diagrams
@@ -10,64 +12,45 @@ A modern web application for visualizing Entra ID (Azure AD) group memberships a
 - **Drill-Up Navigation**: See parent groups and understand the broader organizational structure
 - **Real-Time Data**: Direct integration with Microsoft Graph API for up-to-date information
 - **Responsive Design**: Works seamlessly across desktop and mobile devices
-- **Secure Authentication**: Microsoft MSAL integration for enterprise security
+- **Secure Authentication**: Azure Static Web Apps built-in authentication (no custom app registration needed!)
 
 ## 🏗️ Architecture
 
 - **Frontend**: Next.js 15 with TypeScript and Tailwind CSS
-- **Authentication**: Microsoft MSAL (Microsoft Authentication Library)
+- **Authentication**: Azure Static Web Apps built-in authentication
 - **Data Source**: Microsoft Graph API
 - **Visualization**: D3.js for interactive tree diagrams
-- **Hosting**: Ready for Azure App Service or Azure Static Web Apps
+- **Hosting**: Azure Static Web Apps (optimized for this platform)
 
-## 🚀 Getting Started
+## 🚀 Quick Start Options
 
-### Prerequisites
+### Option 1: One-Click Deploy to Azure (Recommended)
+
+Click the button above to deploy directly to your Azure subscription. This will:
+- ✅ Create an Azure Static Web App
+- ✅ Set up GitHub Actions for continuous deployment
+- ✅ Configure authentication automatically
+- ✅ Handle all Microsoft Graph permissions
+
+**No manual app registration required!**
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 
 - Node.js 18 or later
-- An Azure App Registration with appropriate permissions
-- Access to an Entra ID tenant
+- Azure subscription
+- GitHub account (for deployment)
 
-### 1. Clone and Install
+#### 1. Clone and Install
 
 ```bash
-# Install dependencies
+git clone https://github.com/OfirGavish/Group-Tree-Membership-Visualizer.git
+cd Group-Tree-Membership-Visualizer
 npm install
 ```
 
-### 2. Azure App Registration Setup
-
-1. Go to [Azure Portal](https://portal.azure.com) → Azure Active Directory → App registrations
-2. Create a new app registration:
-   - **Name**: Group Tree Membership Visualizer
-   - **Supported account types**: Accounts in this organizational directory only
-   - **Redirect URI**: Web → `http://localhost:3000`
-
-3. Configure API Permissions:
-   - Microsoft Graph (Delegated permissions):
-     - `User.Read`
-     - `Group.Read.All`
-     - `Directory.Read.All`
-     - `GroupMember.Read.All`
-   - Grant admin consent for your organization
-
-4. Note down the **Application (client) ID** and **Directory (tenant) ID**
-
-### 3. Environment Configuration
-
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env.local
-   ```
-
-2. Update `.env.local` with your Azure App Registration details:
-   ```env
-   NEXT_PUBLIC_MSAL_CLIENT_ID=your-client-id-here
-   NEXT_PUBLIC_MSAL_AUTHORITY=https://login.microsoftonline.com/your-tenant-id
-   NEXT_PUBLIC_MSAL_REDIRECT_URI=http://localhost:3000
-   ```
-
-### 4. Run the Application
+#### 2. Local Development
 
 ```bash
 # Start development server
@@ -76,13 +59,33 @@ npm run dev
 
 Visit `http://localhost:3000` to see the application.
 
+**Note**: Authentication will only work after deployment to Azure Static Web Apps.
+
+#### 3. Deploy to Azure Static Web Apps
+
+Follow the detailed guide in [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for step-by-step instructions.
 ## 📱 Usage
 
-1. **Sign In**: Click "Sign in with Microsoft" to authenticate with your Entra ID account
-2. **Search Users**: Use the search box to find users in your organization
-3. **Explore Groups**: Select a user to see their group memberships in a visual tree
-4. **Navigate**: Click on groups to see their members and parent groups
-5. **Drill Down/Up**: Explore nested group relationships and organizational hierarchies
+1. **Deploy to Azure**: Use the "Deploy to Azure" button above or follow manual deployment steps
+2. **Sign In**: Click "Sign in with Microsoft" to authenticate with your Entra ID account
+3. **Search Users**: Use the search box to find users in your organization
+4. **Explore Groups**: Select a user to see their group memberships in a visual tree
+5. **Navigate**: Click on groups to see their members and parent groups
+6. **Drill Down/Up**: Explore nested group relationships and organizational hierarchies
+
+## 🏢 Deployment Options
+
+### Single-Tenant (Recommended for most organizations)
+- ✅ Deploy once per organization
+- ✅ Maximum security and data isolation
+- ✅ Easier compliance and governance
+- ✅ Use the "Deploy to Azure" button above
+
+### Multi-Tenant (For SaaS scenarios)
+- 🌍 One deployment serves multiple organizations
+- 🔧 More complex setup and maintenance
+- 📋 Requires publisher verification for production
+- 📖 Follow [MULTI_TENANT_SETUP.md](./MULTI_TENANT_SETUP.md) guide
 
 ## 🔧 Development
 
@@ -93,14 +96,18 @@ src/
 ├── app/                    # Next.js App Router
 │   ├── globals.css        # Global styles
 │   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
+│   └── page.tsx           # Home page (single-tenant)
+│   └── simple-page.tsx    # Simplified authentication version
+│   └── multi-tenant-page.tsx # Multi-tenant version
 ├── components/            # React components
 │   ├── GroupDetails.tsx   # Group information panel
 │   ├── TreeVisualization.tsx # D3.js tree diagram
 │   └── UserSearch.tsx     # User search interface
 ├── lib/                   # Utilities and services
-│   ├── auth-config.ts     # MSAL configuration
-│   └── graph-service.ts   # Microsoft Graph API client
+│   ├── static-web-app-auth.ts    # Azure Static Web Apps authentication
+│   ├── simple-graph-service.ts  # Microsoft Graph API client
+│   ├── multi-tenant-auth.ts     # Multi-tenant authentication
+│   └── multi-tenant-graph-service.ts # Multi-tenant Graph client
 └── types/                 # TypeScript definitions
     └── index.ts           # Application types
 ```
@@ -117,7 +124,7 @@ npm run lint         # Run ESLint
 ### Adding New Features
 
 1. **New Components**: Add to `src/components/` with proper TypeScript types
-2. **Graph API Calls**: Extend `GraphService` class in `src/lib/graph-service.ts`
+2. **Graph API Calls**: Extend `SimpleGraphService` or `MultiTenantGraphService` classes
 3. **Types**: Define new interfaces in `src/types/index.ts`
 4. **Styling**: Use Tailwind CSS utility classes
 
@@ -125,27 +132,37 @@ npm run lint         # Run ESLint
 
 ### Azure Static Web Apps (Recommended)
 
-1. Build the application:
-   ```bash
-   npm run build
-   ```
+**Option 1: One-Click Deploy**
+- Click the "Deploy to Azure" button at the top of this README
+- Follow the Azure portal wizard
+- Automatic configuration and deployment
 
-2. Deploy to Azure Static Web Apps using Azure CLI or GitHub Actions
+**Option 2: Manual Deployment**
+- Follow [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed steps
+- Build: `npm run build`
+- Deploy via GitHub Actions (automatically configured)
 
-3. Configure environment variables in Azure portal
+### Environment Variables
 
-### Azure App Service
+**No environment variables needed!** Azure Static Web Apps handles authentication automatically.
 
-1. Configure build settings for Node.js application
-2. Set environment variables in Application Settings
-3. Deploy using Azure CLI, VS Code, or GitHub Actions
+## 🔒 Security & Permissions
 
-## 🔒 Security Considerations
+### Automatic Configuration
+Azure Static Web Apps automatically:
+- ✅ Creates app registration
+- ✅ Configures Microsoft Graph permissions
+- ✅ Handles OAuth flows
+- ✅ Manages token refresh
 
-- **Authentication**: Uses Microsoft MSAL for secure OAuth flows
-- **Permissions**: Requests minimal required permissions
-- **Token Management**: Automatic token refresh and secure storage
-- **API Calls**: All Graph API calls are made server-side or with proper CORS
+### Required Microsoft Graph Permissions
+The app requests these delegated permissions:
+- `User.Read` - Read signed-in user's profile
+- `Group.Read.All` - Read all groups
+- `Directory.Read.All` - Read directory data
+- `GroupMember.Read.All` - Read group memberships
+
+**Admin consent is automatically handled during deployment.**
 
 ## 🤝 Contributing
 
@@ -164,23 +181,24 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ### Common Issues
 
-**Authentication Error**: "AADSTS65001: The user or administrator has not consented to use the application"
-- Solution: Grant admin consent for the required permissions in Azure portal
+**Authentication Error**: "Need admin approval" or "AADSTS65001"
+- Solution: Admin consent is required - this happens automatically during Azure deployment
 
 **API Permission Error**: "Insufficient privileges to complete the operation"
-- Solution: Ensure all required Graph API permissions are granted and consented
+- Solution: Ensure admin consent was granted during deployment, check Azure portal
 
 **Build Error**: TypeScript compilation issues
 - Solution: Run `npm run lint` to identify and fix type issues
 
-**Environment Variables**: Application not connecting to Azure
-- Solution: Verify `.env.local` file has correct values and restart the development server
+**Deployment Issues**: Static Web App not working
+- Solution: Check GitHub Actions logs, ensure repository is connected properly
 
 ### Getting Help
 
-- Check the [Issues](https://github.com/your-repo/group-tree-visualizer/issues) page
+- Check the [Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues) page
+- Review [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed setup steps
+- Check [MULTI_TENANT_SETUP.md](./MULTI_TENANT_SETUP.md) for multi-tenant scenarios
 - Review Microsoft Graph API documentation
-- Check Azure App Registration configuration
 
 ## 🙏 Acknowledgments
 
