@@ -20,10 +20,6 @@ export default function MultiTenantPage() {
   const authService = MultiTenantAuthService.getInstance();
   const graphService = new MultiTenantGraphService();
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
   const checkAuthStatus = async () => {
     try {
       setIsLoading(true);
@@ -40,6 +36,11 @@ export default function MultiTenantPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkAuthStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadTenantData = async () => {
     try {
@@ -131,7 +132,7 @@ export default function MultiTenantPage() {
               🌍 Multi-Tenant Group Visualizer
             </h1>
             <p className="text-gray-600 mb-8">
-              Sign in with your organizational account to view your tenant's group hierarchy
+              Sign in with your organizational account to view your tenant&apos;s group hierarchy
             </p>
             <button
               onClick={handleLogin}
