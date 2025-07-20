@@ -26,6 +26,8 @@ A modern web application for visualizing Entra ID (Azure AD) group memberships a
 
 ### Option 1: One-Click Deploy to Azure (Recommended)
 
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+
 Click the button above to deploy directly to your Azure subscription. This will:
 - ✅ Create an Azure Static Web App
 - ✅ Set up GitHub Actions for continuous deployment
@@ -34,7 +36,39 @@ Click the button above to deploy directly to your Azure subscription. This will:
 
 **No manual app registration required!**
 
-### Option 2: Manual Setup
+### Option 2: No GitHub Account? No Problem!
+
+**For administrators without GitHub accounts:**
+
+📋 **Azure CLI Deployment**:
+```bash
+# Download and run our deployment script
+curl -L -o deploy.sh https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-azure-cli.sh
+chmod +x deploy.sh
+./deploy.sh
+```
+
+💻 **PowerShell Deployment**:
+```powershell
+# Download and run PowerShell script
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-azure-powershell.ps1" -OutFile "deploy.ps1"
+.\deploy.ps1
+```
+
+📖 **See [DEPLOYMENT_ALTERNATIVES.md](./DEPLOYMENT_ALTERNATIVES.md) for more options:**
+- Azure Portal upload
+- Pre-built release packages
+- Container deployment
+- Enterprise deployment guides
+
+### Option 3: Manual Setup
+- ✅ Set up GitHub Actions for continuous deployment
+- ✅ Configure authentication automatically
+- ✅ Handle all Microsoft Graph permissions
+
+**No manual app registration required!**
+
+### Option 3: Manual Setup
 
 #### Prerequisites
 
