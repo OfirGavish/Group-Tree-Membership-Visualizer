@@ -44,7 +44,7 @@ export class ApiGraphService {
 
   async getGroupMemberOf(groupId: string): Promise<Group[]> {
     try {
-      const response = await fetch(`/api/getUserGroups?userId=${encodeURIComponent(groupId)}`)
+      const response = await fetch(`/api/getGroupMemberOf?groupId=${encodeURIComponent(groupId)}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch group memberOf: ${response.status}`)
       }

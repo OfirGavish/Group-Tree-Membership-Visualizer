@@ -83,11 +83,17 @@ export default function SimpleHomePage() {
     if (node.type === 'group') {
       try {
         setLoading(true)
+        setError(null) // Clear any previous errors
         const group = node.data as Group
         const graphService = new ApiGraphService()
         
+        console.log('Loading group details for:', group.displayName, group.id)
+        
         const members = await graphService.getGroupMembers(group.id)
+        console.log('Group members loaded:', members.length)
+        
         const memberOf = await graphService.getGroupMemberOf(group.id)
+        console.log('Group memberOf loaded:', memberOf.length)
         
         const enhancedGroup: Group = {
           ...group,
@@ -98,7 +104,7 @@ export default function SimpleHomePage() {
         setSelectedGroup(enhancedGroup)
       } catch (error) {
         console.error('Error loading group details:', error)
-        setError('Failed to load group details.')
+        setError(`Failed to load group details: ${error instanceof Error ? error.message : 'Unknown error'}`)
       } finally {
         setLoading(false)
       }
