@@ -18,6 +18,7 @@ export default function SimpleHomePage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
 
   const authService = new StaticWebAppAuthService()
 
@@ -54,6 +55,23 @@ export default function SimpleHomePage() {
     }
   }
 
+  const buildTreeFromNode = (rootNode: TreeNode, expandedNodeIds: Set<string>): TreeNode => {
+    const buildNode = (node: TreeNode): TreeNode => {
+      const isExpanded = expandedNodeIds.has(node.id)
+      
+      if (!isExpanded || !node.children || node.children.length === 0) {
+        return { ...node, children: [] }
+      }
+
+      return {
+        ...node,
+        children: node.children.map(buildNode)
+      }
+    }
+
+    return buildNode(rootNode)
+  }
+
   const handleUserSelect = async (user: User) => {
     if (!currentUser) return
 
@@ -64,7 +82,14 @@ export default function SimpleHomePage() {
       
       const graphService = new ApiGraphService()
       const rootNode = await graphService.buildGroupTree(user.id)
-      setTreeData({ nodes: [rootNode], links: [] })
+      
+      // Reset expanded nodes and set the root as expanded
+      const newExpandedNodes = new Set([rootNode.id])
+      setExpandedNodes(newExpandedNodes)
+      
+      // Build the tree with only expanded nodes
+      const filteredTree = buildTreeFromNode(rootNode, newExpandedNodes)
+      setTreeData({ nodes: [filteredTree], links: [] })
       setSelectedNode(rootNode)
       setSelectedGroup(null)
     } catch (error) {
@@ -80,36 +105,144 @@ export default function SimpleHomePage() {
 
     setSelectedNode(node)
     
-    if (node.type === 'group') {
-      try {
-        setLoading(true)
-        setError(null) // Clear any previous errors
-        const group = node.data as Group
-        const graphService = new ApiGraphService()
-        
-        console.log('Loading group details for:', group.displayName, group.id)
-        
-        const members = await graphService.getGroupMembers(group.id)
-        console.log('Group members loaded:', members.length)
-        
-        const memberOf = await graphService.getGroupMemberOf(group.id)
-        console.log('Group memberOf loaded:', memberOf.length)
-        
-        const enhancedGroup: Group = {
-          ...group,
-          members,
-          memberOf,
+    // Handle expanding/collapsing nodes
+    const isExpanded = expandedNodes.has(node.id)
+    const newExpandedNodes = new Set(expandedNodes)
+    
+    if (isExpanded) {
+      // Collapse this node and all its descendants
+      const collapseDescendants = (nodeToCollapse: TreeNode) => {
+        newExpandedNodes.delete(nodeToCollapse.id)
+        if (nodeToCollapse.children) {
+          nodeToCollapse.children.forEach(collapseDescendants)
         }
-        
-        setSelectedGroup(enhancedGroup)
-      } catch (error) {
-        console.error('Error loading group details:', error)
-        setError(`Failed to load group details: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      } finally {
-        setLoading(false)
       }
+      collapseDescendants(node)
     } else {
-      setSelectedGroup(null)
+      // Expand this node
+      newExpandedNodes.add(node.id)
+      
+      // If it's a group, load additional data (members and parent groups)
+      if (node.type === 'group') {
+        try {
+          setLoading(true)
+          const graphService = new ApiGraphService()
+          const group = node.data as Group
+          
+          // Load group members
+          const members = await graphService.getGroupMembers(group.id)
+          
+          // Load groups this group belongs to
+          const memberOf = await graphService.getGroupMemberOf(group.id)
+          
+          // Create new child nodes for members
+          const memberNodes: TreeNode[] = members.map(member => {
+            if (member['@odata.type'].includes('user')) {
+              const user: User = {
+                id: member.id,
+                displayName: member.displayName,
+                userPrincipalName: member.userPrincipalName || '',
+                mail: member.mail,
+              }
+              return {
+                id: member.id,
+                name: member.displayName,
+                type: 'user' as const,
+                data: user,
+                children: undefined
+              }
+            } else {
+              const group: Group = {
+                id: member.id,
+                displayName: member.displayName,
+                description: '',
+                groupTypes: []
+              }
+              return {
+                id: member.id,
+                name: member.displayName,
+                type: 'group' as const,
+                data: group,
+                children: []
+              }
+            }
+          })
+          
+          // Create new parent nodes for groups this group belongs to
+          const parentNodes: TreeNode[] = memberOf.map(parentGroup => ({
+            id: `parent-${parentGroup.id}`,
+            name: `${parentGroup.displayName} (parent)`,
+            type: 'group',
+            data: parentGroup,
+            children: []
+          }))
+          
+          // Update the node with new children
+          const updateTreeData = (nodes: TreeNode[]): TreeNode[] => {
+            return nodes.map(n => {
+              if (n.id === node.id) {
+                return {
+                  ...n,
+                  children: [...(memberNodes), ...(parentNodes)]
+                }
+              }
+              if (n.children) {
+                return {
+                  ...n,
+                  children: updateTreeData(n.children)
+                }
+              }
+              return n
+            })
+          }
+          
+          // Find and update the root node
+          if (treeData.nodes.length > 0) {
+            const rootNode = treeData.nodes[0]
+            const updateNode = (nodeToUpdate: TreeNode): TreeNode => {
+              if (nodeToUpdate.id === node.id) {
+                return {
+                  ...nodeToUpdate,
+                  children: [...memberNodes, ...parentNodes]
+                }
+              }
+              if (nodeToUpdate.children) {
+                return {
+                  ...nodeToUpdate,
+                  children: nodeToUpdate.children.map(updateNode)
+                }
+              }
+              return nodeToUpdate
+            }
+            
+            const updatedRoot = updateNode(rootNode)
+            const filteredTree = buildTreeFromNode(updatedRoot, newExpandedNodes)
+            setTreeData({ nodes: [filteredTree], links: [] })
+          }
+          
+          // Set group details
+          const enhancedGroup: Group = {
+            ...group,
+            members,
+            memberOf,
+          }
+          setSelectedGroup(enhancedGroup)
+          
+        } catch (error) {
+          console.error('Error loading group details:', error)
+          setError(`Failed to load group details: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    
+    setExpandedNodes(newExpandedNodes)
+    
+    // Rebuild tree with new expanded state if we have tree data
+    if (treeData.nodes.length > 0) {
+      const filteredTree = buildTreeFromNode(treeData.nodes[0], newExpandedNodes)
+      setTreeData({ nodes: [filteredTree], links: [] })
     }
   }
 
@@ -122,6 +255,22 @@ export default function SimpleHomePage() {
         mail: member.mail,
       }
       await handleUserSelect(user)
+    } else if (member['@odata.type'].includes('group')) {
+      // Create a tree node for the group and select it
+      const group: Group = {
+        id: member.id,
+        displayName: member.displayName,
+        description: '',
+        groupTypes: []
+      }
+      const groupNode: TreeNode = {
+        id: member.id,
+        name: member.displayName,
+        type: 'group',
+        data: group,
+        children: []
+      }
+      await handleNodeSelect(groupNode)
     }
   }
 

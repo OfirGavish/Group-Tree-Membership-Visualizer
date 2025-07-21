@@ -36,12 +36,31 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .style('border-radius', '12px')
       .call(zoom)
 
-    const g = svg
-      .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
+    // Define gradients
+    const defs = svg.append('defs')
+    
+    // User gradient
+    const userGradient = defs.append('linearGradient')
+      .attr('id', 'userGradient')
+      .attr('gradientUnits', 'objectBoundingBox')
+    userGradient.append('stop').attr('offset', '0%').attr('stop-color', '#4ecdc4')
+    userGradient.append('stop').attr('offset', '100%').attr('stop-color', '#44a08d')
+
+    // Group gradient  
+    const groupGradient = defs.append('linearGradient')
+      .attr('id', 'groupGradient')
+      .attr('gradientUnits', 'objectBoundingBox')
+    groupGradient.append('stop').attr('offset', '0%').attr('stop-color', '#45b7d1')
+    groupGradient.append('stop').attr('offset', '100%').attr('stop-color', '#96c93d')
+
+    // Selected gradient
+    const selectedGradient = defs.append('linearGradient')
+      .attr('id', 'selectedGradient')
+      .attr('gradientUnits', 'objectBoundingBox')
+    selectedGradient.append('stop').attr('offset', '0%').attr('stop-color', '#ff6b6b')
+    selectedGradient.append('stop').attr('offset', '100%').attr('stop-color', '#ee5a52')
 
     // Add a subtle grid pattern
-    const defs = svg.append('defs')
     const pattern = defs.append('pattern')
       .attr('id', 'grid')
       .attr('width', 50)
@@ -58,6 +77,10 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .attr('width', '100%')
       .attr('height', '100%')
       .attr('fill', 'url(#grid)')
+
+    const g = svg
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`)
 
     // Add enhanced links with curves
     const linkGenerator = d3.linkHorizontal<any, TreeNode>()
@@ -84,8 +107,9 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .attr('class', 'tree-node')
       .attr('transform', (d) => `translate(${d.y || 0},${d.x || 0})`)
       .style('cursor', 'pointer')
-      .on('click', (event, d) => {
+      .on('click', function(event, d) {
         event.stopPropagation()
+        console.log('Node clicked:', d.data.name, d.data.type)
         onNodeSelect(d.data)
       })
       .on('mouseover', function(event, d) {
@@ -109,11 +133,11 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .attr('r', 15)
       .style('fill', (d) => {
         if (selectedNode && d.data.id === selectedNode.id) {
-          return 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)'
+          return 'url(#selectedGradient)'
         }
         return d.data.type === 'user' 
-          ? 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)' 
-          : 'linear-gradient(135deg, #45b7d1 0%, #96c93d 100%)'
+          ? 'url(#userGradient)' 
+          : 'url(#groupGradient)'
       })
       .style('stroke', '#ffffff')
       .style('stroke-width', 3)
@@ -128,6 +152,31 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .style('fill', 'white')
       .style('pointer-events', 'none')
       .text((d) => d.data.type === 'user' ? '👤' : '👥')
+
+    // Add expand/collapse indicators for groups
+    node
+      .filter((d) => d.data.type === 'group')
+      .append('circle')
+      .attr('cx', 20)
+      .attr('cy', -20)
+      .attr('r', 8)
+      .style('fill', 'rgba(255,255,255,0.9)')
+      .style('stroke', '#666')
+      .style('stroke-width', 1)
+      .style('cursor', 'pointer')
+
+    node
+      .filter((d) => d.data.type === 'group')
+      .append('text')
+      .attr('x', 20)
+      .attr('y', -20)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-size', '10px')
+      .style('font-weight', 'bold')
+      .style('fill', '#666')
+      .style('pointer-events', 'none')
+      .text((d) => d.children && d.children.length > 0 ? '−' : '+')
 
     // Add enhanced labels with better positioning and styling
     node
@@ -157,6 +206,93 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .style('pointer-events', 'none')
       .text((d) => d.data.type === 'user' ? 'User' : 'Group')
 
+    // Add zoom control buttons
+    const zoomControls = svg.append('g')
+      .attr('class', 'zoom-controls')
+      .attr('transform', `translate(${width - 60}, 20)`)
+
+    // Zoom in button
+    const zoomInButton = zoomControls.append('g')
+      .style('cursor', 'pointer')
+      .on('click', () => {
+        svg.transition().duration(300).call(zoom.scaleBy, 1.5)
+      })
+
+    zoomInButton.append('rect')
+      .attr('width', 30)
+      .attr('height', 30)
+      .attr('rx', 5)
+      .style('fill', 'rgba(255,255,255,0.9)')
+      .style('stroke', '#ccc')
+
+    zoomInButton.append('text')
+      .attr('x', 15)
+      .attr('y', 15)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-size', '18px')
+      .style('font-weight', 'bold')
+      .style('fill', '#333')
+      .text('+')
+
+    // Zoom out button
+    const zoomOutButton = zoomControls.append('g')
+      .attr('transform', 'translate(0, 35)')
+      .style('cursor', 'pointer')
+      .on('click', () => {
+        svg.transition().duration(300).call(zoom.scaleBy, 0.67)
+      })
+
+    zoomOutButton.append('rect')
+      .attr('width', 30)
+      .attr('height', 30)
+      .attr('rx', 5)
+      .style('fill', 'rgba(255,255,255,0.9)')
+      .style('stroke', '#ccc')
+
+    zoomOutButton.append('text')
+      .attr('x', 15)
+      .attr('y', 15)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-size', '18px')
+      .style('font-weight', 'bold')
+      .style('fill', '#333')
+      .text('−')
+
+    // Reset zoom button
+    const resetButton = zoomControls.append('g')
+      .attr('transform', 'translate(0, 70)')
+      .style('cursor', 'pointer')
+      .on('click', () => {
+        const bounds = g.node()?.getBBox()
+        if (bounds) {
+          const fullWidth = width
+          const fullHeight = height
+          const scale = 0.8 * Math.min(fullWidth / bounds.width, fullHeight / bounds.height)
+          const translate = [fullWidth / 2 - scale * (bounds.x + bounds.width / 2), fullHeight / 2 - scale * (bounds.y + bounds.height / 2)]
+          
+          svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale))
+        }
+      })
+
+    resetButton.append('rect')
+      .attr('width', 30)
+      .attr('height', 30)
+      .attr('rx', 5)
+      .style('fill', 'rgba(255,255,255,0.9)')
+      .style('stroke', '#ccc')
+
+    resetButton.append('text')
+      .attr('x', 15)
+      .attr('y', 15)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-size', '12px')
+      .style('font-weight', 'bold')
+      .style('fill', '#333')
+      .text('⌂')
+
     // Set initial zoom to fit content
     const bounds = g.node()?.getBBox()
     if (bounds) {
@@ -167,106 +303,16 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       
       svg.call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale))
     }
-
   }, [data, selectedNode, onNodeSelect])
 
   return (
-    <div className="w-full h-full flex flex-col items-center bg-gray-50 rounded-xl overflow-hidden shadow-lg">
-      <div className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-xl font-bold">Group Membership Tree</h3>
-            <p className="text-blue-100 text-sm">Click and drag to pan • Scroll to zoom • Click nodes to explore</p>
-          </div>
-          <div className="flex gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 shadow-lg"></div>
-              <span>User</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-400 to-green-400 shadow-lg"></div>
-              <span>Group</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-lg"></div>
-              <span>Selected</span>
-            </div>
-          </div>
-        </div>
+    <div className="bg-white rounded-lg shadow-lg p-4">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">Group Membership Tree</h3>
+        <p className="text-sm text-gray-600">Click on group nodes to expand/collapse. Use mouse wheel or controls to zoom.</p>
       </div>
-      
-      <div className="relative w-full h-full bg-gray-900 overflow-hidden">
-        <svg 
-          ref={svgRef} 
-          className="w-full h-full cursor-move"
-          style={{ minHeight: '600px' }}
-        />
-        
-        {/* Zoom controls */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2">
-          <button
-            onClick={() => {
-              const svg = d3.select(svgRef.current)
-              svg.transition().duration(300).call(
-                // @ts-ignore
-                svg.property('__zoom')?.scaleBy, 1.5
-              )
-            }}
-            className="w-10 h-10 bg-white/90 hover:bg-white rounded-lg shadow-lg flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all duration-200"
-            title="Zoom In"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </button>
-          
-          <button
-            onClick={() => {
-              const svg = d3.select(svgRef.current)
-              svg.transition().duration(300).call(
-                // @ts-ignore
-                svg.property('__zoom')?.scaleBy, 1 / 1.5
-              )
-            }}
-            className="w-10 h-10 bg-white/90 hover:bg-white rounded-lg shadow-lg flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all duration-200"
-            title="Zoom Out"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
-            </svg>
-            </button>
-          
-          <button
-            onClick={() => {
-              const svg = d3.select(svgRef.current)
-              const gNode = svg.select('g').node() as SVGGElement
-              const bounds = gNode?.getBBox()
-              if (bounds) {
-                const fullWidth = 1000
-                const fullHeight = 700
-                const scale = 0.8 * Math.min(fullWidth / bounds.width, fullHeight / bounds.height)
-                const translate = [fullWidth / 2 - scale * (bounds.x + bounds.width / 2), fullHeight / 2 - scale * (bounds.y + bounds.height / 2)]
-                
-                svg.transition().duration(500).call(
-                  // @ts-ignore
-                  svg.property('__zoom')?.transform,
-                  d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
-                )
-              }
-            }}
-            className="w-10 h-10 bg-white/90 hover:bg-white rounded-lg shadow-lg flex items-center justify-center text-gray-700 hover:text-gray-900 transition-all duration-200"
-            title="Fit to Screen"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          </button>
-        </div>
-        
-        {/* Instructions overlay */}
-        <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-xs">
-          💡 Use mouse wheel to zoom, drag to pan
-        </div>
+      <div className="overflow-hidden rounded-lg">
+        <svg ref={svgRef} className="w-full h-auto" />
       </div>
     </div>
   )
