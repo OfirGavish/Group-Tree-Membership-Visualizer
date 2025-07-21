@@ -11,6 +11,7 @@ import GroupDetails from '@/components/GroupDetails'
 
 export default function SimpleHomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -33,6 +34,7 @@ export default function SimpleHomePage() {
 
   const checkAuthStatus = async () => {
     try {
+      setAuthLoading(true)
       const user = await authService.getCurrentUser()
       if (user) {
         setIsAuthenticated(true)
@@ -42,6 +44,8 @@ export default function SimpleHomePage() {
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+    } finally {
+      setAuthLoading(false)
     }
   }
 
@@ -436,6 +440,21 @@ export default function SimpleHomePage() {
       }
       await handleNodeSelect(groupNode)
     }
+  }
+
+  // Show loading screen during initial auth check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Loading...</h2>
+          <p className="text-white/70">Checking authentication status</p>
+        </div>
+      </div>
+    )
   }
 
   if (!isAuthenticated) {
