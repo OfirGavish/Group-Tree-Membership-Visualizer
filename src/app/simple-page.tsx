@@ -122,7 +122,84 @@ export default function SimpleHomePage() {
     console.log('Node selected:', node.name, node.type, 'Current expanded nodes:', Array.from(expandedNodes))
     setSelectedNode(node)
     
-    // Handle expanding/collapsing nodes
+    // Handle user node selection - load their group memberships as new branches
+    if (node.type === 'user') {
+      const user = node.data as User
+      console.log('User node selected, loading their group memberships:', user.displayName)
+      
+      try {
+        setLoading(true)
+        const graphService = new ApiGraphService()
+        
+        // Get user's group memberships
+        const userGroups = await graphService.getUserGroups(user.id)
+        console.log('User groups found:', userGroups)
+        
+        // Create group nodes for the user's memberships
+        const groupNodes: TreeNode[] = userGroups.map(group => ({
+          id: group.id,
+          name: group.displayName,
+          type: 'group',
+          data: group,
+          children: [] // Will be populated when expanded
+        }))
+        
+        // Add the group nodes as children of the user node
+        const updateTreeData = (nodes: TreeNode[]): TreeNode[] => {
+          return nodes.map(n => {
+            if (n.id === node.id) {
+              return {
+                ...n,
+                children: groupNodes
+              }
+            }
+            if (n.children) {
+              return {
+                ...n,
+                children: updateTreeData(n.children)
+              }
+            }
+            return n
+          })
+        }
+        
+        if (treeData.nodes.length > 0) {
+          const rootNode = treeData.nodes[0]
+          const updateNode = (nodeToUpdate: TreeNode): TreeNode => {
+            if (nodeToUpdate.id === node.id) {
+              return {
+                ...nodeToUpdate,
+                children: groupNodes
+              }
+            }
+            if (nodeToUpdate.children) {
+              return {
+                ...nodeToUpdate,
+                children: nodeToUpdate.children.map(updateNode)
+              }
+            }
+            return nodeToUpdate
+          }
+          
+          const updatedRoot = updateNode(rootNode)
+          setTreeData({ nodes: [updatedRoot], links: [] })
+          
+          // Expand the user node to show their groups
+          const newExpandedNodes = new Set(expandedNodes)
+          newExpandedNodes.add(node.id)
+          setExpandedNodes(newExpandedNodes)
+        }
+        
+        setLoading(false)
+      } catch (error) {
+        console.error('Error loading user groups:', error)
+        setError('Failed to load user group memberships')
+        setLoading(false)
+      }
+      return
+    }
+    
+    // Handle group node expansion/collapse
     const isExpanded = expandedNodes.has(node.id)
     const newExpandedNodes = new Set(expandedNodes)
     
@@ -391,6 +468,7 @@ export default function SimpleHomePage() {
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
                 selectedNode={selectedNode || undefined}
+                expandedNodes={expandedNodes}
               />
             </div>
 

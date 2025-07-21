@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { TreeNode, TreeVisualizationProps } from '@/types'
 
-export default function TreeVisualization({ data, onNodeSelect, selectedNode }: TreeVisualizationProps) {
+export default function TreeVisualization({ data, onNodeSelect, selectedNode, expandedNodes }: TreeVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
@@ -17,8 +17,25 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
     const height = 700
     const margin = { top: 40, right: 120, bottom: 40, left: 120 }
 
+    // Filter tree data based on expanded nodes
+    const filterTreeData = (node: TreeNode): TreeNode => {
+      const filteredNode = { ...node }
+      
+      // Only include children if this node is expanded
+      if (node.children && expandedNodes.has(node.id)) {
+        filteredNode.children = node.children.map(filterTreeData)
+      } else {
+        // Don't include children if node is not expanded
+        delete filteredNode.children
+      }
+      
+      return filteredNode
+    }
+
+    const filteredRoot = filterTreeData(data.nodes[0])
+
     // Create hierarchical layout
-    const root = d3.hierarchy(data.nodes[0], (d) => d.children)
+    const root = d3.hierarchy(filteredRoot, (d) => d.children)
     const treeLayout = d3.tree<TreeNode>().size([height - margin.top - margin.bottom, width - margin.left - margin.right])
     const treeData = treeLayout(root)
 
@@ -153,9 +170,24 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .style('pointer-events', 'none')
       .text((d) => d.data.type === 'user' ? '👤' : '👥')
 
-    // Add expand/collapse indicators for groups
+    // Add expand/collapse indicators for groups that have children
     const expandButton = node
-      .filter((d) => d.data.type === 'group')
+      .filter((d) => {
+        // Find the original node in the full tree data to check if it has children
+        const findOriginalNode = (node: TreeNode, searchId: string): TreeNode | null => {
+          if (node.id === searchId) return node
+          if (node.children) {
+            for (const child of node.children) {
+              const found = findOriginalNode(child, searchId)
+              if (found) return found
+            }
+          }
+          return null
+        }
+        
+        const originalNode = findOriginalNode(data.nodes[0], d.data.id)
+        return !!(originalNode?.children && originalNode.children.length > 0)
+      })
       .append('g')
       .attr('class', 'expand-button')
       .attr('transform', 'translate(20, -20)')
@@ -195,7 +227,26 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .style('font-weight', 'bold')
       .style('fill', '#666')
       .style('pointer-events', 'none')
-      .text((d) => d.children && d.children.length > 0 ? '−' : '+')
+      .text((d) => {
+        // Find the original node in the full tree data to check if it has children
+        const findOriginalNode = (node: TreeNode, searchId: string): TreeNode | null => {
+          if (node.id === searchId) return node
+          if (node.children) {
+            for (const child of node.children) {
+              const found = findOriginalNode(child, searchId)
+              if (found) return found
+            }
+          }
+          return null
+        }
+        
+        const originalNode = findOriginalNode(data.nodes[0], d.data.id)
+        const hasChildren = originalNode?.children && originalNode.children.length > 0
+        const isExpanded = expandedNodes.has(d.data.id)
+        
+        if (!hasChildren) return '' // No button if no children
+        return isExpanded ? '−' : '+'
+      })
 
     // Add enhanced labels with better positioning and styling
     node
@@ -322,14 +373,14 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       
       svg.call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale))
     }
-  }, [data, selectedNode, onNodeSelect])
+  }, [data, selectedNode, onNodeSelect, expandedNodes])
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4">
+    <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Group Membership Tree</h3>
-        <p className="text-sm text-gray-600">
-          Click on any node to select • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-gray-200 rounded-full text-xs font-bold mx-1">+</span> buttons to expand groups • Use mouse wheel or controls to zoom
+        <h3 className="text-lg font-semibold text-white">Group Membership Tree</h3>
+        <p className="text-sm text-white/70">
+          Click on users to see their groups • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand groups • Use mouse wheel or controls to zoom
         </p>
       </div>
       <div className="overflow-hidden rounded-lg">

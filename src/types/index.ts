@@ -54,6 +54,7 @@ export interface TreeVisualizationProps {
   data: TreeData
   onNodeSelect: (node: TreeNode) => void
   selectedNode?: TreeNode
+  expandedNodes: Set<string>
 }
 
 export interface UserSearchProps {
