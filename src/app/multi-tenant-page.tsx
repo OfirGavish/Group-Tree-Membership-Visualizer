@@ -16,6 +16,7 @@ export default function MultiTenantPage() {
   const [currentUser, setCurrentUser] = useState<GraphUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   const authService = MultiTenantAuthService.getInstance();
   const graphService = new MultiTenantGraphService();
@@ -258,6 +259,7 @@ export default function MultiTenantPage() {
                     data={treeData} 
                     onNodeSelect={(node) => console.log('Selected node:', node)}
                     selectedNode={undefined}
+                    expandedNodes={expandedNodes}
                   />
                 </div>
               ) : (
