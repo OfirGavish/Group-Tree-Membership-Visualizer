@@ -14,6 +14,7 @@ export default function SimpleHomePage() {
   const [users, setUsers] = useState<User[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [treeData, setTreeData] = useState<TreeData>({ nodes: [], links: [] })
+  const [fullTreeData, setFullTreeData] = useState<TreeNode | null>(null)
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [loading, setLoading] = useState(false)
@@ -59,8 +60,13 @@ export default function SimpleHomePage() {
     const buildNode = (node: TreeNode): TreeNode => {
       const isExpanded = expandedNodeIds.has(node.id)
       
+      console.log('Building node:', node.name, 'isExpanded:', isExpanded, 'hasChildren:', !!node.children?.length)
+      
       if (!isExpanded || !node.children || node.children.length === 0) {
-        return { ...node, children: [] }
+        return { 
+          ...node, 
+          children: [] // Always return empty children for non-expanded nodes
+        }
       }
 
       return {
@@ -83,15 +89,22 @@ export default function SimpleHomePage() {
       const graphService = new ApiGraphService()
       const rootNode = await graphService.buildGroupTree(user.id)
       
-      // Reset expanded nodes and set the root as expanded
-      const newExpandedNodes = new Set([rootNode.id])
+      console.log('Full tree loaded:', rootNode)
+      
+      // Start with only the root visible, hide all children initially
+      const collapsedRoot = {
+        ...rootNode,
+        children: [] // Start completely collapsed
+      }
+      
+      // Reset expanded nodes - none expanded initially
+      const newExpandedNodes = new Set<string>()
       setExpandedNodes(newExpandedNodes)
       
-      // Build the tree with only expanded nodes
-      const filteredTree = buildTreeFromNode(rootNode, newExpandedNodes)
-      setTreeData({ nodes: [filteredTree], links: [] })
+      setTreeData({ nodes: [collapsedRoot], links: [] })
       setSelectedNode(rootNode)
       setSelectedGroup(null)
+      setFullTreeData(rootNode) // Store the full tree for reference
     } catch (error) {
       console.error('Error building group tree:', error)
       setError('Failed to load group memberships. Please check your permissions.')
@@ -103,14 +116,18 @@ export default function SimpleHomePage() {
   const handleNodeSelect = async (node: TreeNode) => {
     if (!currentUser) return
 
+    console.log('Node selected:', node.name, node.type, 'Current expanded nodes:', Array.from(expandedNodes))
     setSelectedNode(node)
     
     // Handle expanding/collapsing nodes
     const isExpanded = expandedNodes.has(node.id)
     const newExpandedNodes = new Set(expandedNodes)
     
+    console.log('Node', node.name, 'is currently', isExpanded ? 'expanded' : 'collapsed')
+    
     if (isExpanded) {
       // Collapse this node and all its descendants
+      console.log('Collapsing node:', node.name)
       const collapseDescendants = (nodeToCollapse: TreeNode) => {
         newExpandedNodes.delete(nodeToCollapse.id)
         if (nodeToCollapse.children) {
@@ -120,6 +137,7 @@ export default function SimpleHomePage() {
       collapseDescendants(node)
     } else {
       // Expand this node
+      console.log('Expanding node:', node.name)
       newExpandedNodes.add(node.id)
       
       // If it's a group, load additional data (members and parent groups)
@@ -216,8 +234,7 @@ export default function SimpleHomePage() {
             }
             
             const updatedRoot = updateNode(rootNode)
-            const filteredTree = buildTreeFromNode(updatedRoot, newExpandedNodes)
-            setTreeData({ nodes: [filteredTree], links: [] })
+            setTreeData({ nodes: [updatedRoot], links: [] })
           }
           
           // Set group details
@@ -237,13 +254,8 @@ export default function SimpleHomePage() {
       }
     }
     
+    console.log('New expanded nodes:', Array.from(newExpandedNodes))
     setExpandedNodes(newExpandedNodes)
-    
-    // Rebuild tree with new expanded state if we have tree data
-    if (treeData.nodes.length > 0) {
-      const filteredTree = buildTreeFromNode(treeData.nodes[0], newExpandedNodes)
-      setTreeData({ nodes: [filteredTree], links: [] })
-    }
   }
 
   const handleGroupMemberSelect = async (member: GroupMember) => {

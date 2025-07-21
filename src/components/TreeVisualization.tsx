@@ -154,22 +154,41 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
       .text((d) => d.data.type === 'user' ? '👤' : '👥')
 
     // Add expand/collapse indicators for groups
-    node
+    const expandButton = node
       .filter((d) => d.data.type === 'group')
+      .append('g')
+      .attr('class', 'expand-button')
+      .attr('transform', 'translate(20, -20)')
+      .style('cursor', 'pointer')
+      .on('click', function(event, d) {
+        event.stopPropagation()
+        console.log('Expand button clicked:', d.data.name)
+        onNodeSelect(d.data)
+      })
+
+    expandButton
       .append('circle')
-      .attr('cx', 20)
-      .attr('cy', -20)
       .attr('r', 8)
       .style('fill', 'rgba(255,255,255,0.9)')
       .style('stroke', '#666')
       .style('stroke-width', 1)
-      .style('cursor', 'pointer')
+      .on('mouseover', function() {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .style('fill', 'rgba(255,255,255,1)')
+          .attr('r', 9)
+      })
+      .on('mouseout', function() {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .style('fill', 'rgba(255,255,255,0.9)')
+          .attr('r', 8)
+      })
 
-    node
-      .filter((d) => d.data.type === 'group')
+    expandButton
       .append('text')
-      .attr('x', 20)
-      .attr('y', -20)
       .attr('text-anchor', 'middle')
       .attr('dy', '0.35em')
       .style('font-size', '10px')
@@ -309,7 +328,9 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode }: 
     <div className="bg-white rounded-lg shadow-lg p-4">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-gray-800">Group Membership Tree</h3>
-        <p className="text-sm text-gray-600">Click on group nodes to expand/collapse. Use mouse wheel or controls to zoom.</p>
+        <p className="text-sm text-gray-600">
+          Click on any node to select • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-gray-200 rounded-full text-xs font-bold mx-1">+</span> buttons to expand groups • Use mouse wheel or controls to zoom
+        </p>
       </div>
       <div className="overflow-hidden rounded-lg">
         <svg ref={svgRef} className="w-full h-auto" />
