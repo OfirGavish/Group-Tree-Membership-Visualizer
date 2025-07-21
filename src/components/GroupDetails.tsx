@@ -6,15 +6,15 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
   const isSecurityGroup = group.groupTypes.includes('Unified') ? false : true
 
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-xl border border-white/20 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+      <div className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 backdrop-blur-md text-white p-6 border-b border-white/20">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-2xl">
             👥
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-bold mb-1">{group.displayName}</h3>
+            <h3 className="text-xl font-bold mb-1 text-white">{group.displayName}</h3>
             <div className="flex items-center gap-2">
               <span className={`px-3 py-1 text-xs rounded-full font-medium ${
                 isSecurityGroup 
@@ -25,7 +25,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
               </span>
             </div>
             {group.description && (
-              <p className="text-blue-100 text-sm mt-2 leading-relaxed">{group.description}</p>
+              <p className="text-white/80 text-sm mt-2 leading-relaxed">{group.description}</p>
             )}
           </div>
         </div>
@@ -33,19 +33,19 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       <div className="p-6 space-y-6">
         {/* Group Information */}
-        <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-sm">
+          <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
             Group Information
           </h4>
           <div className="grid grid-cols-1 gap-3 text-sm">
             <div className="flex flex-col gap-1">
-              <span className="text-gray-500 font-medium">Group ID:</span>
-              <p className="font-mono text-xs text-gray-700 bg-gray-50 px-3 py-2 rounded border break-all">{group.id}</p>
+              <span className="text-white/70 font-medium">Group ID:</span>
+              <p className="font-mono text-xs text-white/80 bg-white/10 px-3 py-2 rounded border border-white/20 break-all">{group.id}</p>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-500 font-medium">Group Types:</span>
-              <p className="text-gray-700 bg-gray-50 px-3 py-2 rounded border">
+              <span className="text-white/70 font-medium">Group Types:</span>
+              <p className="text-white/80 bg-white/10 px-3 py-2 rounded border border-white/20">
                 {group.groupTypes.length > 0 ? group.groupTypes.join(', ') : 'Unified'}
               </p>
             </div>
@@ -54,13 +54,13 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
         {/* Members Section */}
         {group.members && group.members.length > 0 && (
-          <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-            <h4 className="font-semibold text-gray-800 mb-3 flex items-center justify-between">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-sm">
+            <h4 className="font-semibold text-white mb-3 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                 Members
               </span>
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+              <span className="bg-green-500/20 text-green-100 px-2 py-1 rounded-full text-xs font-medium border border-green-400/30">
                 {group.members.length}
               </span>
             </h4>
@@ -69,7 +69,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                 <button
                   key={member.id}
                   onClick={() => onMemberSelect(member)}
-                  className="w-full p-3 text-left bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-blue-50 hover:to-blue-100 hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-blue-300"
+                  className="w-full p-3 text-left bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 hover:shadow-md transition-all duration-200 border border-white/20 hover:border-white/40"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md ${
@@ -80,19 +80,19 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                       {member.displayName.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{member.displayName}</div>
+                      <div className="font-medium text-white truncate">{member.displayName}</div>
                       {member.userPrincipalName && (
-                        <div className="text-sm text-gray-600 truncate">{member.userPrincipalName}</div>
+                        <div className="text-sm text-white/70 truncate">{member.userPrincipalName}</div>
                       )}
                       {member.mail && member.mail !== member.userPrincipalName && (
-                        <div className="text-xs text-gray-500 truncate">{member.mail}</div>
+                        <div className="text-xs text-white/60 truncate">{member.mail}</div>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-lg">
                         {member['@odata.type'].includes('user') ? '👤' : '👥'}
                       </span>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -105,13 +105,13 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
         {/* Member Of Section */}
         {group.memberOf && group.memberOf.length > 0 && (
-          <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-            <h4 className="font-semibold text-gray-800 mb-3 flex items-center justify-between">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-sm">
+            <h4 className="font-semibold text-white mb-3 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
                 Member of
               </span>
-              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
+              <span className="bg-orange-500/20 text-orange-100 px-2 py-1 rounded-full text-xs font-medium border border-orange-400/30">
                 {group.memberOf.length}
               </span>
             </h4>
@@ -119,16 +119,16 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
               {group.memberOf.map((parentGroup) => (
                 <div
                   key={parentGroup.id}
-                  className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+                  className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 shadow-sm hover:shadow-md transition-shadow duration-200"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white text-sm font-medium shadow-sm">
                       👥
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{parentGroup.displayName}</div>
+                      <div className="font-medium text-white truncate">{parentGroup.displayName}</div>
                       {parentGroup.description && (
-                        <div className="text-sm text-gray-600 mt-1">{parentGroup.description}</div>
+                        <div className="text-sm text-white/70 mt-1">{parentGroup.description}</div>
                       )}
                     </div>
                   </div>
@@ -140,8 +140,8 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
         {/* Empty State */}
         {(!group.members || group.members.length === 0) && (!group.memberOf || group.memberOf.length === 0) && (
-          <div className="text-center py-8 text-gray-500">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="text-center py-8 text-white/70">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3 border border-white/20">
               <span className="text-2xl">👥</span>
             </div>
             <p className="text-sm">No additional group details available</p>

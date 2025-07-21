@@ -91,17 +91,20 @@ export default function SimpleHomePage() {
       
       console.log('Full tree loaded:', rootNode)
       
-      // Start with only the root visible, hide all children initially
-      const collapsedRoot = {
+      // Start with the user's immediate groups visible (first level expanded)
+      const initialTree = {
         ...rootNode,
-        children: [] // Start completely collapsed
+        children: rootNode.children ? rootNode.children.map(child => ({
+          ...child,
+          children: [] // Collapse second level initially
+        })) : []
       }
       
-      // Reset expanded nodes - none expanded initially
-      const newExpandedNodes = new Set<string>()
+      // Set the root as expanded so we can see the user's groups
+      const newExpandedNodes = new Set([rootNode.id])
       setExpandedNodes(newExpandedNodes)
       
-      setTreeData({ nodes: [collapsedRoot], links: [] })
+      setTreeData({ nodes: [initialTree], links: [] })
       setSelectedNode(rootNode)
       setSelectedGroup(null)
       setFullTreeData(rootNode) // Store the full tree for reference
@@ -316,23 +319,31 @@ export default function SimpleHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-48 h-48 bg-pink-400/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute top-1/2 right-1/2 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl animate-pulse delay-3000"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/10 backdrop-blur-md shadow-lg border-b border-white/20 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-bold text-white">
               Group Tree Membership Visualizer
             </h1>
             <div className="flex items-center gap-4">
               {currentUser && (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-white/80">
                   {currentUser.displayName}
                 </span>
               )}
               <a
                 href={authService.getLogoutUrl()}
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100"
+                className="text-sm text-white/80 hover:text-white px-3 py-1 rounded-md hover:bg-white/10 transition-colors"
               >
                 Sign out
               </a>
@@ -342,14 +353,14 @@ export default function SimpleHomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="mb-6 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
             <div className="flex">
-              <div className="text-red-800 text-sm">{error}</div>
+              <div className="text-red-100 text-sm">{error}</div>
               <button
                 onClick={() => setError(null)}
-                className="ml-auto text-red-600 hover:text-red-800"
+                className="ml-auto text-red-300 hover:text-red-100"
               >
                 ×
               </button>
@@ -359,11 +370,16 @@ export default function SimpleHomePage() {
 
         {/* Search Section */}
         <div className="mb-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Select a User</h2>
-          <UserSearch users={users} onUserSelect={handleUserSelect} />
-          {loading && (
-            <div className="mt-4 text-sm text-gray-600">Loading...</div>
-          )}
+          <h2 className="text-lg font-medium text-white mb-4">Select a User</h2>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <UserSearch users={users} onUserSelect={handleUserSelect} />
+            {loading && (
+              <div className="mt-4 text-sm text-white/70 flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Loading...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Visualization and Details */}
@@ -381,17 +397,17 @@ export default function SimpleHomePage() {
             {/* Details Panel */}
             <div className="space-y-6">
               {/* Selected User Info */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Selected User</h3>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-6 border border-white/20">
+                <h3 className="text-lg font-semibold text-white mb-4">Selected User</h3>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
                     {selectedUser.displayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">{selectedUser.displayName}</div>
-                    <div className="text-sm text-gray-500">{selectedUser.userPrincipalName}</div>
+                    <div className="font-medium text-white">{selectedUser.displayName}</div>
+                    <div className="text-sm text-white/70">{selectedUser.userPrincipalName}</div>
                     {selectedUser.jobTitle && (
-                      <div className="text-xs text-gray-400">{selectedUser.jobTitle}</div>
+                      <div className="text-xs text-white/60">{selectedUser.jobTitle}</div>
                     )}
                   </div>
                 </div>
