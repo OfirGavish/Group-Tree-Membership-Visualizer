@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { StaticWebAppAuthService } from '@/lib/static-web-app-auth'
-import { SimpleGraphService } from '@/lib/simple-graph-service'
+import { ApiGraphService } from '@/lib/api-graph-service'
 import { User, Group, TreeNode, TreeData, GroupMember } from '@/types'
 import UserSearch from '@/components/UserSearch'
 import TreeVisualization from '@/components/TreeVisualization'
@@ -32,18 +32,18 @@ export default function SimpleHomePage() {
       if (user) {
         setIsAuthenticated(true)
         setCurrentUser(user)
-        await loadUsers(user.accessToken)
+        await loadUsers()
       }
     } catch (error) {
       console.error('Auth check failed:', error)
     }
   }
 
-  const loadUsers = async (accessToken: string) => {
+  const loadUsers = async () => {
     try {
       setLoading(true)
       setError(null)
-      const graphService = new SimpleGraphService(accessToken)
+      const graphService = new ApiGraphService()
       const allUsers = await graphService.getAllUsers()
       setUsers(allUsers)
     } catch (error) {
@@ -55,14 +55,14 @@ export default function SimpleHomePage() {
   }
 
   const handleUserSelect = async (user: User) => {
-    if (!currentUser?.accessToken) return
+    if (!currentUser) return
 
     try {
       setLoading(true)
       setError(null)
       setSelectedUser(user)
       
-      const graphService = new SimpleGraphService(currentUser.accessToken)
+      const graphService = new ApiGraphService()
       const rootNode = await graphService.buildGroupTree(user.id)
       setTreeData({ nodes: [rootNode], links: [] })
       setSelectedNode(rootNode)
@@ -76,7 +76,7 @@ export default function SimpleHomePage() {
   }
 
   const handleNodeSelect = async (node: TreeNode) => {
-    if (!currentUser?.accessToken) return
+    if (!currentUser) return
 
     setSelectedNode(node)
     
@@ -84,7 +84,7 @@ export default function SimpleHomePage() {
       try {
         setLoading(true)
         const group = node.data as Group
-        const graphService = new SimpleGraphService(currentUser.accessToken)
+        const graphService = new ApiGraphService()
         
         const members = await graphService.getGroupMembers(group.id)
         const memberOf = await graphService.getGroupMemberOf(group.id)
