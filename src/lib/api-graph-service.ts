@@ -16,6 +16,20 @@ export class ApiGraphService {
     }
   }
 
+  async getAllGroups(search?: string): Promise<Group[]> {
+    try {
+      const url = search ? `/api/getGroups?search=${encodeURIComponent(search)}` : '/api/getGroups'
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch groups: ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      console.error('Error fetching groups:', error)
+      throw error
+    }
+  }
+
   async getUserGroups(userId: string): Promise<Group[]> {
     try {
       const response = await fetch(`/api/getUserGroups?userId=${encodeURIComponent(userId)}`)

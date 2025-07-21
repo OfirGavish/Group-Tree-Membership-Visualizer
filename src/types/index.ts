@@ -15,6 +15,8 @@ export interface Group {
   groupTypes: string[]
   members?: GroupMember[]
   memberOf?: Group[]
+  memberCount?: number
+  isEmpty?: boolean
 }
 
 export interface GroupMember {
@@ -65,4 +67,9 @@ export interface UserSearchProps {
 export interface GroupDetailsProps {
   group: Group
   onMemberSelect: (member: GroupMember) => void
+}
+
+export interface GroupSearchProps {
+  onGroupSelect: (group: Group) => void
+  groups: Group[]
 }
