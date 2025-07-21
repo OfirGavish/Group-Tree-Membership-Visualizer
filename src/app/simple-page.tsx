@@ -125,22 +125,23 @@ export default function SimpleHomePage() {
     // Handle user node selection - load their group memberships as new branches
     if (node.type === 'user') {
       const user = node.data as User
+      const userId = (user as any).originalId || user.id // Use original ID for API calls
       console.log('User node selected, loading their group memberships:', user.displayName)
       
       try {
         setLoading(true)
         const graphService = new ApiGraphService()
         
-        // Get user's group memberships
-        const userGroups = await graphService.getUserGroups(user.id)
+        // Get user's group memberships using original ID
+        const userGroups = await graphService.getUserGroups(userId)
         console.log('User groups found:', userGroups)
         
-        // Create group nodes for the user's memberships
+        // Create group nodes for the user's memberships with path-specific IDs
         const groupNodes: TreeNode[] = userGroups.map(group => ({
-          id: group.id,
+          id: `${node.id}-group-${group.id}`, // Create unique ID based on user path context
           name: group.displayName,
           type: 'group',
-          data: group,
+          data: { ...group, originalId: group.id }, // Store original ID for API calls
           children: [] // Will be populated when expanded
         }))
         
@@ -226,14 +227,15 @@ export default function SimpleHomePage() {
           setLoading(true)
           const graphService = new ApiGraphService()
           const group = node.data as Group
+          const groupId = (group as any).originalId || group.id // Use original ID for API calls
           
           // Load group members
-          const members = await graphService.getGroupMembers(group.id)
+          const members = await graphService.getGroupMembers(groupId)
           
           // Load groups this group belongs to
-          const memberOf = await graphService.getGroupMemberOf(group.id)
+          const memberOf = await graphService.getGroupMemberOf(groupId)
           
-          // Create new child nodes for members
+          // Create new child nodes for members with path-specific IDs
           const memberNodes: TreeNode[] = members.map(member => {
             if (member['@odata.type'].includes('user')) {
               const user: User = {
@@ -243,10 +245,10 @@ export default function SimpleHomePage() {
                 mail: member.mail,
               }
               return {
-                id: member.id,
+                id: `${node.id}-user-${member.id}`, // Create unique ID based on group path
                 name: member.displayName,
                 type: 'user' as const,
-                data: user,
+                data: { ...user, originalId: user.id }, // Store original ID
                 children: undefined
               }
             } else {
@@ -257,21 +259,21 @@ export default function SimpleHomePage() {
                 groupTypes: []
               }
               return {
-                id: member.id,
+                id: `${node.id}-group-${member.id}`, // Create unique ID based on parent path
                 name: member.displayName,
                 type: 'group' as const,
-                data: group,
+                data: { ...group, originalId: group.id }, // Store original ID
                 children: []
               }
             }
           })
           
-          // Create new parent nodes for groups this group belongs to
+          // Create new parent nodes for groups this group belongs to with path-specific IDs
           const parentNodes: TreeNode[] = memberOf.map(parentGroup => ({
-            id: `parent-${parentGroup.id}`,
+            id: `${node.id}-parent-${parentGroup.id}`, // Create unique ID based on path
             name: `${parentGroup.displayName} (parent)`,
             type: 'group',
-            data: parentGroup,
+            data: { ...parentGroup, originalId: parentGroup.id }, // Store original ID
             children: []
           }))
           
