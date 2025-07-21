@@ -490,10 +490,12 @@ export default function SimpleHomePage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-48 h-48 bg-pink-400/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        <div className="absolute top-1/2 right-1/2 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl animate-pulse delay-3000"></div>
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-pink-400/20 rounded-full blur-3xl animate-float-delayed"></div>
+        <div className="absolute top-1/2 right-1/2 w-48 h-48 bg-indigo-400/25 rounded-full blur-2xl animate-pulse delay-3000"></div>
+        <div className="absolute top-1/6 right-1/3 w-40 h-40 bg-teal-400/15 rounded-full blur-2xl animate-bounce"></div>
+        <div className="absolute bottom-1/3 right-1/6 w-56 h-56 bg-cyan-400/20 rounded-full blur-3xl animate-float"></div>
       </div>
 
       {/* Header */}
@@ -542,26 +544,26 @@ export default function SimpleHomePage() {
             <h2 className="text-lg font-medium text-white">
               Select a {searchType === 'user' ? 'User' : 'Group'}
             </h2>
-            <div className="flex bg-white/10 rounded-lg p-1">
+            <div className="flex bg-white/5 backdrop-blur-sm rounded-xl p-1 border border-white/20">
               <button
                 onClick={() => setSearchType('user')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
                   searchType === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'text-white/70 hover:text-white'
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg transform scale-105'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
               >
-                Users
+                👤 Users
               </button>
               <button
                 onClick={() => setSearchType('group')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
                   searchType === 'group'
-                    ? 'bg-blue-500 text-white'
-                    : 'text-white/70 hover:text-white'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg transform scale-105'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
               >
-                Groups
+                👥 Groups
               </button>
             </div>
           </div>
