@@ -1,242 +1,298 @@
-# Group Tree Membership Visualizer
+# 🌳 Group Tree Membership Visualizer
 
-A modern web application for visualizing Entra ID (Azure AD) group memberships and hierarchies with interactive tree diagrams.
+> **A beautiful, interactive Microsoft Entra ID group membership visualizer with stunning D3.js tree visualization**
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Azure Static Web Apps](https://img.shields.io/badge/Azure-Static%20Web%20Apps-blue?logo=microsoftazure)](https://azure.microsoft.com/services/app-service/static/)
 
-## 🌟 Features
+## ✨ Features
 
-- **Interactive Tree Visualization**: Navigate group hierarchies with D3.js-powered tree diagrams
-- **User Search**: Find users quickly with intelligent search and autocomplete
-- **Drill-Down Navigation**: Click on groups to explore members and nested group relationships
-- **Drill-Up Navigation**: See parent groups and understand the broader organizational structure
-- **Real-Time Data**: Direct integration with Microsoft Graph API for up-to-date information
-- **Responsive Design**: Works seamlessly across desktop and mobile devices
-- **Secure Authentication**: Azure Static Web Apps built-in authentication (no custom app registration needed!)
+### 🎯 Core Functionality
+- **🔍 Smart Search**: Search for users and groups across your organization with real-time autocomplete
+- **🌲 Interactive Tree Visualization**: Beautiful D3.js-powered hierarchical tree showing group memberships
+- **👥 Dual Mode**: Switch between user-centric and group-centric views
+- **🔴 Empty Group Detection**: Automatically highlights groups with no members in red
+- **📱 Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+
+### 🎨 User Experience
+- **✨ Glass Morphism UI**: Modern, elegant interface with glass-like transparency effects
+- **🌊 Floating Animations**: Smooth, continuous animations for an engaging experience
+- **🎛️ Gradient Toggle Buttons**: Beautiful animated toggle switches between search modes
+- **⚡ Real-time Updates**: Instant feedback and smooth transitions
+- **🎪 Expand/Collapse**: Interactive tree nodes with smooth expand/collapse animations
+
+### 🔐 Security & Authentication
+- **🔒 Microsoft OAuth**: Secure authentication using your organization's Entra ID
+- **🛡️ Permission-based Access**: Respects your existing directory permissions
+- **🔑 Secure API**: All API calls are authenticated and authorized
+- **🏢 Single Tenant**: Designed for organizational use with proper security boundaries
+
+### 🚀 Technical Excellence
+- **⚡ Serverless Architecture**: Built on Azure Static Web Apps for automatic scaling
+- **🔄 Smart Caching**: Optimized performance with intelligent client-side caching
+- **📊 Microsoft Graph Integration**: Direct integration with Microsoft Graph API
+- **🏗️ Modern Stack**: Next.js 15, TypeScript, Tailwind CSS, and D3.js
+
+## 🎬 Demo
+
+![Group Tree Visualizer Demo](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/raw/main/docs/demo.gif)
+
+*Beautiful tree visualization showing group hierarchies with empty groups highlighted in red*
+
+## 🚀 Quick Start
+
+### Option 1: One-Click Azure Deployment (Recommended)
+
+1. **Deploy to Azure** - Click the button below:
+   
+   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+
+2. **Configure Deployment**:
+   - Choose your Azure subscription
+   - Create a new resource group or use existing
+   - Enter a unique Static Web App name
+   - Select a region close to your users
+   - Click "Review + Create"
+
+3. **Post-Deployment Setup**:
+   ```powershell
+   # Download and run the configuration script
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
+   .\configure-app.ps1 -StaticWebAppName "your-app-name"
+   ```
+
+4. **Done!** 🎉 Your app is ready at `https://your-app-name.azurestaticapps.net`
+
+### Option 2: Manual Setup
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
+
+#### Prerequisites
+- Azure subscription
+- PowerShell or Azure CLI
+- Global Administrator or Application Administrator role
+
+#### Step 1: Deploy Infrastructure
+```bash
+# Clone the repository
+git clone https://github.com/OfirGavish/Group-Tree-Membership-Visualizer.git
+cd Group-Tree-Membership-Visualizer
+
+# Deploy using Azure CLI
+az group create --name "rg-group-visualizer" --location "East US"
+az deployment group create \
+  --resource-group "rg-group-visualizer" \
+  --template-file azuredeploy.json \
+  --parameters staticWebAppName="your-unique-name"
+```
+
+#### Step 2: Configure App Registration
+```powershell
+# Run the configuration script
+.\configure-app.ps1 -StaticWebAppName "your-unique-name"
+```
+
+#### Step 3: Grant Permissions
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Navigate to **Azure Active Directory** > **App registrations**
+3. Find "Group Tree Membership Visualizer"
+4. Go to **API permissions** > **Grant admin consent**
+
+</details>
 
 ## 🏗️ Architecture
 
-- **Frontend**: Next.js 15 with TypeScript and Tailwind CSS
-- **Authentication**: Azure Static Web Apps built-in authentication
-- **Data Source**: Microsoft Graph API
-- **Visualization**: D3.js for interactive tree diagrams
-- **Hosting**: Azure Static Web Apps (optimized for this platform)
+The application follows a modern, serverless architecture:
 
-## 🚀 Quick Start Options
-
-### Option 1: One-Click Deploy to Azure (Recommended)
-
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
-
-Click the button above to deploy directly to your Azure subscription. This will:
-- ✅ Create an Azure Static Web App
-- ✅ Set up GitHub Actions for continuous deployment
-- ✅ Configure authentication automatically
-- ✅ Handle all Microsoft Graph permissions
-
-**No manual app registration required!**
-
-### Option 2: No GitHub Account? No Problem!
-
-**For administrators without GitHub accounts:**
-
-📋 **Azure CLI Deployment**:
-```bash
-# Download and run our deployment script
-curl -L -o deploy.sh https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-azure-cli.sh
-chmod +x deploy.sh
-./deploy.sh
+```mermaid
+graph TB
+    User[👤 User] --> SWA[🌐 Azure Static Web App]
+    SWA --> Frontend[⚛️ Next.js Frontend]
+    SWA --> API[🔧 Azure Functions API]
+    
+    Frontend --> Auth[🔐 MSAL Authentication]
+    API --> Graph[📊 Microsoft Graph API]
+    
+    Auth --> AAD[🏢 Azure Active Directory]
+    Graph --> AAD
+    
+    Frontend --> D3[📈 D3.js Visualization]
+    Frontend --> Cache[💾 Client-side Cache]
 ```
 
-💻 **PowerShell Deployment**:
-```powershell
-# Download and run PowerShell script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-azure-powershell.ps1" -OutFile "deploy.ps1"
-.\deploy.ps1
-```
+### Tech Stack
 
-📖 **See [DEPLOYMENT_ALTERNATIVES.md](./DEPLOYMENT_ALTERNATIVES.md) for more options:**
-- Azure Portal upload
-- Pre-built release packages
-- Container deployment
-- Enterprise deployment guides
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Frontend** | Next.js 15 + TypeScript | React framework with static generation |
+| **Styling** | Tailwind CSS | Utility-first CSS with custom glass morphism |
+| **Visualization** | D3.js v7 | Interactive tree diagrams and animations |
+| **Authentication** | MSAL Browser | Microsoft OAuth integration |
+| **API** | Azure Functions | Serverless backend endpoints |
+| **Data Source** | Microsoft Graph | Entra ID users and groups |
+| **Hosting** | Azure Static Web Apps | Global CDN with automatic scaling |
 
-### Option 3: Manual Setup
-- ✅ Set up GitHub Actions for continuous deployment
-- ✅ Configure authentication automatically
-- ✅ Handle all Microsoft Graph permissions
+## 📖 Documentation
 
-**No manual app registration required!**
+| Document | Description |
+|----------|-------------|
+| **[Setup Guide](SETUP_GUIDE.md)** | Complete deployment and configuration guide |
+| **[Configuration Reference](CONFIGURATION.md)** | Environment variables and settings |
+| **[Architecture Guide](ARCHITECTURE.md)** | Technical architecture and design patterns |
+| **[Troubleshooting](TROUBLESHOOTING.md)** | Common issues and solutions |
 
-### Option 3: Manual Setup
+## 🎯 Use Cases
 
-#### Prerequisites
+### 👥 HR & People Operations
+- **Org Chart Visualization**: Understand reporting structures through group memberships
+- **Access Reviews**: Identify users with excessive group memberships
+- **Onboarding/Offboarding**: Visualize user access patterns
 
-- Node.js 18 or later
-- Azure subscription
-- GitHub account (for deployment)
+### 🔐 Security & Compliance
+- **Permission Audits**: Review group-based access permissions
+- **Empty Group Cleanup**: Identify and clean up unused security groups
+- **Access Governance**: Understand access inheritance through nested groups
 
-#### 1. Clone and Install
+### 🏢 IT Administration
+- **Directory Health**: Monitor group structures and memberships
+- **Troubleshooting**: Debug user access issues through group visualization
+- **Documentation**: Visual documentation of organizational structure
+
+## 🛠️ Development
+
+### Local Development Setup
 
 ```bash
+# Clone and install dependencies
 git clone https://github.com/OfirGavish/Group-Tree-Membership-Visualizer.git
 cd Group-Tree-Membership-Visualizer
 npm install
-```
 
-#### 2. Local Development
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Azure app registration details
 
-```bash
 # Start development server
 npm run dev
 ```
 
-Visit `http://localhost:3000` to see the application.
+### Environment Variables
 
-**Note**: Authentication will only work after deployment to Azure Static Web Apps.
-
-#### 3. Deploy to Azure Static Web Apps
-
-Follow the detailed guide in [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for step-by-step instructions.
-## 📱 Usage
-
-1. **Deploy to Azure**: Use the "Deploy to Azure" button above or follow manual deployment steps
-2. **Sign In**: Click "Sign in with Microsoft" to authenticate with your Entra ID account
-3. **Search Users**: Use the search box to find users in your organization
-4. **Explore Groups**: Select a user to see their group memberships in a visual tree
-5. **Navigate**: Click on groups to see their members and parent groups
-6. **Drill Down/Up**: Explore nested group relationships and organizational hierarchies
-
-## 🏢 Deployment Options
-
-### Single-Tenant (Recommended for most organizations)
-- ✅ Deploy once per organization
-- ✅ Maximum security and data isolation
-- ✅ Easier compliance and governance
-- ✅ Use the "Deploy to Azure" button above
-
-### Multi-Tenant (For SaaS scenarios)
-- 🌍 One deployment serves multiple organizations
-- 🔧 More complex setup and maintenance
-- 📋 Requires publisher verification for production
-- 📖 Follow [MULTI_TENANT_SETUP.md](./MULTI_TENANT_SETUP.md) guide
-
-## 🔧 Development
+```env
+AZURE_CLIENT_ID=your-app-registration-id
+AZURE_CLIENT_SECRET=your-client-secret
+AZURE_TENANT_ID=your-tenant-id
+```
 
 ### Project Structure
 
 ```
-src/
-├── app/                    # Next.js App Router
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page (single-tenant)
-│   └── simple-page.tsx    # Simplified authentication version
-│   └── multi-tenant-page.tsx # Multi-tenant version
-├── components/            # React components
-│   ├── GroupDetails.tsx   # Group information panel
-│   ├── TreeVisualization.tsx # D3.js tree diagram
-│   └── UserSearch.tsx     # User search interface
-├── lib/                   # Utilities and services
-│   ├── static-web-app-auth.ts    # Azure Static Web Apps authentication
-│   ├── simple-graph-service.ts  # Microsoft Graph API client
-│   ├── multi-tenant-auth.ts     # Multi-tenant authentication
-│   └── multi-tenant-graph-service.ts # Multi-tenant Graph client
-└── types/                 # TypeScript definitions
-    └── index.ts           # Application types
+├── src/
+│   ├── app/                    # Next.js app router pages
+│   ├── components/             # React components
+│   ├── lib/                    # Utilities and services
+│   └── types/                  # TypeScript definitions
+├── api/                        # Azure Functions API
+├── docs/                       # Documentation and assets
+├── public/                     # Static assets
+└── styles/                     # Global styles
 ```
-
-### Key Scripts
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-```
-
-### Adding New Features
-
-1. **New Components**: Add to `src/components/` with proper TypeScript types
-2. **Graph API Calls**: Extend `SimpleGraphService` or `MultiTenantGraphService` classes
-3. **Types**: Define new interfaces in `src/types/index.ts`
-4. **Styling**: Use Tailwind CSS utility classes
-
-## 🚀 Deployment
-
-### Azure Static Web Apps (Recommended)
-
-**Option 1: One-Click Deploy**
-- Click the "Deploy to Azure" button at the top of this README
-- Follow the Azure portal wizard
-- Automatic configuration and deployment
-
-**Option 2: Manual Deployment**
-- Follow [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed steps
-- Build: `npm run build`
-- Deploy via GitHub Actions (automatically configured)
-
-### Environment Variables
-
-**No environment variables needed!** Azure Static Web Apps handles authentication automatically.
 
 ## 🔒 Security & Permissions
 
-### Automatic Configuration
-Azure Static Web Apps automatically:
-- ✅ Creates app registration
-- ✅ Configures Microsoft Graph permissions
-- ✅ Handles OAuth flows
-- ✅ Manages token refresh
-
 ### Required Microsoft Graph Permissions
-The app requests these delegated permissions:
-- `User.Read` - Read signed-in user's profile
-- `Group.Read.All` - Read all groups
-- `Directory.Read.All` - Read directory data
-- `GroupMember.Read.All` - Read group memberships
 
-**Admin consent is automatically handled during deployment.**
+| Permission | Type | Purpose |
+|------------|------|---------|
+| `User.Read.All` | Application | Read user profiles and search directory |
+| `Group.Read.All` | Application | Read group information and memberships |
+| `Directory.Read.All` | Application | Access directory objects and relationships |
+| `GroupMember.Read.All` | Application | Read detailed group membership information |
+
+### Security Features
+
+- ✅ **OAuth 2.0 Authentication** with Microsoft Entra ID
+- ✅ **Token-based API Security** with automatic validation
+- ✅ **Permission-based Access** respecting directory permissions
+- ✅ **HTTPS Only** with secure headers and CSP
+- ✅ **Input Sanitization** and validation on all endpoints
+- ✅ **Rate Limiting** to prevent abuse
+
+## 🌟 Advanced Features
+
+### Empty Group Detection
+Groups with no members are automatically highlighted in red, making it easy to identify unused security groups for cleanup.
+
+### Smart Caching
+Intelligent client-side caching reduces API calls and improves performance:
+- User search results: 5 minutes
+- Group memberships: 10 minutes  
+- Directory data: 5 minutes
+
+### Responsive Design
+The application works beautifully across all devices:
+- **Desktop**: Full-featured experience with large tree visualizations
+- **Tablet**: Optimized touch interactions and responsive layouts
+- **Mobile**: Streamlined interface for on-the-go access
 
 ## 🤝 Contributing
 
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Make your changes and add tests
-4. Commit your changes: `git commit -am 'Add new feature'`
-5. Push to the branch: `git push origin feature/new-feature`
-6. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Authentication Error**: "Need admin approval" or "AADSTS65001"
-- Solution: Admin consent is required - this happens automatically during Azure deployment
-
-**API Permission Error**: "Insufficient privileges to complete the operation"
-- Solution: Ensure admin consent was granted during deployment, check Azure portal
-
-**Build Error**: TypeScript compilation issues
-- Solution: Run `npm run lint` to identify and fix type issues
-
-**Deployment Issues**: Static Web App not working
-- Solution: Check GitHub Actions logs, ensure repository is connected properly
+## 🆘 Support
 
 ### Getting Help
 
-- Check the [Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues) page
-- Review [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed setup steps
-- Check [MULTI_TENANT_SETUP.md](./MULTI_TENANT_SETUP.md) for multi-tenant scenarios
-- Review Microsoft Graph API documentation
+- 📖 **Documentation**: Check our comprehensive [docs](docs/) folder
+- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues)
+- 💬 **Discussions**: Join conversations in [GitHub Discussions](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/discussions)
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Authentication fails | Verify app registration and permissions |
+| Empty tree display | Check Microsoft Graph API permissions |
+| Performance issues | Review caching configuration |
+| Deployment fails | Check Azure CLI authentication |
+
+See [Troubleshooting Guide](TROUBLESHOOTING.md) for detailed solutions.
 
 ## 🙏 Acknowledgments
 
-- Microsoft Graph API for providing access to Entra ID data
-- D3.js community for powerful visualization capabilities
-- Next.js team for the excellent React framework
-- Tailwind CSS for the utility-first CSS framework
+- **Microsoft Graph Team** - For the excellent Graph API
+- **D3.js Community** - For the amazing visualization library
+- **Next.js Team** - For the fantastic React framework
+- **Azure Static Web Apps** - For the seamless hosting platform
+
+## 🎉 What's Next?
+
+- 🔄 **Real-time Updates** with SignalR integration
+- 📊 **Analytics Dashboard** with usage metrics
+- 🎨 **Custom Themes** and branding options
+- 📱 **Mobile App** with React Native
+- 🤖 **AI Insights** for access recommendations
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Microsoft community**
+
+[⭐ Star this repository](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer) • [🐛 Report Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues) • [💬 Join Discussions](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/discussions)
+
+</div>

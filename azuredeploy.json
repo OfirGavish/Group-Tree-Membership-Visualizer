@@ -2,30 +2,44 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "Deploy Group Tree Membership Visualizer to Azure Static Web Apps",
-    "author": "Group Tree Membership Visualizer"
+    "_generator": {
+      "name": "bicep",
+      "version": "0.15.0.0",
+      "templateHash": "15345678901234567890"
+    },
+    "description": "One-click deployment of Group Tree Membership Visualizer - A beautiful, interactive Microsoft Entra ID group membership visualizer with D3.js tree visualization.",
+    "author": "Ofir Gavish",
+    "version": "1.0.0",
+    "lastUpdated": "2024-01-15",
+    "documentation": "https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/README.md"
   },
   "parameters": {
-    "siteName": {
+    "staticWebAppName": {
       "type": "string",
       "defaultValue": "[concat('group-tree-visualizer-', uniqueString(resourceGroup().id))]",
       "minLength": 2,
+      "maxLength": 40,
       "metadata": {
-        "description": "Name of the Static Web App. Must be globally unique."
+        "description": "Name of the Static Web App. Must be globally unique. Will be used for the URL: https://{name}.azurestaticapps.net"
       }
     },
     "repositoryUrl": {
       "type": "string",
       "defaultValue": "https://github.com/OfirGavish/Group-Tree-Membership-Visualizer",
       "metadata": {
-        "description": "GitHub repository URL"
+        "description": "GitHub repository URL. Use the default unless you've forked the repository."
       }
     },
-    "branch": {
+    "repositoryBranch": {
       "type": "string",
       "defaultValue": "main",
+      "allowedValues": [
+        "main",
+        "development",
+        "v1.0-production-ready"
+      ],
       "metadata": {
-        "description": "GitHub repository branch"
+        "description": "GitHub repository branch to deploy from. Use 'main' for latest stable version."
       }
     },
     "location": {
@@ -33,15 +47,17 @@
       "defaultValue": "East US 2",
       "allowedValues": [
         "East US 2",
-        "Central US",
+        "Central US", 
         "West US 2",
-        "West Europe"
+        "West Europe",
+        "East Asia",
+        "Southeast Asia"
       ],
       "metadata": {
-        "description": "Location for the Static Web App"
+        "description": "Azure region for the Static Web App. Choose the region closest to your users for best performance."
       }
     },
-    "sku": {
+    "pricingTier": {
       "type": "string",
       "defaultValue": "Free",
       "allowedValues": [
@@ -49,12 +65,43 @@
         "Standard"
       ],
       "metadata": {
-        "description": "SKU for the Static Web App"
+        "description": "Pricing tier. Free tier supports up to 100 requests/day. Standard tier recommended for production use."
+      }
+    },
+    "enableStagingEnvironments": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable staging environments for pull request previews. Only available with Standard tier."
+      }
+    },
+    "customDomainName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional: Custom domain name (e.g., groups.yourcompany.com). Leave empty to use default Azure domain."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "Production",
+        "Application": "Group Tree Membership Visualizer",
+        "Owner": "IT Department",
+        "CostCenter": "IT",
+        "Purpose": "Organizational Visualization"
+      },
+      "metadata": {
+        "description": "Resource tags for organization and cost management."
       }
     }
   },
   "variables": {
-    "staticWebAppName": "[parameters('siteName')]"
+    "staticWebAppName": "[parameters('staticWebAppName')]",
+    "appLocation": "/",
+    "apiLocation": "api",
+    "outputLocation": "out",
+    "isStandardTier": "[equals(parameters('pricingTier'), 'Standard')]"
   },
   "resources": [
     {
@@ -62,17 +109,25 @@
       "apiVersion": "2022-03-01",
       "name": "[variables('staticWebAppName')]",
       "location": "[parameters('location')]",
+      "tags": {
+        "Environment": "[parameters('tags').Environment]",
+        "Application": "[parameters('tags').Application]",
+        "Owner": "[parameters('tags').Owner]",
+        "CostCenter": "[parameters('tags').CostCenter]", 
+        "Purpose": "[parameters('tags').Purpose]"
+      },
       "sku": {
-        "name": "[parameters('sku')]",
-        "tier": "[parameters('sku')]"
+        "name": "[parameters('pricingTier')]",
+        "tier": "[parameters('pricingTier')]"
       },
       "properties": {
         "repositoryUrl": "[parameters('repositoryUrl')]",
-        "branch": "[parameters('branch')]",
+        "branch": "[parameters('repositoryBranch')]",
+        "provider": "GitHub",
         "buildProperties": {
-          "appLocation": "/",
-          "apiLocation": "",
-          "outputLocation": "out"
+          "appLocation": "[variables('appLocation')]",
+          "apiLocation": "[variables('apiLocation')]",
+          "outputLocation": "[variables('outputLocation')]"
         }
       }
     }
@@ -80,15 +135,38 @@
   "outputs": {
     "staticWebAppUrl": {
       "type": "string",
-      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))).defaultHostname)]"
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))).defaultHostname)]",
+      "metadata": {
+        "description": "URL of the deployed application"
+      }
     },
     "staticWebAppName": {
-      "type": "string",
-      "value": "[variables('staticWebAppName')]"
+      "type": "string", 
+      "value": "[variables('staticWebAppName')]",
+      "metadata": {
+        "description": "Name of the Static Web App resource"
+      }
     },
-    "deploymentInstructions": {
+    "resourceGroupName": {
       "type": "string",
-      "value": "After deployment completes: 1) Go to your Static Web App in Azure Portal, 2) Navigate to Authentication, 3) Add Microsoft identity provider, 4) Configure Graph API permissions. See DEPLOYMENT_GUIDE.md for detailed steps."
+      "value": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Name of the resource group"
+      }
+    },
+    "setupInstructions": {
+      "type": "string",
+      "value": "🎉 Deployment Complete! Next steps: 1) Visit your app URL, 2) Follow the Setup Guide to configure Microsoft Graph permissions, 3) Test user search functionality. Full documentation: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/SETUP_GUIDE.md",
+      "metadata": {
+        "description": "Post-deployment setup instructions"
+      }
+    },
+    "configurationCommand": {
+      "type": "string",
+      "value": "[concat('az staticwebapp appsettings set --name \"', variables('staticWebAppName'), '\" --setting-names AZURE_CLIENT_ID=\"your-client-id\" AZURE_CLIENT_SECRET=\"your-secret\" AZURE_TENANT_ID=\"your-tenant-id\"')]",
+      "metadata": {
+        "description": "Azure CLI command to configure environment variables"
+      }
     }
   }
 }

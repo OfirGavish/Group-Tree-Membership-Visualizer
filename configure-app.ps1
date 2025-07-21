@@ -1,23 +1,277 @@
-# PowerShell script to configure Azure Static Web App with required environment variables and permissions
-# Prerequisites: Azure CLI installed and logged in (az login)
+# Group Tree Membership Visualizer - Post-Deployment Configuration Script
+# This script configures the Azure app registration and sets up Microsoft Graph permissions
 
-Write-Host "Configuring Azure Static Web App for Group Tree Membership Visualizer..." -ForegroundColor Green
+param(
+    [Parameter(Mandatory=$true, HelpMessage="Name of your Azure Static Web App")]
+    [string]$StaticWebAppName,
+    
+    [Parameter(Mandatory=$false, HelpMessage="Your Azure Tenant ID")]
+    [string]$TenantId,
+    
+    [Parameter(Mandatory=$false, HelpMessage="Resource Group containing the Static Web App")]
+    [string]$ResourceGroupName,
+    
+    [Parameter(Mandatory=$false, HelpMessage="Skip admin consent (if you're not a Global Admin)")]
+    [switch]$SkipAdminConsent
+)
 
-$STATIC_WEB_APP_NAME = "group-tree-membership-visualizer"
-$APP_ID = "4c4814af-7b2a-4a96-bed9-59c394641f29"
-$TENANT_ID = "df5c1b3a-b49f-406f-b067-a4a6fae72629"
+Write-Host "🚀 Group Tree Membership Visualizer - Configuration Script" -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host ""
 
-Write-Host "Step 1: Setting environment variables..." -ForegroundColor Yellow
+# Check if required modules are installed
+$requiredModules = @('AzureAD', 'Az.Accounts', 'Az.Resources')
+foreach ($module in $requiredModules) {
+    if (!(Get-Module -ListAvailable -Name $module)) {
+        Write-Host "❌ Required module '$module' not found. Installing..." -ForegroundColor Yellow
+        Install-Module -Name $module -Force -AllowClobber -Scope CurrentUser
+    }
+}
 
-# Set the Client ID
-Write-Host "Setting AZURE_CLIENT_ID..." -ForegroundColor Cyan
-az staticwebapp appsettings set --name $STATIC_WEB_APP_NAME --setting-names "AZURE_CLIENT_ID=$APP_ID"
+# Connect to Azure
+Write-Host "🔐 Connecting to Azure..." -ForegroundColor Green
+try {
+    $azContext = Get-AzContext
+    if (!$azContext) {
+        Connect-AzAccount
+    }
+    Write-Host "✅ Connected to Azure as: $($azContext.Account)" -ForegroundColor Green
+} catch {
+    Write-Error "❌ Failed to connect to Azure: $($_.Exception.Message)"
+    exit 1
+}
 
-# Set the Tenant ID
-Write-Host "Setting AZURE_TENANT_ID..." -ForegroundColor Cyan
-az staticwebapp appsettings set --name $STATIC_WEB_APP_NAME --setting-names "AZURE_TENANT_ID=$TENANT_ID"
+# Get tenant ID if not provided
+if (!$TenantId) {
+    $TenantId = (Get-AzContext).Tenant.Id
+    Write-Host "📋 Using Tenant ID: $TenantId" -ForegroundColor Blue
+}
 
-# Get or create a new client secret
+# Connect to Azure AD
+Write-Host "🔐 Connecting to Azure AD..." -ForegroundColor Green
+try {
+    Connect-AzureAD -TenantId $TenantId | Out-Null
+    Write-Host "✅ Connected to Azure AD" -ForegroundColor Green
+} catch {
+    Write-Error "❌ Failed to connect to Azure AD: $($_.Exception.Message)"
+    exit 1
+}
+
+# Get Static Web App details
+Write-Host "🔍 Finding Static Web App: $StaticWebAppName..." -ForegroundColor Green
+try {
+    if ($ResourceGroupName) {
+        $staticWebApp = Get-AzStaticWebApp -ResourceGroupName $ResourceGroupName -Name $StaticWebAppName
+    } else {
+        $staticWebApp = Get-AzStaticWebApp | Where-Object { $_.Name -eq $StaticWebAppName }
+        if ($staticWebApp) {
+            $ResourceGroupName = $staticWebApp.ResourceGroupName
+        }
+    }
+    
+    if (!$staticWebApp) {
+        Write-Error "❌ Static Web App '$StaticWebAppName' not found"
+        exit 1
+    }
+    
+    $appUrl = "https://$($staticWebApp.DefaultHostname)"
+    Write-Host "✅ Found Static Web App: $appUrl" -ForegroundColor Green
+} catch {
+    Write-Error "❌ Failed to find Static Web App: $($_.Exception.Message)"
+    exit 1
+}
+
+# Create or find app registration
+$appDisplayName = "Group Tree Membership Visualizer"
+Write-Host "🔍 Checking for existing app registration..." -ForegroundColor Green
+
+$existingApp = Get-AzureADApplication -Filter "displayName eq '$appDisplayName'"
+
+if ($existingApp) {
+    Write-Host "✅ Found existing app registration: $($existingApp.AppId)" -ForegroundColor Green
+    $app = $existingApp
+} else {
+    Write-Host "📝 Creating new app registration..." -ForegroundColor Green
+    
+    # Create app registration
+    $app = New-AzureADApplication -DisplayName $appDisplayName -IdentifierUris @() -ReplyUrls @($appUrl, "$appUrl/", "http://localhost:3000")
+    Write-Host "✅ Created app registration: $($app.AppId)" -ForegroundColor Green
+}
+
+# Generate client secret
+Write-Host "🔑 Generating client secret..." -ForegroundColor Green
+$secretDisplayName = "GroupVisualizerSecret-$(Get-Date -Format 'yyyy-MM-dd')"
+$secretEndDate = (Get-Date).AddMonths(24)
+
+try {
+    $existingSecrets = Get-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
+    if ($existingSecrets) {
+        Write-Host "⚠️  Existing secrets found. Creating additional secret..." -ForegroundColor Yellow
+    }
+    
+    $clientSecret = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId -CustomKeyIdentifier $secretDisplayName -EndDate $secretEndDate
+    Write-Host "✅ Client secret created (expires: $($secretEndDate.ToString('yyyy-MM-dd')))" -ForegroundColor Green
+} catch {
+    Write-Error "❌ Failed to create client secret: $($_.Exception.Message)"
+    exit 1
+}
+
+# Required Microsoft Graph permissions
+$requiredPermissions = @(
+    @{ Value = "User.Read.All"; Type = "Role" },
+    @{ Value = "Group.Read.All"; Type = "Role" },
+    @{ Value = "Directory.Read.All"; Type = "Role" },
+    @{ Value = "GroupMember.Read.All"; Type = "Role" }
+)
+
+Write-Host "🔐 Configuring Microsoft Graph permissions..." -ForegroundColor Green
+
+# Get Microsoft Graph service principal
+$graphServicePrincipal = Get-AzureADServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
+
+# Add permissions to app registration
+foreach ($permission in $requiredPermissions) {
+    try {
+        $appRole = $graphServicePrincipal.AppRoles | Where-Object {$_.Value -eq $permission.Value}
+        if ($appRole) {
+            # Check if permission already granted
+            $existingAssignment = Get-AzureADServiceAppRoleAssignment -ObjectId $app.ObjectId | Where-Object {$_.Id -eq $appRole.Id}
+            
+            if (!$existingAssignment) {
+                New-AzureADServiceAppRoleAssignment -ObjectId $app.ObjectId -PrincipalId $app.ObjectId -ResourceId $graphServicePrincipal.ObjectId -Id $appRole.Id | Out-Null
+                Write-Host "  ✅ Added permission: $($permission.Value)" -ForegroundColor Green
+            } else {
+                Write-Host "  ℹ️  Permission already exists: $($permission.Value)" -ForegroundColor Blue
+            }
+        }
+    } catch {
+        Write-Warning "  ⚠️  Failed to add permission $($permission.Value): $($_.Exception.Message)"
+    }
+}
+
+# Grant admin consent if not skipped
+if (!$SkipAdminConsent) {
+    Write-Host "🔐 Attempting to grant admin consent..." -ForegroundColor Green
+    try {
+        # Try to grant admin consent
+        $consentUrl = "https://login.microsoftonline.com/$TenantId/adminconsent?client_id=$($app.AppId)"
+        Write-Host "  📝 Admin consent URL: $consentUrl" -ForegroundColor Blue
+        
+        # Open browser for admin consent
+        Start-Process $consentUrl
+        
+        Write-Host "  ⏳ Please complete admin consent in your browser..." -ForegroundColor Yellow
+        Read-Host "  ⌨️  Press Enter after completing admin consent"
+        
+        Write-Host "✅ Admin consent process initiated" -ForegroundColor Green
+    } catch {
+        Write-Warning "⚠️  Could not automatically grant admin consent. Please grant manually via Azure Portal."
+    }
+} else {
+    Write-Host "⏭️  Skipping admin consent (use -SkipAdminConsent:$false to enable)" -ForegroundColor Yellow
+}
+
+# Configure Static Web App environment variables
+Write-Host "⚙️  Configuring Static Web App environment variables..." -ForegroundColor Green
+
+$appSettings = @{
+    "AZURE_CLIENT_ID" = $app.AppId
+    "AZURE_CLIENT_SECRET" = $clientSecret.Value
+    "AZURE_TENANT_ID" = $TenantId
+}
+
+try {
+    foreach ($setting in $appSettings.GetEnumerator()) {
+        New-AzStaticWebAppSetting -ResourceGroupName $ResourceGroupName -Name $StaticWebAppName -Setting @{$setting.Key = $setting.Value} | Out-Null
+    }
+    Write-Host "✅ Environment variables configured" -ForegroundColor Green
+} catch {
+    Write-Warning "⚠️  Failed to set environment variables automatically. Please set them manually:"
+    foreach ($setting in $appSettings.GetEnumerator()) {
+        if ($setting.Key -eq "AZURE_CLIENT_SECRET") {
+            Write-Host "  $($setting.Key) = [HIDDEN]" -ForegroundColor Yellow
+        } else {
+            Write-Host "  $($setting.Key) = $($setting.Value)" -ForegroundColor Yellow
+        }
+    }
+}
+
+# Test configuration
+Write-Host "🧪 Testing configuration..." -ForegroundColor Green
+try {
+    $testUrl = "$appUrl/api/debug"
+    $response = Invoke-RestMethod -Uri $testUrl -Method Get -TimeoutSec 30
+    
+    if ($response.authenticated) {
+        Write-Host "✅ Configuration test passed!" -ForegroundColor Green
+    } else {
+        Write-Host "⚠️  Configuration test inconclusive. Check manually at: $testUrl" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "⚠️  Configuration test failed. The app may need a few minutes to update." -ForegroundColor Yellow
+    Write-Host "     Test manually at: $appUrl/api/debug" -ForegroundColor Blue
+}
+
+# Summary
+Write-Host ""
+Write-Host "🎉 Configuration Complete!" -ForegroundColor Cyan
+Write-Host "========================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "📋 Configuration Summary:" -ForegroundColor White
+Write-Host "  • App Registration ID: $($app.AppId)" -ForegroundColor Blue
+Write-Host "  • App URL: $appUrl" -ForegroundColor Blue
+Write-Host "  • Tenant ID: $TenantId" -ForegroundColor Blue
+Write-Host "  • Resource Group: $ResourceGroupName" -ForegroundColor Blue
+Write-Host ""
+Write-Host "🔗 Important Links:" -ForegroundColor White
+Write-Host "  • Your App: $appUrl" -ForegroundColor Green
+Write-Host "  • Setup Guide: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/SETUP_GUIDE.md" -ForegroundColor Blue
+Write-Host "  • Troubleshooting: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/TROUBLESHOOTING.md" -ForegroundColor Blue
+Write-Host ""
+Write-Host "🎯 Next Steps:" -ForegroundColor White
+Write-Host "  1. Visit your app URL to test authentication" -ForegroundColor Green
+Write-Host "  2. Try searching for users in your organization" -ForegroundColor Green
+Write-Host "  3. Test group membership visualization" -ForegroundColor Green
+Write-Host "  4. Review the documentation for customization options" -ForegroundColor Green
+Write-Host ""
+
+# Save configuration details
+$configFile = "group-visualizer-config.txt"
+$configContent = @"
+Group Tree Membership Visualizer - Configuration Details
+Generated: $(Get-Date)
+
+App Registration:
+- Display Name: $appDisplayName
+- Application ID: $($app.AppId)
+- Tenant ID: $TenantId
+
+Static Web App:
+- Name: $StaticWebAppName
+- Resource Group: $ResourceGroupName
+- URL: $appUrl
+
+Environment Variables:
+- AZURE_CLIENT_ID: $($app.AppId)
+- AZURE_CLIENT_SECRET: [HIDDEN - Check Azure Portal]
+- AZURE_TENANT_ID: $TenantId
+
+Important Links:
+- Application URL: $appUrl
+- Setup Guide: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/SETUP_GUIDE.md
+- Troubleshooting: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/TROUBLESHOOTING.md
+
+Manual Configuration Commands:
+az staticwebapp appsettings set --name "$StaticWebAppName" --resource-group "$ResourceGroupName" --setting-names AZURE_CLIENT_ID="$($app.AppId)" AZURE_CLIENT_SECRET="your-secret" AZURE_TENANT_ID="$TenantId"
+"@
+
+$configContent | Out-File -FilePath $configFile -Encoding UTF8
+Write-Host "💾 Configuration details saved to: $configFile" -ForegroundColor Blue
+
+Write-Host ""
+Write-Host "🚀 Your Group Tree Membership Visualizer is ready to use!" -ForegroundColor Cyan
+Write-Host "   Visit: $appUrl" -ForegroundColor Green
+Write-Host ""
 Write-Host "Creating new client secret..." -ForegroundColor Cyan
 $CLIENT_SECRET = az ad app credential reset --id $APP_ID --append --display-name "Static Web App API Secret" --query password -o tsv
 
