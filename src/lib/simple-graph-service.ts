@@ -40,6 +40,62 @@ export class SimpleGraphService {
     }
   }
 
+  async getAllGroups(search?: string): Promise<Group[]> {
+    if (!this.graphClient) throw new Error('Not authenticated')
+
+    try {
+      let query = this.graphClient
+        .api('/groups')
+        .select('id,displayName,description,groupTypes')
+        .top(100)
+
+      if (search) {
+        query = query.filter(`startswith(displayName,'${search}') or contains(displayName,'${search}')`)
+      }
+
+      const response = await query.get()
+
+      // For each group, check member count to identify empty groups
+      const groupsWithMemberCheck = await Promise.all(
+        response.value.map(async (group: any) => {
+          try {
+            const membersResponse = await this.graphClient!
+              .api(`/groups/${group.id}/members`)
+              .count(true)
+              .top(1)
+              .get()
+
+            const memberCount = membersResponse['@odata.count'] || 0
+            
+            return {
+              id: group.id,
+              displayName: group.displayName,
+              description: group.description,
+              groupTypes: group.groupTypes || [],
+              memberCount: memberCount,
+              isEmpty: memberCount === 0
+            }
+          } catch (error) {
+            console.error(`Error checking members for group ${group.id}:`, error)
+            return {
+              id: group.id,
+              displayName: group.displayName,
+              description: group.description,
+              groupTypes: group.groupTypes || [],
+              memberCount: 0,
+              isEmpty: true
+            }
+          }
+        })
+      )
+
+      return groupsWithMemberCheck
+    } catch (error) {
+      console.error('Error fetching groups:', error)
+      throw error
+    }
+  }
+
   async getUserGroups(userId: string): Promise<Group[]> {
     if (!this.graphClient) throw new Error('Not authenticated')
 

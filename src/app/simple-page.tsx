@@ -5,6 +5,7 @@ import { StaticWebAppAuthService } from '@/lib/static-web-app-auth'
 import { SimpleGraphService } from '@/lib/simple-graph-service'
 import { User, Group, TreeNode, TreeData, GroupMember } from '@/types'
 import UserSearch from '@/components/UserSearch'
+import GroupSearch from '@/components/GroupSearch'
 import TreeVisualization from '@/components/TreeVisualization'
 import GroupDetails from '@/components/GroupDetails'
 
@@ -12,12 +13,15 @@ export default function SimpleHomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [treeData, setTreeData] = useState<TreeData>({ nodes: [], links: [] })
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [searchType, setSearchType] = useState<'users' | 'groups'>('users')
 
   const authService = new StaticWebAppAuthService()
 
@@ -33,6 +37,7 @@ export default function SimpleHomePage() {
         setIsAuthenticated(true)
         setCurrentUser(user)
         await loadUsers(user.accessToken)
+        await loadGroups(user.accessToken)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
@@ -54,6 +59,21 @@ export default function SimpleHomePage() {
     }
   }
 
+  const loadGroups = async (accessToken: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const graphService = new SimpleGraphService(accessToken)
+      const allGroups = await graphService.getAllGroups()
+      setGroups(allGroups)
+    } catch (error) {
+      console.error('Error loading groups:', error)
+      setError('Failed to load groups. Please check your permissions.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleUserSelect = async (user: User) => {
     if (!currentUser?.accessToken) return
 
@@ -61,15 +81,55 @@ export default function SimpleHomePage() {
       setLoading(true)
       setError(null)
       setSelectedUser(user)
+      setSelectedGroup(null)
       
       const graphService = new SimpleGraphService(currentUser.accessToken)
       const rootNode = await graphService.buildGroupTree(user.id)
       setTreeData({ nodes: [rootNode], links: [] })
       setSelectedNode(rootNode)
-      setSelectedGroup(null)
     } catch (error) {
       console.error('Error building group tree:', error)
       setError('Failed to load group memberships. Please check your permissions.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGroupSelect = async (group: Group) => {
+    if (!currentUser?.accessToken) return
+
+    try {
+      setLoading(true)
+      setError(null)
+      setSelectedUser(null)
+      setSelectedGroup(null)
+      
+      const graphService = new SimpleGraphService(currentUser.accessToken)
+      
+      // Build a tree starting from the group
+      const members = await graphService.getGroupMembers(group.id)
+      const memberOf = await graphService.getGroupMemberOf(group.id)
+      
+      const rootNode: TreeNode = {
+        id: `group-${group.id}`,
+        name: group.displayName,
+        type: 'group',
+        data: { ...group, members, memberOf },
+        children: members.map(member => ({
+          id: `${group.id}-member-${member.id}`,
+          name: member.displayName,
+          type: member['@odata.type'].includes('user') ? 'user' as const : 'group' as const,
+          data: member,
+          children: []
+        }))
+      }
+      
+      setTreeData({ nodes: [rootNode], links: [] })
+      setSelectedNode(rootNode)
+      setSelectedGroup({ ...group, members, memberOf })
+    } catch (error) {
+      console.error('Error building group tree:', error)
+      setError('Failed to load group details. Please check your permissions.')
     } finally {
       setLoading(false)
     }
@@ -192,15 +252,45 @@ export default function SimpleHomePage() {
 
         {/* Search Section */}
         <div className="mb-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Select a User</h2>
-          <UserSearch users={users} onUserSelect={handleUserSelect} />
+          <div className="flex items-center gap-4 mb-4">
+            <h2 className="text-lg font-medium text-gray-900">Search</h2>
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setSearchType('users')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  searchType === 'users'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Users
+              </button>
+              <button
+                onClick={() => setSearchType('groups')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  searchType === 'groups'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Groups
+              </button>
+            </div>
+          </div>
+          
+          {searchType === 'users' ? (
+            <UserSearch users={users} onUserSelect={handleUserSelect} />
+          ) : (
+            <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
+          )}
+          
           {loading && (
             <div className="mt-4 text-sm text-gray-600">Loading...</div>
           )}
         </div>
 
         {/* Visualization and Details */}
-        {selectedUser && (
+        {(selectedUser || selectedGroup) && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Tree Visualization */}
             <div className="lg:col-span-2">
@@ -213,25 +303,54 @@ export default function SimpleHomePage() {
 
             {/* Details Panel */}
             <div className="space-y-6">
-              {/* Selected User Info */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Selected User</h3>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
-                    {selectedUser.displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{selectedUser.displayName}</div>
-                    <div className="text-sm text-gray-500">{selectedUser.userPrincipalName}</div>
-                    {selectedUser.jobTitle && (
-                      <div className="text-xs text-gray-400">{selectedUser.jobTitle}</div>
-                    )}
+              {/* Selected Item Info */}
+              {selectedUser && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Selected User</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
+                      {selectedUser.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{selectedUser.displayName}</div>
+                      <div className="text-sm text-gray-500">{selectedUser.userPrincipalName}</div>
+                      {selectedUser.jobTitle && (
+                        <div className="text-xs text-gray-400">{selectedUser.jobTitle}</div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {selectedGroup && searchType === 'groups' && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    Selected Group
+                    {selectedGroup.isEmpty && (
+                      <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                        Empty
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                      {selectedGroup.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{selectedGroup.displayName}</div>
+                      {selectedGroup.description && (
+                        <div className="text-sm text-gray-500">{selectedGroup.description}</div>
+                      )}
+                      <div className="text-xs text-gray-400">
+                        {selectedGroup.memberCount || 0} members • {selectedGroup.groupTypes.join(', ') || 'Standard Group'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Group Details */}
-              {selectedGroup && (
+              {selectedGroup && selectedGroup.members && (
                 <GroupDetails
                   group={selectedGroup}
                   onMemberSelect={handleGroupMemberSelect}
