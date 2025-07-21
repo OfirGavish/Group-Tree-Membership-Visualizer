@@ -544,26 +544,44 @@ export default function SimpleHomePage() {
             <h2 className="text-lg font-medium text-white">
               Select a {searchType === 'user' ? 'User' : 'Group'}
             </h2>
-            <div className="flex bg-white/5 backdrop-blur-sm rounded-xl p-1 border border-white/20">
+            <div className="flex bg-white/5 backdrop-blur-sm rounded-xl p-1.5 border border-white/20 shadow-lg">
               <button
                 onClick={() => setSearchType('user')}
-                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   searchType === 'user'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg transform scale-105'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 text-white shadow-xl transform scale-105 shadow-blue-500/25'
+                    : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-cyan-500/20'
                 }`}
               >
-                👤 Users
+                {/* Animated background for active state */}
+                {searchType === 'user' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 via-cyan-400/30 to-blue-400/30 animate-pulse"></div>
+                )}
+                {/* Hover glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-cyan-400/20 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative flex items-center gap-2">
+                  <span className="text-lg">👤</span>
+                  Users
+                </span>
               </button>
               <button
                 onClick={() => setSearchType('group')}
-                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   searchType === 'group'
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg transform scale-105'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 text-white shadow-xl transform scale-105 shadow-purple-500/25'
+                    : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20'
                 }`}
               >
-                👥 Groups
+                {/* Animated background for active state */}
+                {searchType === 'group' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/30 via-pink-400/30 to-purple-400/30 animate-pulse"></div>
+                )}
+                {/* Hover glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-pink-400/20 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative flex items-center gap-2">
+                  <span className="text-lg">👥</span>
+                  Groups
+                </span>
               </button>
             </div>
           </div>
