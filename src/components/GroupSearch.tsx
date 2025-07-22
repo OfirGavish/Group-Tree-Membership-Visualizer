@@ -27,9 +27,9 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
   const emptyGroupsCount = groups.filter(g => g.isEmpty).length
 
   return (
-    <div className="w-full space-y-4">
+    <div className="space-y-4">
       {/* Search Input */}
-      <div className="relative w-full max-w-sm mx-auto">
+      <div className="relative max-w-sm mx-auto">
         <div className="relative group">
           <input
             type="text"

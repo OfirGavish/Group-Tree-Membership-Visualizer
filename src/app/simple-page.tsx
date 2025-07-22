@@ -585,18 +585,20 @@ export default function SimpleHomePage() {
               </button>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            {searchType === 'user' ? (
-              <UserSearch users={users} onUserSelect={handleUserSelect} />
-            ) : (
-              <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
-            )}
-            {loading && (
-              <div className="mt-4 text-sm text-white/70 flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Loading...
-              </div>
-            )}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 flex justify-center">
+            <div className="w-full max-w-md">
+              {searchType === 'user' ? (
+                <UserSearch users={users} onUserSelect={handleUserSelect} />
+              ) : (
+                <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
+              )}
+              {loading && (
+                <div className="mt-4 text-sm text-white/70 flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Loading...
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
