@@ -586,7 +586,7 @@ export default function SimpleHomePage() {
             </div>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 flex justify-center">
-            <div className="w-full">
+            <div className="w-full max-w-md">
               {searchType === 'user' ? (
                 <UserSearch users={users} onUserSelect={handleUserSelect} />
               ) : (

@@ -29,7 +29,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
   return (
     <div className="space-y-4">
       {/* Search Input */}
-      <div className="relative w-96 mx-auto">
+      <div className="relative max-w-sm mx-auto">
         <div className="relative group">
           <input
             type="text"
@@ -122,7 +122,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
       </div>
 
       {/* Filter Controls */}
-      <div className="flex items-center gap-4 mt-4">
+      <div className="flex items-center justify-center gap-4 mt-4 max-w-sm mx-auto flex-wrap">
         <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer group">
           <input
             type="checkbox"
@@ -141,7 +141,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
       </div>
 
       {/* Summary */}
-      <div className="text-sm text-purple-200/60 mt-2 flex items-center gap-2">
+      <div className="text-sm text-purple-200/60 mt-2 flex items-center justify-center gap-2 max-w-sm mx-auto">
         <span className="w-1.5 h-1.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60"></span>
         Showing {filteredGroups.length} of {groups.length} groups
         {showEmptyOnly && ` (empty only)`}
