@@ -29,7 +29,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
   return (
     <div className="w-full space-y-4">
       {/* Search Input */}
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-sm mx-auto">
         <div className="relative group">
           <input
             type="text"
@@ -40,11 +40,11 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
             }}
             onFocus={() => setIsOpen(true)}
             placeholder="Search for a group..."
-            className="w-full px-4 py-3 pl-4 pr-12 text-sm bg-gradient-to-r from-purple-500/20 via-pink-500/15 to-purple-500/20 backdrop-blur-md border border-purple-300/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 text-white placeholder-purple-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-purple-500/25 hover:via-pink-500/20 hover:to-purple-500/25"
+            className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-gradient-to-r from-purple-500/20 via-pink-500/15 to-purple-500/20 backdrop-blur-md border border-purple-300/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 text-white placeholder-purple-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-purple-500/25 hover:via-pink-500/20 hover:to-purple-500/25"
           />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-5">
             <svg
-              className="w-5 h-5 text-purple-200/80 group-hover:text-purple-100 transition-colors duration-300"
+              className="w-6 h-6 text-purple-200/80 group-hover:text-purple-100 transition-colors duration-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -58,11 +58,11 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
             </svg>
           </div>
           {/* Floating gradient border animation */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400/20 via-pink-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400/20 via-pink-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
         </div>
 
         {isOpen && searchTerm && (
-          <div className="absolute z-10 w-full mt-2 bg-gradient-to-br from-purple-500/15 via-pink-500/10 to-purple-500/15 backdrop-blur-xl border border-purple-300/25 rounded-xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
+          <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-purple-500/15 via-pink-500/10 to-purple-500/15 backdrop-blur-xl border border-purple-300/25 rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
             {/* Animated gradient background */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-transparent to-pink-600/10 animate-pulse"></div>
             

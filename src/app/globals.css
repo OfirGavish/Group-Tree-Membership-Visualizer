@@ -17,7 +17,7 @@
 html, body {
   background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #be185d 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
 }
 
@@ -59,6 +59,15 @@ input[type="text"], input[placeholder*="Search"] {
   border: 1px solid rgba(147, 197, 253, 0.3) !important;
 }
 
+/* Purple variant for group search */
+input[placeholder*="group"] {
+  background: linear-gradient(to right, 
+    rgba(147, 51, 234, 0.2), 
+    rgba(236, 72, 153, 0.15), 
+    rgba(147, 51, 234, 0.2)) !important;
+  border: 1px solid rgba(196, 181, 253, 0.3) !important;
+}
+
 input[type="text"]:focus, input[placeholder*="Search"]:focus {
   background: linear-gradient(to right, 
     rgba(59, 130, 246, 0.25), 
@@ -69,8 +78,39 @@ input[type="text"]:focus, input[placeholder*="Search"]:focus {
   border-color: rgba(96, 165, 250, 0.5) !important;
 }
 
+input[placeholder*="group"]:focus {
+  background: linear-gradient(to right, 
+    rgba(147, 51, 234, 0.25), 
+    rgba(236, 72, 153, 0.2), 
+    rgba(147, 51, 234, 0.25)) !important;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.5) !important;
+  border-color: rgba(168, 85, 247, 0.5) !important;
+}
+
 input[type="text"]::placeholder, input[placeholder*="Search"]::placeholder {
   color: rgba(191, 219, 254, 0.7) !important;
+}
+
+input[placeholder*="group"]::placeholder {
+  color: rgba(196, 181, 253, 0.7) !important;
+}
+
+/* Modern rounded corners for all interactive elements */
+button, .btn, input, select, textarea {
+  border-radius: 1rem !important;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 500;
+}
+
+/* Enhanced button styling */
+button:not(.no-style) {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+button:not(.no-style):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Fix dropdown text visibility */

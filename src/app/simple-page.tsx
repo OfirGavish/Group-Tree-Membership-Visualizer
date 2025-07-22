@@ -544,10 +544,10 @@ export default function SimpleHomePage() {
             <h2 className="text-lg font-medium text-white">
               Select a {searchType === 'user' ? 'User' : 'Group'}
             </h2>
-            <div className="flex bg-white/5 backdrop-blur-sm rounded-xl p-1.5 border border-white/20 shadow-lg">
+            <div className="flex bg-white/5 backdrop-blur-sm rounded-2xl p-1.5 border border-white/20 shadow-lg">
               <button
                 onClick={() => setSearchType('user')}
-                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   searchType === 'user'
                     ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 text-white shadow-xl transform scale-105 shadow-blue-500/25'
                     : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-cyan-500/20'
@@ -566,7 +566,7 @@ export default function SimpleHomePage() {
               </button>
               <button
                 onClick={() => setSearchType('group')}
-                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   searchType === 'group'
                     ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 text-white shadow-xl transform scale-105 shadow-purple-500/25'
                     : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20'
@@ -585,7 +585,7 @@ export default function SimpleHomePage() {
               </button>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
             {searchType === 'user' ? (
               <UserSearch users={users} onUserSelect={handleUserSelect} />
             ) : (

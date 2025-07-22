@@ -20,7 +20,7 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
   }
 
   return (
-    <div className="relative w-full max-w-md">
+    <div className="relative w-full max-w-sm mx-auto">
       <div className="relative group">
         <input
           type="text"
@@ -31,11 +31,11 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Search for a user..."
-          className="w-full px-4 py-3 pl-4 pr-12 text-sm bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 backdrop-blur-md border border-blue-300/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 text-white placeholder-blue-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-500/25 hover:via-cyan-500/20 hover:to-blue-500/25"
+          className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 backdrop-blur-md border border-blue-300/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 text-white placeholder-blue-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-500/25 hover:via-cyan-500/20 hover:to-blue-500/25"
         />
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+        <div className="absolute inset-y-0 right-0 flex items-center pr-5">
           <svg
-            className="w-5 h-5 text-blue-200/80 group-hover:text-blue-100 transition-colors duration-300"
+            className="w-6 h-6 text-blue-200/80 group-hover:text-blue-100 transition-colors duration-300"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -49,11 +49,11 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
           </svg>
         </div>
         {/* Floating gradient border animation */}
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/20 via-cyan-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400/20 via-cyan-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       </div>
 
       {isOpen && searchTerm && (
-        <div className="absolute z-10 w-full mt-2 bg-gradient-to-br from-blue-500/15 via-cyan-500/10 to-blue-500/15 backdrop-blur-xl border border-blue-300/25 rounded-xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
+        <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-blue-500/15 via-cyan-500/10 to-blue-500/15 backdrop-blur-xl border border-blue-300/25 rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
           {/* Animated gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 animate-pulse"></div>
           
