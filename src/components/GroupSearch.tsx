@@ -29,7 +29,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
   return (
     <div className="space-y-4">
       {/* Search Input */}
-      <div className="relative max-w-sm mx-auto">
+      <div className="relative w-96 mx-auto">
         <div className="relative group">
           <input
             type="text"

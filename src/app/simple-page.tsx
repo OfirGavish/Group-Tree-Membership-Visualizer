@@ -544,7 +544,7 @@ export default function SimpleHomePage() {
             <h2 className="text-lg font-medium text-white">
               Select a {searchType === 'user' ? 'User' : 'Group'}
             </h2>
-            <div className="flex bg-white/5 backdrop-blur-sm rounded-2xl p-1.5 border border-white/20 shadow-lg">
+            <div className="flex bg-white/5 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
               <button
                 onClick={() => setSearchType('user')}
                 className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
@@ -586,7 +586,7 @@ export default function SimpleHomePage() {
             </div>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 flex justify-center">
-            <div className="w-full max-w-md">
+            <div className="w-full">
               {searchType === 'user' ? (
                 <UserSearch users={users} onUserSelect={handleUserSelect} />
               ) : (

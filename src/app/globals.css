@@ -102,6 +102,12 @@ button, .btn, input, select, textarea {
   font-weight: 500;
 }
 
+/* Force search input width constraint */
+input[type="text"], input[placeholder*="Search"], input[placeholder*="search"] {
+  max-width: 24rem !important; /* 384px - equivalent to max-w-sm */
+  width: 100% !important;
+}
+
 /* Enhanced button styling */
 button:not(.no-style) {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
