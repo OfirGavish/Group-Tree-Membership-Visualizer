@@ -48,6 +48,31 @@ html, body {
   }
 }
 
+/* Fix search input styling to match glass morphism design */
+input[type="text"], input[placeholder*="Search"] {
+  background: linear-gradient(to right, 
+    rgba(59, 130, 246, 0.2), 
+    rgba(6, 182, 212, 0.15), 
+    rgba(59, 130, 246, 0.2)) !important;
+  color: white !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(147, 197, 253, 0.3) !important;
+}
+
+input[type="text"]:focus, input[placeholder*="Search"]:focus {
+  background: linear-gradient(to right, 
+    rgba(59, 130, 246, 0.25), 
+    rgba(6, 182, 212, 0.2), 
+    rgba(59, 130, 246, 0.25)) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5) !important;
+  border-color: rgba(96, 165, 250, 0.5) !important;
+}
+
+input[type="text"]::placeholder, input[placeholder*="Search"]::placeholder {
+  color: rgba(191, 219, 254, 0.7) !important;
+}
+
 /* Fix dropdown text visibility */
 .absolute.z-10 button div {
   color: white !important;
