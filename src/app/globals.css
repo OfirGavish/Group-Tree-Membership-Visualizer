@@ -48,6 +48,22 @@ html, body {
   }
 }
 
+/* Fix dropdown text visibility */
+.absolute.z-10 button div {
+  color: white !important;
+}
+
+.absolute.z-10 button .text-sm,
+.absolute.z-10 button .text-xs {
+  color: #bfdbfe !important;
+}
+
+/* For groups dropdown */
+.absolute.z-10 button .text-purple-200\/70,
+.absolute.z-10 button .text-purple-200\/60 {
+  color: #ddd6fe !important;
+}
+
 /* Custom styles for tree visualization */
 .tree-node {
   cursor: pointer;
