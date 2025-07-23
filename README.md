@@ -114,14 +114,13 @@ graph TB
     SWA --> Frontend[⚛️ Next.js Frontend]
     SWA --> API[🔧 Azure Functions API]
     
-    Frontend --> Auth[🔐 MSAL Authentication]
+    SWA --> Auth[🔐 Built-in Authentication]
     API --> Graph[📊 Microsoft Graph API]
     
     Auth --> AAD[🏢 Azure Active Directory]
     Graph --> AAD
     
     Frontend --> D3[📈 D3.js Visualization]
-    Frontend --> Cache[💾 Client-side Cache]
 ```
 
 ### Tech Stack
@@ -131,7 +130,7 @@ graph TB
 | **Frontend** | Next.js 15 + TypeScript | React framework with static generation |
 | **Styling** | Tailwind CSS | Utility-first CSS with custom glass morphism |
 | **Visualization** | D3.js v7 | Interactive tree diagrams and animations |
-| **Authentication** | MSAL Browser | Microsoft OAuth integration |
+| **Authentication** | Azure Static Web Apps | Built-in Microsoft OAuth integration |
 | **API** | Azure Functions | Serverless backend endpoints |
 | **Data Source** | Microsoft Graph | Entra ID users and groups |
 | **Hosting** | Azure Static Web Apps | Global CDN with automatic scaling |
