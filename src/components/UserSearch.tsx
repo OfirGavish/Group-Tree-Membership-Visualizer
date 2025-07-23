@@ -20,7 +20,7 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
   }
 
   return (
-    <div className="relative w-80 max-w-xs mx-auto">
+    <div className="relative w-72 mx-auto" style={{ maxWidth: '300px' }}>
       <div className="relative group">
         <input
           type="text"
