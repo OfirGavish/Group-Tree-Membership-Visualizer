@@ -116,21 +116,66 @@ try {
     exit 1
 }
 
-# Required Microsoft Graph permissions
-$requiredPermissions = @(
+# Required Microsoft Graph permissions for delegated access
+$requiredDelegatedPermissions = @(
+    @{ Value = "User.Read"; Type = "Scope" },
+    @{ Value = "User.Read.All"; Type = "Scope" },
+    @{ Value = "Group.Read.All"; Type = "Scope" },
+    @{ Value = "Directory.Read.All"; Type = "Scope" },
+    @{ Value = "Device.Read.All"; Type = "Scope" }
+)
+
+# Required Microsoft Graph permissions for application access (fallback)
+$requiredApplicationPermissions = @(
     @{ Value = "User.Read.All"; Type = "Role" },
     @{ Value = "Group.Read.All"; Type = "Role" },
     @{ Value = "Directory.Read.All"; Type = "Role" },
-    @{ Value = "GroupMember.Read.All"; Type = "Role" }
+    @{ Value = "GroupMember.Read.All"; Type = "Role" },
+    @{ Value = "Device.Read.All"; Type = "Role" }
 )
 
-Write-Host "🔐 Configuring Microsoft Graph permissions..." -ForegroundColor Green
+Write-Host "🔐 Configuring Microsoft Graph permissions (delegated + application)..." -ForegroundColor Green
 
 # Get Microsoft Graph service principal
 $graphServicePrincipal = Get-AzureADServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
 
-# Add permissions to app registration
-foreach ($permission in $requiredPermissions) {
+# Update app registration to support web platform for delegated permissions
+Write-Host "🌐 Updating app registration for web platform..." -ForegroundColor Green
+try {
+    # Add web platform if not exists
+    $redirectUris = @(
+        "https://$StaticWebAppName.azurestaticapps.net/.auth/login/aad/callback",
+        "https://localhost:3000/.auth/login/aad/callback"
+    )
+    
+    # Update the application to support web platform
+    Set-AzureADApplication -ObjectId $app.ObjectId -ReplyUrls $redirectUris
+    Write-Host "✅ Web platform configured with redirect URIs" -ForegroundColor Green
+} catch {
+    Write-Warning "⚠️  Failed to update web platform configuration: $($_.Exception.Message)"
+}
+
+# Add delegated permissions first (preferred for user experience)
+Write-Host "🔐 Adding delegated permissions..." -ForegroundColor Green
+foreach ($permission in $requiredDelegatedPermissions) {
+    try {
+        $oauth2Permission = $graphServicePrincipal.Oauth2Permissions | Where-Object {$_.Value -eq $permission.Value}
+        if ($oauth2Permission) {
+            # Add to required resource access for delegated permissions
+            $resourceAccess = New-Object -TypeName "Microsoft.Open.AzureAD.Model.ResourceAccess"
+            $resourceAccess.Id = $oauth2Permission.Id
+            $resourceAccess.Type = "Scope"
+            
+            Write-Host "  ✅ Will request delegated permission: $($permission.Value)" -ForegroundColor Green
+        }
+    } catch {
+        Write-Warning "  ⚠️  Failed to configure delegated permission $($permission.Value): $($_.Exception.Message)"
+    }
+}
+
+# Add application permissions (for admin operations if needed)
+Write-Host "🔐 Adding application permissions..." -ForegroundColor Green
+foreach ($permission in $requiredApplicationPermissions) {
     try {
         $appRole = $graphServicePrincipal.AppRoles | Where-Object {$_.Value -eq $permission.Value}
         if ($appRole) {
@@ -139,13 +184,13 @@ foreach ($permission in $requiredPermissions) {
             
             if (!$existingAssignment) {
                 New-AzureADServiceAppRoleAssignment -ObjectId $app.ObjectId -PrincipalId $app.ObjectId -ResourceId $graphServicePrincipal.ObjectId -Id $appRole.Id | Out-Null
-                Write-Host "  ✅ Added permission: $($permission.Value)" -ForegroundColor Green
+                Write-Host "  ✅ Added application permission: $($permission.Value)" -ForegroundColor Green
             } else {
-                Write-Host "  ℹ️  Permission already exists: $($permission.Value)" -ForegroundColor Blue
+                Write-Host "  ℹ️  Application permission already exists: $($permission.Value)" -ForegroundColor Blue
             }
         }
     } catch {
-        Write-Warning "  ⚠️  Failed to add permission $($permission.Value): $($_.Exception.Message)"
+        Write-Warning "  ⚠️  Failed to add application permission $($permission.Value): $($_.Exception.Message)"
     }
 }
 
@@ -175,8 +220,10 @@ if (!$SkipAdminConsent) {
 Write-Host "⚙️  Configuring Static Web App environment variables..." -ForegroundColor Green
 
 $appSettings = @{
-    "AZURE_CLIENT_ID" = $app.AppId
-    "AZURE_CLIENT_SECRET" = $clientSecret.Value
+    "ENTRA_CLIENT_ID" = $app.AppId
+    "ENTRA_CLIENT_SECRET" = $clientSecret.Value
+    "AZURE_CLIENT_ID" = $app.AppId  # Keeping for backward compatibility
+    "AZURE_CLIENT_SECRET" = $clientSecret.Value  # Keeping for backward compatibility
     "AZURE_TENANT_ID" = $TenantId
 }
 

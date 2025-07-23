@@ -217,11 +217,16 @@ AZURE_TENANT_ID=your-tenant-id
 
 | Permission | Type | Purpose |
 |------------|------|---------|
-| `User.Read.All` | Application | Read user profiles and search directory |
-| `Group.Read.All` | Application | Read group information and memberships |
-| `Device.Read.All` | Application | Read device information and group memberships |
-| `Directory.Read.All` | Application | Access directory objects and relationships |
-| `GroupMember.Read.All` | Application | Read detailed group membership information |
+| `User.Read` | Delegated | Basic user profile access |
+| `User.Read.All` | Delegated | Read user profiles based on user's permissions |
+| `Group.Read.All` | Delegated | Read group information based on user's permissions |
+| `Device.Read.All` | Delegated | Read device information based on user's permissions |
+| `Directory.Read.All` | Delegated | Access directory objects based on user's permissions |
+
+**🔐 Delegated vs Application Permissions:**
+- **Delegated Permissions**: Users only see data they have permission to access in your organization
+- **Application Permissions**: Used as fallback for admin operations when needed
+- **User Experience**: Each user sees only what their directory permissions allow
 
 ### Security Features
 

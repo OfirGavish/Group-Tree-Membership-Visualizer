@@ -23,9 +23,25 @@
       "statusCode": 302
     }
   },
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/YOUR_TENANT_ID",
+          "clientIdSettingName": "ENTRA_CLIENT_ID",
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
+        },
+        "login": {
+          "loginParameters": [
+            "resource=https://graph.microsoft.com"
+          ]
+        }
+      }
+    }
+  },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Content-Security-Policy": "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-src 'none';"
+    "Content-Security-Policy": "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-src 'none';"
   }
 }

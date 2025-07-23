@@ -30,9 +30,14 @@
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/df5c1b3a-b49f-406f-b067-a4a6fae72629",
-          "clientIdSettingName": "AZURE_CLIENT_ID",
-          "clientSecretSettingName": "AZURE_CLIENT_SECRET"
+          "openIdIssuer": "https://login.microsoftonline.com/YOUR_TENANT_ID",
+          "clientIdSettingName": "ENTRA_CLIENT_ID",
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
+        },
+        "login": {
+          "loginParameters": [
+            "resource=https://graph.microsoft.com"
+          ]
         }
       }
     }
