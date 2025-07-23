@@ -30,7 +30,7 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
             setIsOpen(true)
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder="🔍 Search users - UPDATED DESIGN..."
+          placeholder="Search for a user..."
           className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 backdrop-blur-md border border-blue-300/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 text-white placeholder-blue-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-500/25 hover:via-cyan-500/20 hover:to-blue-500/25"
         />
         <div className="absolute inset-y-0 right-0 flex items-center pr-5">

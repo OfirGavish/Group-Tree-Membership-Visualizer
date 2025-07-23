@@ -39,7 +39,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
               setIsOpen(true)
             }}
             onFocus={() => setIsOpen(true)}
-            placeholder="👥 Search groups - UPDATED DESIGN..."
+            placeholder="Search for a group..."
             className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-gradient-to-r from-purple-500/20 via-pink-500/15 to-purple-500/20 backdrop-blur-md border border-purple-300/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 text-white placeholder-purple-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-purple-500/25 hover:via-pink-500/20 hover:to-purple-500/25"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-5">

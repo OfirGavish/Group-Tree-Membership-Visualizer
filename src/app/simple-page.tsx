@@ -585,7 +585,7 @@ export default function SimpleHomePage() {
               </button>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 flex justify-center">
+          <div className="flex justify-center p-6">
             <div className="w-full max-w-xs" style={{ maxWidth: '320px' }}>
               {searchType === 'user' ? (
                 <UserSearch users={users} onUserSelect={handleUserSelect} />
