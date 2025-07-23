@@ -1,4 +1,6 @@
 // Microsoft Graph API endpoint for getting group memberOf (groups that this group belongs to)
+const fetch = require('node-fetch');
+
 module.exports = async function (context, req) {
     context.log('Get group memberOf request received');
 

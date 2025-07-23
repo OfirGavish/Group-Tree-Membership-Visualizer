@@ -1,4 +1,6 @@
 // Microsoft Graph API endpoint for getting device group memberships
+const fetch = require('node-fetch');
+
 module.exports = async function (context, req) {
     context.log('Get device groups request received');
 

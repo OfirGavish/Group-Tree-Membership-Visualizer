@@ -1,4 +1,6 @@
 // Microsoft Graph API endpoint for getting groups
+const fetch = require('node-fetch');
+
 module.exports = async function (context, req) {
     context.log('Get groups request received');
 

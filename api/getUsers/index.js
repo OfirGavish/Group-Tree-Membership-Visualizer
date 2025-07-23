@@ -1,4 +1,6 @@
 // Microsoft Graph API endpoint for getting users
+const fetch = require('node-fetch');
+
 module.exports = async function (context, req) {
     context.log('Get users request received');
 

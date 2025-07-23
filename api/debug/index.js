@@ -1,4 +1,6 @@
 // Debug endpoint to check environment variables and auth
+const fetch = require('node-fetch');
+
 module.exports = async function (context, req) {
     context.log('Debug request received');
 
