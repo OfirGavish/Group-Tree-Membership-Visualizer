@@ -16,7 +16,6 @@
   "parameters": {
     "staticWebAppName": {
       "type": "string",
-      "defaultValue": "[concat('group-tree-visualizer-', uniqueString(resourceGroup().id))]",
       "minLength": 2,
       "maxLength": 40,
       "metadata": {
@@ -97,7 +96,7 @@
     }
   },
   "variables": {
-    "staticWebAppName": "[parameters('staticWebAppName')]",
+    "staticWebAppName": "[if(empty(parameters('staticWebAppName')), concat('group-tree-visualizer-', uniqueString(resourceGroup().id)), parameters('staticWebAppName'))]",
     "appLocation": "/",
     "apiLocation": "api",
     "outputLocation": "out",
