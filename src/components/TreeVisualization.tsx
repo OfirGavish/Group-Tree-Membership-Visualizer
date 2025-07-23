@@ -170,7 +170,7 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       .style('pointer-events', 'none')
       .text((d) => d.data.type === 'user' ? '👤' : '👥')
 
-    // Add expand/collapse indicators for groups that have children
+    // Add expand/collapse indicators for nodes that have children (both groups and users)
     const expandButton = node
       .filter((d) => {
         // Find the original node in the full tree data to check if it has children
@@ -186,7 +186,16 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
         }
         
         const originalNode = findOriginalNode(data.nodes[0], d.data.id)
-        return !!(originalNode?.children && originalNode.children.length > 0)
+        
+        // For users, check if they could have groups (show + button for expandable users)
+        if (d.data.type === 'user') {
+          // Show expand button if user is not expanded (they could have groups)
+          // or if they are expanded and have children
+          return !expandedNodes.has(d.data.id) || Boolean(originalNode?.children && originalNode.children.length > 0)
+        }
+        
+        // For groups, check if they have children in the original tree
+        return Boolean(originalNode?.children && originalNode.children.length > 0)
       })
       .append('g')
       .attr('class', 'expand-button')
@@ -241,9 +250,19 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
         }
         
         const originalNode = findOriginalNode(data.nodes[0], d.data.id)
-        const hasChildren = originalNode?.children && originalNode.children.length > 0
         const isExpanded = expandedNodes.has(d.data.id)
         
+        // For users
+        if (d.data.type === 'user') {
+          // If user is not expanded, show + (they can be expanded to show groups)
+          // If user is expanded and has children, show - (they can be collapsed)
+          if (!isExpanded) return '+'
+          const hasChildren = originalNode?.children && originalNode.children.length > 0
+          return hasChildren ? '−' : '+'
+        }
+        
+        // For groups
+        const hasChildren = originalNode?.children && originalNode.children.length > 0
         if (!hasChildren) return '' // No button if no children
         return isExpanded ? '−' : '+'
       })
@@ -380,7 +399,7 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-white">Group Membership Tree</h3>
         <p className="text-sm text-white/70">
-          Click on users to see their groups • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand groups • Use mouse wheel or controls to zoom
+          Click on nodes to explore • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom
         </p>
       </div>
       <div className="overflow-hidden rounded-lg">

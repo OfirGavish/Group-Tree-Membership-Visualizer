@@ -196,51 +196,65 @@ export default function SimpleHomePage() {
     console.log('Node selected:', node.name, node.type, 'Current expanded nodes:', Array.from(expandedNodes))
     setSelectedNode(node)
     
-    // Handle user node selection - load their group memberships as new branches
+    // Handle user node selection - check if expanding or collapsing
     if (node.type === 'user') {
-      const user = node.data as User
-      const userId = (user as any).originalId || user.id // Use original ID for API calls
-      console.log('User node selected, loading their group memberships:', user.displayName)
+      const isUserExpanded = expandedNodes.has(node.id)
       
-      try {
-        setLoading(true)
-        const graphService = new ApiGraphService()
+      if (isUserExpanded) {
+        // Collapse the user node (hide their groups)
+        console.log('Collapsing user node:', node.name)
+        const newExpandedNodes = new Set(expandedNodes)
+        newExpandedNodes.delete(node.id)
+        setExpandedNodes(newExpandedNodes)
         
-        // Get user's group memberships using original ID
-        const userGroups = await graphService.getUserGroups(userId)
-        console.log('User groups found:', userGroups)
-        
-        // Create group nodes for the user's memberships with path-specific IDs
-        const groupNodes: TreeNode[] = userGroups.map(group => ({
-          id: `${node.id}-group-${group.id}`, // Create unique ID based on user path context
-          name: group.displayName,
-          type: 'group',
-          data: { ...group, originalId: group.id }, // Store original ID for API calls
-          children: [] // Will be populated when expanded
-        }))
-        
-        // Add the group nodes as children of the user node
-        const updateTreeData = (nodes: TreeNode[]): TreeNode[] => {
-          return nodes.map(n => {
-            if (n.id === node.id) {
-              return {
-                ...n,
-                children: groupNodes
-              }
+        // Remove the user's groups from the tree
+        const updateTreeData = (nodeToUpdate: TreeNode): TreeNode => {
+          if (nodeToUpdate.id === node.id) {
+            return {
+              ...nodeToUpdate,
+              children: [] // Remove children when collapsed
             }
-            if (n.children) {
-              return {
-                ...n,
-                children: updateTreeData(n.children)
-              }
+          }
+          if (nodeToUpdate.children) {
+            return {
+              ...nodeToUpdate,
+              children: nodeToUpdate.children.map(updateTreeData)
             }
-            return n
-          })
+          }
+          return nodeToUpdate
         }
         
         if (treeData.nodes.length > 0) {
           const rootNode = treeData.nodes[0]
-          const updateNode = (nodeToUpdate: TreeNode): TreeNode => {
+          const updatedRoot = updateTreeData(rootNode)
+          setTreeData({ nodes: [updatedRoot], links: [] })
+        }
+        return
+      } else {
+        // Expand the user node (load and show their groups)
+        const user = node.data as User
+        const userId = (user as any).originalId || user.id // Use original ID for API calls
+        console.log('Expanding user node, loading their group memberships:', user.displayName)
+        
+        try {
+          setLoading(true)
+          const graphService = new ApiGraphService()
+          
+          // Get user's group memberships using original ID
+          const userGroups = await graphService.getUserGroups(userId)
+          console.log('User groups found:', userGroups)
+          
+          // Create group nodes for the user's memberships with path-specific IDs
+          const groupNodes: TreeNode[] = userGroups.map(group => ({
+            id: `${node.id}-group-${group.id}`, // Create unique ID based on user path context
+            name: group.displayName,
+            type: 'group',
+            data: { ...group, originalId: group.id }, // Store original ID for API calls
+            children: [] // Will be populated when expanded
+          }))
+          
+          // Update the tree with the user's groups
+          const updateTreeData = (nodeToUpdate: TreeNode): TreeNode => {
             if (nodeToUpdate.id === node.id) {
               return {
                 ...nodeToUpdate,
@@ -250,28 +264,31 @@ export default function SimpleHomePage() {
             if (nodeToUpdate.children) {
               return {
                 ...nodeToUpdate,
-                children: nodeToUpdate.children.map(updateNode)
+                children: nodeToUpdate.children.map(updateTreeData)
               }
             }
             return nodeToUpdate
           }
           
-          const updatedRoot = updateNode(rootNode)
-          setTreeData({ nodes: [updatedRoot], links: [] })
+          if (treeData.nodes.length > 0) {
+            const rootNode = treeData.nodes[0]
+            const updatedRoot = updateTreeData(rootNode)
+            setTreeData({ nodes: [updatedRoot], links: [] })
+          }
           
-          // Expand the user node to show their groups
+          // Mark the user node as expanded
           const newExpandedNodes = new Set(expandedNodes)
           newExpandedNodes.add(node.id)
           setExpandedNodes(newExpandedNodes)
+          
+          setLoading(false)
+        } catch (error) {
+          console.error('Error loading user groups:', error)
+          setError('Failed to load user group memberships')
+          setLoading(false)
         }
-        
-        setLoading(false)
-      } catch (error) {
-        console.error('Error loading user groups:', error)
-        setError('Failed to load user group memberships')
-        setLoading(false)
+        return
       }
-      return
     }
     
     // Handle group node expansion/collapse
