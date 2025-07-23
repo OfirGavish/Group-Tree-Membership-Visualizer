@@ -180,7 +180,7 @@ export default function DeviceSearch({ onDeviceSelect, devices }: DeviceSearchPr
           
           {filteredDevices.length === 0 && searchTerm && (
             <div className="p-4 text-white/60 text-center">
-              No devices found matching "{searchTerm}"
+              No devices found matching &quot;{searchTerm}&quot;
             </div>
           )}
         </div>
