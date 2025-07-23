@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { StaticWebAppAuthService } from '@/lib/static-web-app-auth'
 import { ApiGraphService } from '@/lib/api-graph-service'
 import { CacheService } from '@/lib/cache-service'
-import { User, Group, TreeNode, TreeData, GroupMember } from '@/types'
+import { User, Group, TreeNode, TreeData, GroupMember, Device } from '@/types'
 import UserSearch from '@/components/UserSearch'
 import GroupSearch from '@/components/GroupSearch'
+import DeviceSearch from '@/components/DeviceSearch'
 import TreeVisualization from '@/components/TreeVisualization'
 import GroupDetails from '@/components/GroupDetails'
 
@@ -16,7 +17,9 @@ export default function SimpleHomePage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
   const [groups, setGroups] = useState<Group[]>([])
+  const [devices, setDevices] = useState<Device[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [treeData, setTreeData] = useState<TreeData>({ nodes: [], links: [] })
   const [fullTreeData, setFullTreeData] = useState<TreeNode | null>(null)
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null)
@@ -24,7 +27,7 @@ export default function SimpleHomePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
-  const [searchType, setSearchType] = useState<'user' | 'group'>('user')
+  const [searchType, setSearchType] = useState<'user' | 'group' | 'device'>('user')
   const [cacheStats, setCacheStats] = useState({ totalItems: 0, totalSize: 0 })
 
   const authService = new StaticWebAppAuthService()
@@ -58,6 +61,7 @@ export default function SimpleHomePage() {
         setCurrentUser(user)
         await loadUsers()
         await loadGroups()
+        await loadDevices()
       }
     } catch (error) {
       console.error('Auth check failed:', error)
@@ -93,6 +97,22 @@ export default function SimpleHomePage() {
     } catch (error) {
       console.error('Error loading groups:', error)
       setError('Failed to load groups. Please check your permissions.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadDevices = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const graphService = new ApiGraphService()
+      const allDevices = await graphService.getAllDevices()
+      setDevices(allDevices)
+      updateCacheStats() // Update cache stats after loading data
+    } catch (error) {
+      console.error('Error loading devices:', error)
+      setError('Failed to load devices. Please check your permissions.')
     } finally {
       setLoading(false)
     }
@@ -153,6 +173,45 @@ export default function SimpleHomePage() {
     } catch (error) {
       console.error('Error building group tree:', error)
       setError('Failed to load group memberships. Please check your permissions.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeviceSelect = async (device: Device) => {
+    if (!currentUser) return
+
+    try {
+      setLoading(true)
+      setError(null)
+      setSelectedDevice(device)
+      setSelectedUser(null) // Clear user selection
+      
+      const graphService = new ApiGraphService()
+      const rootNode = await graphService.buildDeviceTree(device.id)
+      
+      console.log('Device tree loaded:', rootNode)
+      
+      // Start with the device's immediate groups visible (first level expanded)
+      const initialTree = {
+        ...rootNode,
+        children: rootNode.children ? rootNode.children.map(child => ({
+          ...child,
+          children: [] // Collapse second level initially
+        })) : []
+      }
+      
+      // Set the root as expanded so we can see the device's groups
+      const newExpandedNodes = new Set([rootNode.id])
+      setExpandedNodes(newExpandedNodes)
+      
+      setTreeData({ nodes: [initialTree], links: [] })
+      setSelectedNode(rootNode)
+      setSelectedGroup(null)
+      setFullTreeData(rootNode) // Store the full tree for reference
+    } catch (error) {
+      console.error('Error building device tree:', error)
+      setError('Failed to load device group memberships. Please check your permissions.')
     } finally {
       setLoading(false)
     }
@@ -304,6 +363,98 @@ export default function SimpleHomePage() {
         } catch (error) {
           console.error('Error loading user groups:', error)
           setError('Failed to load user group memberships')
+          setLoading(false)
+        }
+        return
+      }
+    }
+    
+    // Handle device node selection - check if expanding or collapsing (similar to users)
+    if (node.type === 'device') {
+      const isDeviceExpanded = expandedNodes.has(node.id)
+      
+      if (isDeviceExpanded) {
+        // Collapse the device node (hide their groups)
+        console.log('Collapsing device node:', node.name)
+        const newExpandedNodes = new Set(expandedNodes)
+        newExpandedNodes.delete(node.id)
+        setExpandedNodes(newExpandedNodes)
+        
+        // Remove the device's groups from the tree
+        const updateTreeData = (nodeToUpdate: TreeNode): TreeNode => {
+          if (nodeToUpdate.id === node.id) {
+            return {
+              ...nodeToUpdate,
+              children: [] // Remove children when collapsed
+            }
+          }
+          if (nodeToUpdate.children) {
+            return {
+              ...nodeToUpdate,
+              children: nodeToUpdate.children.map(updateTreeData)
+            }
+          }
+          return nodeToUpdate
+        }
+        
+        if (treeData.nodes.length > 0) {
+          const rootNode = treeData.nodes[0]
+          const updatedRoot = updateTreeData(rootNode)
+          setTreeData({ nodes: [updatedRoot], links: [] })
+        }
+        return
+      } else {
+        // Expand the device node (load and show their groups)
+        const device = node.data as Device
+        const deviceId = (device as any).originalId || device.id // Use original ID for API calls
+        console.log('Expanding device node, loading their group memberships:', device.displayName)
+        
+        try {
+          setLoading(true)
+          const graphService = new ApiGraphService()
+          
+          // Get device's groups
+          const deviceGroups = await graphService.getDeviceGroups(deviceId)
+          console.log('Device groups loaded:', deviceGroups.length)
+          
+          // Update tree data to include the device's groups
+          const updateTreeData = (nodeToUpdate: TreeNode): TreeNode => {
+            if (nodeToUpdate.id === node.id) {
+              return {
+                ...nodeToUpdate,
+                children: deviceGroups.map(group => ({
+                  id: `group-${group.id}`,
+                  name: group.displayName,
+                  type: 'group' as const,
+                  data: group,
+                  children: []
+                }))
+              }
+            }
+            if (nodeToUpdate.children) {
+              return {
+                ...nodeToUpdate,
+                children: nodeToUpdate.children.map(updateTreeData)
+              }
+            }
+            return nodeToUpdate
+          }
+          
+          if (treeData.nodes.length > 0) {
+            const rootNode = treeData.nodes[0]
+            const updatedRoot = updateTreeData(rootNode)
+            setTreeData({ nodes: [updatedRoot], links: [] })
+          }
+          
+          // Mark the device node as expanded
+          const newExpandedNodes = new Set(expandedNodes)
+          newExpandedNodes.add(node.id)
+          setExpandedNodes(newExpandedNodes)
+          
+          setLoading(false)
+        } catch (error) {
+          console.error('Error loading device groups:', error)
+          setError('Failed to load device group memberships')
           setLoading(false)
         }
         return
@@ -590,12 +741,12 @@ export default function SimpleHomePage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium text-white">
-              Select a {searchType === 'user' ? 'User' : 'Group'}
+              Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
             </h2>
             <div className="flex bg-white/5 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
               <button
                 onClick={() => setSearchType('user')}
-                className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                className={`px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   searchType === 'user'
                     ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 text-white shadow-xl transform scale-105 shadow-blue-500/25'
                     : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-cyan-500/20'
@@ -614,7 +765,7 @@ export default function SimpleHomePage() {
               </button>
               <button
                 onClick={() => setSearchType('group')}
-                className={`px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                className={`px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
                   searchType === 'group'
                     ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 text-white shadow-xl transform scale-105 shadow-purple-500/25'
                     : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20'
@@ -631,14 +782,35 @@ export default function SimpleHomePage() {
                   Groups
                 </span>
               </button>
+              <button
+                onClick={() => setSearchType('device')}
+                className={`px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 relative overflow-hidden group ${
+                  searchType === 'device'
+                    ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white shadow-xl transform scale-105 shadow-green-500/25'
+                    : 'text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-green-500/20 hover:to-emerald-500/20'
+                }`}
+              >
+                {/* Animated background for active state */}
+                {searchType === 'device' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/30 via-emerald-400/30 to-green-400/30 animate-pulse"></div>
+                )}
+                {/* Hover glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400/0 via-emerald-400/20 to-green-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative flex items-center gap-2">
+                  <span className="text-lg">💻</span>
+                  Devices
+                </span>
+              </button>
             </div>
           </div>
           <div className="flex justify-center p-6">
             <div className="w-full max-w-xs" style={{ maxWidth: '320px' }}>
               {searchType === 'user' ? (
                 <UserSearch users={users} onUserSelect={handleUserSelect} />
-              ) : (
+              ) : searchType === 'group' ? (
                 <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
+              ) : (
+                <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
               )}
               {loading && (
                 <div className="mt-4 text-sm text-white/70 flex items-center justify-center gap-2">

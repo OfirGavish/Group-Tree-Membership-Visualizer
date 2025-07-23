@@ -70,6 +70,13 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
     groupGradient.append('stop').attr('offset', '0%').attr('stop-color', '#45b7d1')
     groupGradient.append('stop').attr('offset', '100%').attr('stop-color', '#96c93d')
 
+    // Device gradient
+    const deviceGradient = defs.append('linearGradient')
+      .attr('id', 'deviceGradient')
+      .attr('gradientUnits', 'objectBoundingBox')
+    deviceGradient.append('stop').attr('offset', '0%').attr('stop-color', '#10b981')
+    deviceGradient.append('stop').attr('offset', '100%').attr('stop-color', '#059669')
+
     // Selected gradient
     const selectedGradient = defs.append('linearGradient')
       .attr('id', 'selectedGradient')
@@ -152,9 +159,13 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
         if (selectedNode && d.data.id === selectedNode.id) {
           return 'url(#selectedGradient)'
         }
-        return d.data.type === 'user' 
-          ? 'url(#userGradient)' 
-          : 'url(#groupGradient)'
+        if (d.data.type === 'user') {
+          return 'url(#userGradient)'
+        } else if (d.data.type === 'device') {
+          return 'url(#deviceGradient)'
+        } else {
+          return 'url(#groupGradient)'
+        }
       })
       .style('stroke', '#ffffff')
       .style('stroke-width', 3)
@@ -168,7 +179,11 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       .style('font-size', '14px')
       .style('fill', 'white')
       .style('pointer-events', 'none')
-      .text((d) => d.data.type === 'user' ? '👤' : '👥')
+      .text((d) => {
+        if (d.data.type === 'user') return '👤'
+        if (d.data.type === 'device') return '💻'
+        return '👥'
+      })
 
     // Add expand/collapse indicators for nodes that have children (both groups and users)
     const expandButton = node
@@ -252,10 +267,10 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
         const originalNode = findOriginalNode(data.nodes[0], d.data.id)
         const isExpanded = expandedNodes.has(d.data.id)
         
-        // For users
-        if (d.data.type === 'user') {
-          // If user is not expanded, show + (they can be expanded to show groups)
-          // If user is expanded and has children, show - (they can be collapsed)
+        // For users and devices (similar behavior)
+        if (d.data.type === 'user' || d.data.type === 'device') {
+          // If user/device is not expanded, show + (they can be expanded to show groups)
+          // If user/device is expanded and has children, show - (they can be collapsed)
           if (!isExpanded) return '+'
           const hasChildren = originalNode?.children && originalNode.children.length > 0
           return hasChildren ? '−' : '+'
@@ -293,7 +308,11 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       .style('fill', 'rgba(255,255,255,0.8)')
       .style('text-shadow', '0 1px 2px rgba(0,0,0,0.5)')
       .style('pointer-events', 'none')
-      .text((d) => d.data.type === 'user' ? 'User' : 'Group')
+      .text((d) => {
+        if (d.data.type === 'user') return 'User'
+        if (d.data.type === 'device') return 'Device'
+        return 'Group'
+      })
 
     // Add zoom control buttons
     const zoomControls = svg.append('g')

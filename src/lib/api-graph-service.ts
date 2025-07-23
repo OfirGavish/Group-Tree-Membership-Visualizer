@@ -1,4 +1,4 @@
-import { User, Group, GroupMember, TreeNode } from '@/types'
+import { User, Group, GroupMember, TreeNode, Device } from '@/types'
 import { CacheService } from './cache-service'
 
 export class ApiGraphService {
@@ -120,6 +120,68 @@ export class ApiGraphService {
     }
   }
 
+  async getAllDevices(search?: string): Promise<Device[]> {
+    try {
+      // For searches, we don't cache to get fresh results
+      // For full device list (no search), we cache it
+      const shouldCache = !search
+      const cacheKey = 'cache:devices:all'
+      
+      if (shouldCache) {
+        const cached = CacheService.get<Device[]>(cacheKey)
+        if (cached) {
+          return cached
+        }
+      }
+
+      // Fetch from API
+      const url = search ? `/api/getDevices?search=${encodeURIComponent(search)}` : '/api/getDevices'
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch devices: ${response.status}`)
+      }
+      
+      const devices = await response.json()
+      
+      // Cache only if it's the full list (no search)
+      if (shouldCache) {
+        CacheService.set(cacheKey, devices, 'users') // Use 'users' cache duration
+      }
+      
+      return devices
+    } catch (error) {
+      console.error('Error fetching devices:', error)
+      throw error
+    }
+  }
+
+  async getDeviceGroups(deviceId: string): Promise<Group[]> {
+    try {
+      // Check cache first
+      const cacheKey = `cache:device:groups:${deviceId}`
+      const cached = CacheService.get<Group[]>(cacheKey)
+      if (cached) {
+        return cached
+      }
+
+      // Fetch from API
+      const response = await fetch(`/api/getDeviceGroups?deviceId=${encodeURIComponent(deviceId)}`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch device groups: ${response.status}`)
+      }
+      
+      const groups = await response.json()
+      
+      // Cache the result
+      CacheService.set(cacheKey, groups, 'memberships')
+      
+      return groups
+    } catch (error) {
+      console.error('Error fetching device groups:', error)
+      throw error
+    }
+  }
+
   async getGroupMemberOf(groupId: string): Promise<Group[]> {
     try {
       // Check cache first
@@ -187,6 +249,50 @@ export class ApiGraphService {
       return rootNode
     } catch (error) {
       console.error('Error building group tree:', error)
+      throw error
+    }
+  }
+
+  async buildDeviceTree(deviceId: string): Promise<TreeNode> {
+    try {
+      // Get device info
+      const devices = await this.getAllDevices()
+      const device = devices.find(d => d.id === deviceId)
+      
+      if (!device) {
+        throw new Error('Device not found')
+      }
+
+      // Create root node for the device
+      const rootNode: TreeNode = {
+        id: `device-${device.id}`,
+        name: device.displayName,
+        type: 'device',
+        data: device,
+        children: []
+      }
+
+      // Get device's groups
+      const groups = await this.getDeviceGroups(deviceId)
+      
+      // Add groups as children
+      for (const group of groups) {
+        const groupNode: TreeNode = {
+          id: `group-${group.id}`,
+          name: group.displayName,
+          type: 'group',
+          data: group,
+          children: []
+        }
+        
+        if (rootNode.children) {
+          rootNode.children.push(groupNode)
+        }
+      }
+
+      return rootNode
+    } catch (error) {
+      console.error('Error building device tree:', error)
       throw error
     }
   }

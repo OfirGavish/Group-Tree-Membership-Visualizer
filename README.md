@@ -11,18 +11,20 @@
 ## ✨ Features
 
 ### 🎯 Core Functionality
-- **🔍 Smart Search**: Search for users and groups across your organization with real-time autocomplete
+- **🔍 Smart Search**: Search for users, groups, and devices across your organization with real-time autocomplete
 - **🌲 Interactive Tree Visualization**: Beautiful D3.js-powered hierarchical tree showing group memberships
-- **👥 Dual Mode**: Switch between user-centric and group-centric views
+- **👥 Triple Mode**: Switch between user-centric, group-centric, and device-centric views
+- **💻 Device Support**: Explore device group memberships with device status indicators (managed/compliant)
 - **🔴 Empty Group Detection**: Automatically highlights groups with no members in red
 - **📱 Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 
 ### 🎨 User Experience
 - **✨ Glass Morphism UI**: Modern, elegant interface with glass-like transparency effects
 - **🌊 Floating Animations**: Smooth, continuous animations for an engaging experience
-- **🎛️ Gradient Toggle Buttons**: Beautiful animated toggle switches between search modes
+- **🎛️ Triple Toggle Buttons**: Beautiful animated toggle switches between User, Group, and Device search modes
 - **⚡ Real-time Updates**: Instant feedback and smooth transitions
 - **🎪 Expand/Collapse**: Interactive tree nodes with smooth expand/collapse animations
+- **📊 Status Indicators**: Device compliance and management status badges
 
 ### 🔐 Security & Authentication
 - **🔒 Microsoft OAuth**: Secure authentication using your organization's Entra ID
@@ -161,8 +163,14 @@ graph TB
 
 ### 🏢 IT Administration
 - **Directory Health**: Monitor group structures and memberships
-- **Troubleshooting**: Debug user access issues through group visualization
+- **Device Management**: Visualize device group assignments and compliance status
+- **Troubleshooting**: Debug user and device access issues through group visualization
 - **Documentation**: Visual documentation of organizational structure
+
+### 💻 Device & Endpoint Management
+- **Device Compliance**: Monitor device group memberships and compliance status
+- **Policy Assignment**: Understand which policies apply to devices through group visualization
+- **Device Access Reviews**: Review device-based group memberships for security
 
 ## 🛠️ Development
 
@@ -211,6 +219,7 @@ AZURE_TENANT_ID=your-tenant-id
 |------------|------|---------|
 | `User.Read.All` | Application | Read user profiles and search directory |
 | `Group.Read.All` | Application | Read group information and memberships |
+| `Device.Read.All` | Application | Read device information and group memberships |
 | `Directory.Read.All` | Application | Access directory objects and relationships |
 | `GroupMember.Read.All` | Application | Read detailed group membership information |
 

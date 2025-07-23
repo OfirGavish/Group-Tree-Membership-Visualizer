@@ -8,6 +8,19 @@ export interface User {
   department?: string
 }
 
+export interface Device {
+  id: string
+  displayName: string
+  deviceId: string
+  operatingSystem?: string
+  operatingSystemVersion?: string
+  deviceVersion?: string
+  trustType?: string
+  isManaged?: boolean
+  isCompliant?: boolean
+  registrationDateTime?: string
+}
+
 export interface Group {
   id: string
   displayName: string
@@ -31,10 +44,10 @@ export interface GroupMember {
 export interface TreeNode {
   id: string
   name: string
-  type: 'user' | 'group'
+  type: 'user' | 'group' | 'device'
   children?: TreeNode[]
   parent?: TreeNode
-  data: User | Group
+  data: User | Group | Device
   x?: number
   y?: number
   depth?: number
@@ -62,6 +75,11 @@ export interface TreeVisualizationProps {
 export interface UserSearchProps {
   onUserSelect: (user: User) => void
   users: User[]
+}
+
+export interface DeviceSearchProps {
+  onDeviceSelect: (device: Device) => void
+  devices: Device[]
 }
 
 export interface GroupDetailsProps {
