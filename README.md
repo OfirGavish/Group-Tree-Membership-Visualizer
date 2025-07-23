@@ -138,14 +138,14 @@ graph TB
 | **Data Source** | Microsoft Graph | Entra ID users and groups |
 | **Hosting** | Azure Static Web Apps | Global CDN with automatic scaling |
 
-## 📖 Documentation
+## 📖 Available Documentation
 
 | Document | Description |
 |----------|-------------|
-| **[Setup Guide](SETUP_GUIDE.md)** | Complete deployment and configuration guide |
-| **[Configuration Reference](CONFIGURATION.md)** | Environment variables and settings |
-| **[Architecture Guide](ARCHITECTURE.md)** | Technical architecture and design patterns |
-| **[Troubleshooting](TROUBLESHOOTING.md)** | Common issues and solutions |
+| **[Quick Start](#-quick-start)** | One-click Azure deployment guide |
+| **[Architecture](#️-architecture)** | Technical architecture and design patterns |
+| **[Security & Permissions](#-security--permissions)** | Required permissions and security features |
+| **[Development](#️-development)** | Local development setup instructions |
 
 ## 🎯 Use Cases
 
@@ -199,9 +199,8 @@ AZURE_TENANT_ID=your-tenant-id
 │   ├── lib/                    # Utilities and services
 │   └── types/                  # TypeScript definitions
 ├── api/                        # Azure Functions API
-├── docs/                       # Documentation and assets
-├── public/                     # Static assets
-└── styles/                     # Global styles
+├── public/                     # Static assets and configuration
+└── Configuration files         # Next.js, Tailwind, TypeScript configs
 ```
 
 ## 🔒 Security & Permissions
@@ -243,7 +242,7 @@ The application works beautifully across all devices:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Here's how to get started:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -259,9 +258,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Getting Help
 
-- 📖 **Documentation**: Check our comprehensive [docs](docs/) folder
-- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues)
-- 💬 **Discussions**: Join conversations in [GitHub Discussions](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/discussions)
+-  **Issues**: Report bugs on [GitHub Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues)
+- � **Documentation**: All information is available in this README
+- 💡 **Feature Requests**: Submit ideas via GitHub Issues with the enhancement label
 
 ### Common Issues
 
@@ -269,10 +268,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 |-------|----------|
 | Authentication fails | Verify app registration and permissions |
 | Empty tree display | Check Microsoft Graph API permissions |
-| Performance issues | Review caching configuration |
+| Performance issues | Review caching configuration and clear cache |
 | Deployment fails | Check Azure CLI authentication |
 
-See [Troubleshooting Guide](TROUBLESHOOTING.md) for detailed solutions.
+For detailed troubleshooting, check the error messages in the browser console.
 
 ## 🙏 Acknowledgments
 
@@ -295,6 +294,6 @@ See [Troubleshooting Guide](TROUBLESHOOTING.md) for detailed solutions.
 
 **Made with ❤️ for the Microsoft community**
 
-[⭐ Star this repository](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer) • [🐛 Report Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues) • [💬 Join Discussions](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/discussions)
+[⭐ Star this repository](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer) • [🐛 Report Issues](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/issues)
 
 </div>
