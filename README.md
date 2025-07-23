@@ -61,12 +61,24 @@
 
 3. **Post-Deployment Setup**:
    ```powershell
-   # Download and run the configuration script
+   # Download and run the configuration script with your app name
    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
    .\configure-app.ps1 -StaticWebAppName "your-app-name"
+   
+   # The script will automatically:
+   # - Get your tenant ID from Azure context
+   # - Update configuration files with your tenant ID
+   # - Create/update App Registration with delegated permissions
+   # - Configure environment variables in your Static Web App
    ```
 
-4. **Done!** 🎉 Your app is ready at `https://your-app-name.azurestaticapps.net`
+4. **Automatic Configuration**: The script handles:
+   - 🔧 **Dynamic Tenant ID**: Automatically detects and configures your Azure tenant
+   - 🔐 **App Registration**: Sets up delegated permissions for Microsoft Graph
+   - ⚙️ **Environment Variables**: Configures ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET
+   - 🌐 **Configuration Files**: Updates staticwebapp.config.json with your tenant
+
+5. **Done!** 🎉 Your app is ready at `https://your-app-name.azurestaticapps.net`
 
 ### Option 2: Manual Setup
 

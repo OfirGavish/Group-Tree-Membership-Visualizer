@@ -29,6 +29,13 @@ module.exports = async function (context, req) {
                 nodeVersion: process.version,
                 platform: process.platform,
                 arch: process.arch
+            },
+            configuration: {
+                hasClientId: !!process.env.ENTRA_CLIENT_ID || !!process.env.AZURE_CLIENT_ID,
+                hasClientSecret: !!process.env.ENTRA_CLIENT_SECRET || !!process.env.AZURE_CLIENT_SECRET,
+                hasTenantId: !!process.env.AZURE_TENANT_ID,
+                authMode: 'delegated-permissions',
+                configurationRequired: !(process.env.ENTRA_CLIENT_ID && process.env.ENTRA_CLIENT_SECRET && process.env.AZURE_TENANT_ID)
             }
         };
 

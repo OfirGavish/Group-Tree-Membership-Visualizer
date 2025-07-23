@@ -116,6 +116,31 @@ try {
     exit 1
 }
 
+# Update configuration files with tenant ID
+Write-Host "⚙️  Updating configuration files with tenant ID..." -ForegroundColor Green
+try {
+    # Update staticwebapp.config.json
+    $configFiles = @(
+        "staticwebapp.config.json",
+        "public/staticwebapp.config.json"
+    )
+    
+    foreach ($configFile in $configFiles) {
+        if (Test-Path $configFile) {
+            $content = Get-Content $configFile -Raw
+            $updatedContent = $content -replace '\{\{TENANT_ID\}\}', $TenantId
+            Set-Content $configFile -Value $updatedContent -NoNewline
+            Write-Host "  ✅ Updated $configFile" -ForegroundColor Green
+        } else {
+            Write-Host "  ⚠️  Configuration file not found: $configFile" -ForegroundColor Yellow
+        }
+    }
+    
+    Write-Host "✅ Configuration files updated with tenant ID: $TenantId" -ForegroundColor Green
+} catch {
+    Write-Warning "⚠️  Failed to update configuration files: $($_.Exception.Message)"
+}
+
 # Required Microsoft Graph permissions for delegated access
 $requiredDelegatedPermissions = @(
     @{ Value = "User.Read"; Type = "Scope" },

@@ -101,7 +101,9 @@
     "appLocation": "/",
     "apiLocation": "api",
     "outputLocation": "out",
-    "isStandardTier": "[equals(parameters('pricingTier'), 'Standard')]"
+    "isStandardTier": "[equals(parameters('pricingTier'), 'Standard')]",
+    "tenantId": "[subscription().tenantId]",
+    "subscriptionId": "[subscription().subscriptionId]"
   },
   "resources": [
     {
@@ -154,18 +156,32 @@
         "description": "Name of the resource group"
       }
     },
+    "tenantId": {
+      "type": "string",
+      "value": "[variables('tenantId')]",
+      "metadata": {
+        "description": "Azure tenant ID for configuration"
+      }
+    },
+    "subscriptionId": {
+      "type": "string",
+      "value": "[variables('subscriptionId')]",
+      "metadata": {
+        "description": "Azure subscription ID"
+      }
+    },
     "setupInstructions": {
       "type": "string",
-      "value": "🎉 Deployment Complete! Next steps: 1) Visit your app URL, 2) Follow the Setup Guide to configure Microsoft Graph permissions, 3) Test user search functionality. Full documentation: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/SETUP_GUIDE.md",
+      "value": "🎉 Deployment Complete! Next steps: 1) Run the configuration script with your app name, 2) Visit your app URL to test, 3) Users will see data based on their directory permissions. Configuration: Run 'configure-app.ps1 -StaticWebAppName \"your-app-name\"'",
       "metadata": {
         "description": "Post-deployment setup instructions"
       }
     },
     "configurationCommand": {
       "type": "string",
-      "value": "[concat('az staticwebapp appsettings set --name \"', variables('staticWebAppName'), '\" --setting-names AZURE_CLIENT_ID=\"your-client-id\" AZURE_CLIENT_SECRET=\"your-secret\" AZURE_TENANT_ID=\"your-tenant-id\"')]",
+      "value": "[concat('Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1\" -OutFile \"configure-app.ps1\"; .\\configure-app.ps1 -StaticWebAppName \"', variables('staticWebAppName'), '\" -TenantId \"', variables('tenantId'), '\"')]",
       "metadata": {
-        "description": "Azure CLI command to configure environment variables"
+        "description": "PowerShell command to download and run the configuration script"
       }
     }
   }
