@@ -106,13 +106,16 @@ az deployment group create \
 
 ## 🏗️ Architecture
 
-The application follows a modern, serverless architecture:
+The application follows a modern, serverless architecture with intelligent caching:
 
 ```mermaid
 graph TB
     User[👤 User] --> SWA[🌐 Azure Static Web App]
     SWA --> Frontend[⚛️ Next.js Frontend]
     SWA --> API[🔧 Azure Functions API]
+    
+    Frontend --> Cache[🗄️ Client Cache<br/>localStorage]
+    Cache --> Frontend
     
     SWA --> Auth[🔐 Built-in Authentication]
     API --> Graph[📊 Microsoft Graph API]

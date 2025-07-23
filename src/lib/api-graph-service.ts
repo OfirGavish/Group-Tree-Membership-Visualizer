@@ -1,15 +1,30 @@
 import { User, Group, GroupMember, TreeNode } from '@/types'
+import { CacheService } from './cache-service'
 
 export class ApiGraphService {
   private baseUrl = ''
 
   async getAllUsers(): Promise<User[]> {
     try {
+      // Check cache first
+      const cacheKey = CacheService.keys.allUsers()
+      const cached = CacheService.get<User[]>(cacheKey)
+      if (cached) {
+        return cached
+      }
+
+      // Fetch from API
       const response = await fetch('/api/getUsers')
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.status}`)
       }
-      return await response.json()
+      
+      const users = await response.json()
+      
+      // Cache the result
+      CacheService.set(cacheKey, users, 'users')
+      
+      return users
     } catch (error) {
       console.error('Error fetching users:', error)
       throw error
@@ -18,12 +33,33 @@ export class ApiGraphService {
 
   async getAllGroups(search?: string): Promise<Group[]> {
     try {
+      // For searches, we don't cache to get fresh results
+      // For full group list (no search), we cache it
+      const shouldCache = !search
+      const cacheKey = CacheService.keys.allGroups()
+      
+      if (shouldCache) {
+        const cached = CacheService.get<Group[]>(cacheKey)
+        if (cached) {
+          return cached
+        }
+      }
+
+      // Fetch from API
       const url = search ? `/api/getGroups?search=${encodeURIComponent(search)}` : '/api/getGroups'
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`Failed to fetch groups: ${response.status}`)
       }
-      return await response.json()
+      
+      const groups = await response.json()
+      
+      // Cache only if it's the full list (no search)
+      if (shouldCache) {
+        CacheService.set(cacheKey, groups, 'groups')
+      }
+      
+      return groups
     } catch (error) {
       console.error('Error fetching groups:', error)
       throw error
@@ -32,11 +68,25 @@ export class ApiGraphService {
 
   async getUserGroups(userId: string): Promise<Group[]> {
     try {
+      // Check cache first
+      const cacheKey = CacheService.keys.userGroups(userId)
+      const cached = CacheService.get<Group[]>(cacheKey)
+      if (cached) {
+        return cached
+      }
+
+      // Fetch from API
       const response = await fetch(`/api/getUserGroups?userId=${encodeURIComponent(userId)}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch user groups: ${response.status}`)
       }
-      return await response.json()
+      
+      const groups = await response.json()
+      
+      // Cache the result
+      CacheService.set(cacheKey, groups, 'memberships')
+      
+      return groups
     } catch (error) {
       console.error('Error fetching user groups:', error)
       throw error
@@ -45,11 +95,25 @@ export class ApiGraphService {
 
   async getGroupMembers(groupId: string): Promise<GroupMember[]> {
     try {
+      // Check cache first
+      const cacheKey = CacheService.keys.groupMembers(groupId)
+      const cached = CacheService.get<GroupMember[]>(cacheKey)
+      if (cached) {
+        return cached
+      }
+
+      // Fetch from API
       const response = await fetch(`/api/getGroupMembers?groupId=${encodeURIComponent(groupId)}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch group members: ${response.status}`)
       }
-      return await response.json()
+      
+      const members = await response.json()
+      
+      // Cache the result
+      CacheService.set(cacheKey, members, 'memberships')
+      
+      return members
     } catch (error) {
       console.error('Error fetching group members:', error)
       throw error
@@ -58,11 +122,25 @@ export class ApiGraphService {
 
   async getGroupMemberOf(groupId: string): Promise<Group[]> {
     try {
+      // Check cache first
+      const cacheKey = CacheService.keys.groupMemberOf(groupId)
+      const cached = CacheService.get<Group[]>(cacheKey)
+      if (cached) {
+        return cached
+      }
+
+      // Fetch from API
       const response = await fetch(`/api/getGroupMemberOf?groupId=${encodeURIComponent(groupId)}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch group memberOf: ${response.status}`)
       }
-      return await response.json()
+      
+      const groups = await response.json()
+      
+      // Cache the result
+      CacheService.set(cacheKey, groups, 'memberships')
+      
+      return groups
     } catch (error) {
       console.error('Error fetching group memberOf:', error)
       throw error

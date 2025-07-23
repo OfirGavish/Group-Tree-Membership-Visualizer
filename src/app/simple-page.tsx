@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { StaticWebAppAuthService } from '@/lib/static-web-app-auth'
 import { ApiGraphService } from '@/lib/api-graph-service'
+import { CacheService } from '@/lib/cache-service'
 import { User, Group, TreeNode, TreeData, GroupMember } from '@/types'
 import UserSearch from '@/components/UserSearch'
 import GroupSearch from '@/components/GroupSearch'
@@ -24,11 +25,27 @@ export default function SimpleHomePage() {
   const [error, setError] = useState<string | null>(null)
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [searchType, setSearchType] = useState<'user' | 'group'>('user')
+  const [cacheStats, setCacheStats] = useState({ totalItems: 0, totalSize: 0 })
 
   const authService = new StaticWebAppAuthService()
 
+  // Cache management functions
+  const updateCacheStats = () => {
+    const stats = CacheService.getStats()
+    setCacheStats(stats)
+  }
+
+  const clearCache = () => {
+    CacheService.clear()
+    updateCacheStats()
+    // Show a brief success message
+    setError('Cache cleared successfully!')
+    setTimeout(() => setError(null), 3000)
+  }
+
   useEffect(() => {
     checkAuthStatus()
+    updateCacheStats() // Update cache stats on page load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty dependency array is intentional - we only want to run this once on mount
 
@@ -56,6 +73,7 @@ export default function SimpleHomePage() {
       const graphService = new ApiGraphService()
       const allUsers = await graphService.getAllUsers()
       setUsers(allUsers)
+      updateCacheStats() // Update cache stats after loading data
     } catch (error) {
       console.error('Error loading users:', error)
       setError('Failed to load users. Please check your permissions.')
@@ -71,6 +89,7 @@ export default function SimpleHomePage() {
       const graphService = new ApiGraphService()
       const allGroups = await graphService.getAllGroups()
       setGroups(allGroups)
+      updateCacheStats() // Update cache stats after loading data
     } catch (error) {
       console.error('Error loading groups:', error)
       setError('Failed to load groups. Please check your permissions.')
@@ -523,6 +542,18 @@ export default function SimpleHomePage() {
               Group Tree Membership Visualizer
             </h1>
             <div className="flex items-center gap-4">
+              {/* Cache Management */}
+              <div className="flex items-center gap-2 text-sm text-white/80">
+                <span>Cache: {cacheStats.totalItems} items</span>
+                <button
+                  onClick={clearCache}
+                  className="px-2 py-1 text-xs bg-white/10 hover:bg-white/20 rounded border border-white/20 hover:border-white/30 transition-colors"
+                  title="Clear cache to force fresh data"
+                >
+                  Clear
+                </button>
+              </div>
+              
               {currentUser && (
                 <span className="text-sm text-white/80">
                   {currentUser.displayName}
