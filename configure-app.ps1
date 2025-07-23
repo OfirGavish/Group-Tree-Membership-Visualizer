@@ -20,7 +20,7 @@ Write-Host "==========================================================" -Foregro
 Write-Host ""
 
 # Check if required modules are installed
-$requiredModules = @('Microsoft.Graph', 'Az.Accounts', 'Az.Resources')
+$requiredModules = @('Microsoft.Graph', 'Az.Accounts', 'Az.Resources', 'Az.Websites')
 foreach ($module in $requiredModules) {
     if (!(Get-Module -ListAvailable -Name $module)) {
         Write-Host "❌ Required module '$module' not found. Installing..." -ForegroundColor Yellow
@@ -28,16 +28,39 @@ foreach ($module in $requiredModules) {
     }
 }
 
+# Check if Azure CLI is available for setting Static Web App environment variables
+try {
+    $azVersion = az version 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "⚠️  Azure CLI not found. Environment variables will need to be set manually."
+        $azCliAvailable = $false
+    } else {
+        Write-Host "✅ Azure CLI is available" -ForegroundColor Green
+        $azCliAvailable = $true
+    }
+} catch {
+    Write-Warning "⚠️  Azure CLI not found. Environment variables will need to be set manually."
+    $azCliAvailable = $false
+}
+
 # Connect to Azure
 Write-Host "🔐 Connecting to Azure..." -ForegroundColor Green
 try {
     $azContext = Get-AzContext
     if (!$azContext) {
+        Write-Host "  📝 No existing Azure context found. Initiating login..." -ForegroundColor Blue
         Connect-AzAccount
+        $azContext = Get-AzContext
     }
-    Write-Host "✅ Connected to Azure as: $($azContext.Account)" -ForegroundColor Green
+    
+    if ($azContext) {
+        Write-Host "✅ Connected to Azure as: $($azContext.Account)" -ForegroundColor Green
+    } else {
+        throw "Failed to establish Azure context"
+    }
 } catch {
     Write-Error "❌ Failed to connect to Azure: $($_.Exception.Message)"
+    Write-Host "💡 Please ensure you have appropriate permissions and try running Connect-AzAccount manually." -ForegroundColor Yellow
     exit 1
 }
 
@@ -64,16 +87,17 @@ try {
 Write-Host "🔍 Finding Static Web App: $StaticWebAppName..." -ForegroundColor Green
 try {
     if ($ResourceGroupName) {
-        $staticWebApp = Get-AzStaticWebApp -ResourceGroupName $ResourceGroupName -Name $StaticWebAppName
+        $staticWebApp = Get-AzStaticWebApp -ResourceGroupName $ResourceGroupName -Name $StaticWebAppName -ErrorAction SilentlyContinue
     } else {
-        $staticWebApp = Get-AzStaticWebApp | Where-Object { $_.Name -eq $StaticWebAppName }
+        $staticWebApps = Get-AzStaticWebApp -ErrorAction SilentlyContinue
+        $staticWebApp = $staticWebApps | Where-Object { $_.Name -eq $StaticWebAppName }
         if ($staticWebApp) {
             $ResourceGroupName = $staticWebApp.ResourceGroupName
         }
     }
     
     if (!$staticWebApp) {
-        Write-Error "❌ Static Web App '$StaticWebAppName' not found"
+        Write-Error "❌ Static Web App '$StaticWebAppName' not found. Please verify the name and ensure you have access to it."
         exit 1
     }
     
@@ -81,6 +105,7 @@ try {
     Write-Host "✅ Found Static Web App: $appUrl" -ForegroundColor Green
 } catch {
     Write-Error "❌ Failed to find Static Web App: $($_.Exception.Message)"
+    Write-Host "💡 Make sure you have the Az.Websites module installed and you're authenticated to Azure." -ForegroundColor Yellow
     exit 1
 }
 
@@ -184,7 +209,7 @@ Write-Host "🌐 Updating app registration for web platform..." -ForegroundColor
 try {
     # Add web platform if not exists
     $redirectUris = @(
-        "https://$StaticWebAppName.azurestaticapps.net/.auth/login/aad/callback",
+        "$appUrl/.auth/login/aad/callback",
         "https://localhost:3000/.auth/login/aad/callback"
     )
     
@@ -253,7 +278,6 @@ try {
 } catch {
     Write-Warning "⚠️  Failed to configure API permissions: $($_.Exception.Message)"
 }
-}
 
 # Grant admin consent if not skipped
 if (!$SkipAdminConsent) {
@@ -289,17 +313,30 @@ $appSettings = @{
 }
 
 try {
-    foreach ($setting in $appSettings.GetEnumerator()) {
-        New-AzStaticWebAppSetting -ResourceGroupName $ResourceGroupName -Name $StaticWebAppName -Setting @{$setting.Key = $setting.Value} | Out-Null
+    if ($azCliAvailable) {
+        # Use Azure CLI for setting Static Web App settings as it's more reliable
+        Write-Host "  🔧 Setting environment variables using Azure CLI..." -ForegroundColor Blue
+        
+        foreach ($setting in $appSettings.GetEnumerator()) {
+            $settingString = "$($setting.Key)=$($setting.Value)"
+            $result = az staticwebapp appsettings set --name $StaticWebAppName --resource-group $ResourceGroupName --setting-names $settingString 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "    ✅ Set $($setting.Key)" -ForegroundColor Green
+            } else {
+                Write-Warning "    ⚠️  Failed to set $($setting.Key)"
+            }
+        }
+        Write-Host "✅ Environment variables configured" -ForegroundColor Green
+    } else {
+        throw "Azure CLI not available"
     }
-    Write-Host "✅ Environment variables configured" -ForegroundColor Green
 } catch {
-    Write-Warning "⚠️  Failed to set environment variables automatically. Please set them manually:"
+    Write-Warning "⚠️  Failed to set environment variables automatically. Please set them manually using Azure CLI:"
     foreach ($setting in $appSettings.GetEnumerator()) {
-        if ($setting.Key -eq "AZURE_CLIENT_SECRET") {
-            Write-Host "  $($setting.Key) = [HIDDEN]" -ForegroundColor Yellow
+        if ($setting.Key -like "*SECRET*") {
+            Write-Host "  az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names `"$($setting.Key)=[HIDDEN]`"" -ForegroundColor Yellow
         } else {
-            Write-Host "  $($setting.Key) = $($setting.Value)" -ForegroundColor Yellow
+            Write-Host "  az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names `"$($setting.Key)=$($setting.Value)`"" -ForegroundColor Yellow
         }
     }
 }
@@ -380,62 +417,3 @@ Write-Host ""
 Write-Host "🚀 Your Group Tree Membership Visualizer is ready to use!" -ForegroundColor Cyan
 Write-Host "   Visit: $appUrl" -ForegroundColor Green
 Write-Host ""
-Write-Host "Creating new client secret..." -ForegroundColor Cyan
-$CLIENT_SECRET = az ad app credential reset --id $APP_ID --append --display-name "Static Web App API Secret" --query password -o tsv
-
-# Set the Client Secret
-Write-Host "Setting AZURE_CLIENT_SECRET..." -ForegroundColor Cyan
-az staticwebapp appsettings set --name $STATIC_WEB_APP_NAME --setting-names "AZURE_CLIENT_SECRET=$CLIENT_SECRET"
-
-Write-Host "Step 2: Adding Application permissions..." -ForegroundColor Yellow
-
-# Add Application permissions (these are needed for server-to-server calls)
-Write-Host "Adding User.Read.All (Application)..." -ForegroundColor Cyan
-az ad app permission add --id $APP_ID --api 00000003-0000-0000-c000-000000000000 --api-permissions "df021288-bdef-4463-88db-98f22de89214=Role"
-
-Write-Host "Adding Group.Read.All (Application)..." -ForegroundColor Cyan
-az ad app permission add --id $APP_ID --api 00000003-0000-0000-c000-000000000000 --api-permissions "5b567255-7703-4780-807c-7be8301ae99b=Role"
-
-Write-Host "Adding Directory.Read.All (Application)..." -ForegroundColor Cyan
-az ad app permission add --id $APP_ID --api 00000003-0000-0000-c000-000000000000 --api-permissions "7ab1d382-f21e-4acd-a863-ba3e13f7da61=Role"
-
-Write-Host "Adding GroupMember.Read.All (Application)..." -ForegroundColor Cyan
-az ad app permission add --id $APP_ID --api 00000003-0000-0000-c000-000000000000 --api-permissions "98830695-27a2-44f7-8c18-0c3ebc9698f6=Role"
-
-Write-Host "Step 3: Attempting to grant admin consent..." -ForegroundColor Yellow
-try {
-    az ad app permission admin-consent --id $APP_ID
-    Write-Host "✅ Admin consent granted successfully!" -ForegroundColor Green
-} catch {
-    Write-Host "❌ Admin consent failed - please grant consent manually in Azure Portal" -ForegroundColor Red
-}
-
-Write-Host ""
-Write-Host "Configuration Summary:" -ForegroundColor Cyan
-Write-Host "========================"
-Write-Host "Static Web App: $STATIC_WEB_APP_NAME"
-Write-Host "App ID: $APP_ID"
-Write-Host "Tenant ID: $TENANT_ID"
-Write-Host "New Client Secret: [HIDDEN]"
-Write-Host ""
-Write-Host "Environment Variables Set:" -ForegroundColor Green
-Write-Host "✅ AZURE_CLIENT_ID"
-Write-Host "✅ AZURE_CLIENT_SECRET"
-Write-Host "✅ AZURE_TENANT_ID"
-Write-Host ""
-Write-Host "Application Permissions Added:" -ForegroundColor Green
-Write-Host "✅ User.Read.All (Application)"
-Write-Host "✅ Group.Read.All (Application)"
-Write-Host "✅ Directory.Read.All (Application)"
-Write-Host "✅ GroupMember.Read.All (Application)"
-Write-Host ""
-Write-Host "Next Steps:" -ForegroundColor Yellow
-Write-Host "1. If admin consent failed above, go to Azure Portal:"
-Write-Host "   Azure Active Directory -> App registrations -> Group Tree Membership Visualizer"
-Write-Host "   -> API permissions -> Grant admin consent for MSCloudNinja"
-Write-Host ""
-Write-Host "2. Wait a few minutes for the settings to propagate"
-Write-Host ""
-Write-Host "3. Test the application at: https://brave-smoke-0cd316503.2.azurestaticapps.net"
-Write-Host ""
-Write-Host "4. Test the debug endpoint: https://brave-smoke-0cd316503.2.azurestaticapps.net/api/debug"
