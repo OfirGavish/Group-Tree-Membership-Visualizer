@@ -117,8 +117,8 @@ graph TB
     SWA --> Auth[🔐 Built-in Authentication]
     API --> Graph[📊 Microsoft Graph API]
     
-    Auth --> AAD[🏢 Azure Active Directory]
-    Graph --> AAD
+    Auth --> EID[🏢 Entra ID]
+    Graph --> EID
     
     Frontend --> D3[📈 D3.js Visualization]
 ```
