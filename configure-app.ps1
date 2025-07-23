@@ -20,7 +20,7 @@ Write-Host "==========================================================" -Foregro
 Write-Host ""
 
 # Check if required modules are installed
-$requiredModules = @('AzureAD', 'Az.Accounts', 'Az.Resources')
+$requiredModules = @('Microsoft.Graph', 'Az.Accounts', 'Az.Resources')
 foreach ($module in $requiredModules) {
     if (!(Get-Module -ListAvailable -Name $module)) {
         Write-Host "❌ Required module '$module' not found. Installing..." -ForegroundColor Yellow
@@ -47,13 +47,16 @@ if (!$TenantId) {
     Write-Host "📋 Using Tenant ID: $TenantId" -ForegroundColor Blue
 }
 
-# Connect to Azure AD
-Write-Host "🔐 Connecting to Azure AD..." -ForegroundColor Green
+# Connect to Microsoft Graph
+Write-Host "🔐 Connecting to Microsoft Graph..." -ForegroundColor Green
 try {
-    Connect-AzureAD -TenantId $TenantId | Out-Null
-    Write-Host "✅ Connected to Azure AD" -ForegroundColor Green
+    $graphContext = Get-MgContext
+    if (!$graphContext -or $graphContext.TenantId -ne $TenantId) {
+        Connect-MgGraph -TenantId $TenantId -Scopes "Application.ReadWrite.All", "Directory.ReadWrite.All" -NoWelcome
+    }
+    Write-Host "✅ Connected to Microsoft Graph" -ForegroundColor Green
 } catch {
-    Write-Error "❌ Failed to connect to Azure AD: $($_.Exception.Message)"
+    Write-Error "❌ Failed to connect to Microsoft Graph: $($_.Exception.Message)"
     exit 1
 }
 
@@ -85,7 +88,7 @@ try {
 $appDisplayName = "Group Tree Membership Visualizer"
 Write-Host "🔍 Checking for existing app registration..." -ForegroundColor Green
 
-$existingApp = Get-AzureADApplication -Filter "displayName eq '$appDisplayName'"
+$existingApp = Get-MgApplication -Filter "displayName eq '$appDisplayName'"
 
 if ($existingApp) {
     Write-Host "✅ Found existing app registration: $($existingApp.AppId)" -ForegroundColor Green
@@ -93,8 +96,15 @@ if ($existingApp) {
 } else {
     Write-Host "📝 Creating new app registration..." -ForegroundColor Green
     
-    # Create app registration
-    $app = New-AzureADApplication -DisplayName $appDisplayName -IdentifierUris @() -ReplyUrls @($appUrl, "$appUrl/", "http://localhost:3000")
+    # Create app registration with redirect URIs
+    $appParams = @{
+        DisplayName = $appDisplayName
+        Web = @{
+            RedirectUris = @($appUrl, "$appUrl/", "http://localhost:3000")
+        }
+    }
+    
+    $app = New-MgApplication @appParams
     Write-Host "✅ Created app registration: $($app.AppId)" -ForegroundColor Green
 }
 
@@ -104,12 +114,17 @@ $secretDisplayName = "GroupVisualizerSecret-$(Get-Date -Format 'yyyy-MM-dd')"
 $secretEndDate = (Get-Date).AddMonths(24)
 
 try {
-    $existingSecrets = Get-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId
+    $existingSecrets = Get-MgApplicationPasswordCredential -ApplicationId $app.Id
     if ($existingSecrets) {
         Write-Host "⚠️  Existing secrets found. Creating additional secret..." -ForegroundColor Yellow
     }
     
-    $clientSecret = New-AzureADApplicationPasswordCredential -ObjectId $app.ObjectId -CustomKeyIdentifier $secretDisplayName -EndDate $secretEndDate
+    $passwordCredential = @{
+        displayName = $secretDisplayName
+        endDateTime = $secretEndDate
+    }
+    
+    $clientSecret = Add-MgApplicationPassword -ApplicationId $app.Id -PasswordCredential $passwordCredential
     Write-Host "✅ Client secret created (expires: $($secretEndDate.ToString('yyyy-MM-dd')))" -ForegroundColor Green
 } catch {
     Write-Error "❌ Failed to create client secret: $($_.Exception.Message)"
@@ -162,7 +177,7 @@ $requiredApplicationPermissions = @(
 Write-Host "🔐 Configuring Microsoft Graph permissions (delegated + application)..." -ForegroundColor Green
 
 # Get Microsoft Graph service principal
-$graphServicePrincipal = Get-AzureADServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
+$graphServicePrincipal = Get-MgServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
 
 # Update app registration to support web platform for delegated permissions
 Write-Host "🌐 Updating app registration for web platform..." -ForegroundColor Green
@@ -174,49 +189,70 @@ try {
     )
     
     # Update the application to support web platform
-    Set-AzureADApplication -ObjectId $app.ObjectId -ReplyUrls $redirectUris
+    $webParams = @{
+        ApplicationId = $app.Id
+        Web = @{
+            RedirectUris = $redirectUris
+        }
+    }
+    Update-MgApplication @webParams
     Write-Host "✅ Web platform configured with redirect URIs" -ForegroundColor Green
 } catch {
     Write-Warning "⚠️  Failed to update web platform configuration: $($_.Exception.Message)"
 }
 
-# Add delegated permissions first (preferred for user experience)
-Write-Host "🔐 Adding delegated permissions..." -ForegroundColor Green
-foreach ($permission in $requiredDelegatedPermissions) {
-    try {
-        $oauth2Permission = $graphServicePrincipal.Oauth2Permissions | Where-Object {$_.Value -eq $permission.Value}
+# Add Microsoft Graph API permissions
+Write-Host "🔐 Configuring Microsoft Graph API permissions..." -ForegroundColor Green
+try {
+    # Build required resource access for Microsoft Graph
+    $requiredResourceAccess = @()
+    
+    # Add delegated permissions (scopes)
+    $delegatedPermissions = @()
+    foreach ($permission in $requiredDelegatedPermissions) {
+        $oauth2Permission = $graphServicePrincipal.Oauth2PermissionScopes | Where-Object {$_.Value -eq $permission.Value}
         if ($oauth2Permission) {
-            # Add to required resource access for delegated permissions
-            $resourceAccess = New-Object -TypeName "Microsoft.Open.AzureAD.Model.ResourceAccess"
-            $resourceAccess.Id = $oauth2Permission.Id
-            $resourceAccess.Type = "Scope"
-            
+            $delegatedPermissions += @{
+                Id = $oauth2Permission.Id
+                Type = "Scope"
+            }
             Write-Host "  ✅ Will request delegated permission: $($permission.Value)" -ForegroundColor Green
         }
-    } catch {
-        Write-Warning "  ⚠️  Failed to configure delegated permission $($permission.Value): $($_.Exception.Message)"
     }
-}
-
-# Add application permissions (for admin operations if needed)
-Write-Host "🔐 Adding application permissions..." -ForegroundColor Green
-foreach ($permission in $requiredApplicationPermissions) {
-    try {
+    
+    # Add application permissions (roles)
+    $applicationPermissions = @()
+    foreach ($permission in $requiredApplicationPermissions) {
         $appRole = $graphServicePrincipal.AppRoles | Where-Object {$_.Value -eq $permission.Value}
         if ($appRole) {
-            # Check if permission already granted
-            $existingAssignment = Get-AzureADServiceAppRoleAssignment -ObjectId $app.ObjectId | Where-Object {$_.Id -eq $appRole.Id}
-            
-            if (!$existingAssignment) {
-                New-AzureADServiceAppRoleAssignment -ObjectId $app.ObjectId -PrincipalId $app.ObjectId -ResourceId $graphServicePrincipal.ObjectId -Id $appRole.Id | Out-Null
-                Write-Host "  ✅ Added application permission: $($permission.Value)" -ForegroundColor Green
-            } else {
-                Write-Host "  ℹ️  Application permission already exists: $($permission.Value)" -ForegroundColor Blue
+            $applicationPermissions += @{
+                Id = $appRole.Id
+                Type = "Role"
             }
+            Write-Host "  ✅ Will request application permission: $($permission.Value)" -ForegroundColor Green
         }
-    } catch {
-        Write-Warning "  ⚠️  Failed to add application permission $($permission.Value): $($_.Exception.Message)"
     }
+    
+    # Combine all permissions
+    $allPermissions = $delegatedPermissions + $applicationPermissions
+    
+    if ($allPermissions.Count -gt 0) {
+        $requiredResourceAccess += @{
+            ResourceAppId = "00000003-0000-0000-c000-000000000000"  # Microsoft Graph
+            ResourceAccess = $allPermissions
+        }
+        
+        # Update the application with required permissions
+        $updateParams = @{
+            ApplicationId = $app.Id
+            RequiredResourceAccess = $requiredResourceAccess
+        }
+        Update-MgApplication @updateParams
+        Write-Host "✅ Microsoft Graph API permissions configured" -ForegroundColor Green
+    }
+} catch {
+    Write-Warning "⚠️  Failed to configure API permissions: $($_.Exception.Message)"
+}
 }
 
 # Grant admin consent if not skipped
@@ -246,9 +282,9 @@ Write-Host "⚙️  Configuring Static Web App environment variables..." -Foregr
 
 $appSettings = @{
     "ENTRA_CLIENT_ID" = $app.AppId
-    "ENTRA_CLIENT_SECRET" = $clientSecret.Value
+    "ENTRA_CLIENT_SECRET" = $clientSecret.SecretText
     "AZURE_CLIENT_ID" = $app.AppId  # Keeping for backward compatibility
-    "AZURE_CLIENT_SECRET" = $clientSecret.Value  # Keeping for backward compatibility
+    "AZURE_CLIENT_SECRET" = $clientSecret.SecretText  # Keeping for backward compatibility
     "AZURE_TENANT_ID" = $TenantId
 }
 

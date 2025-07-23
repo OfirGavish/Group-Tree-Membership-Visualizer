@@ -66,6 +66,7 @@
    .\configure-app.ps1 -StaticWebAppName "your-app-name"
    
    # The script will automatically:
+   # - Install Microsoft Graph PowerShell SDK (modern replacement for deprecated AzureAD module)
    # - Get your tenant ID from Azure context
    # - Update configuration files with your tenant ID
    # - Create/update App Registration with delegated permissions
