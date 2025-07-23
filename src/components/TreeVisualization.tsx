@@ -376,7 +376,7 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
   }, [data, selectedNode, onNodeSelect, expandedNodes])
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
+    <div className="p-6">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-white">Group Membership Tree</h3>
         <p className="text-sm text-white/70">

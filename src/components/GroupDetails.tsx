@@ -6,9 +6,9 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
   const isSecurityGroup = group.groupTypes.includes('Unified') ? false : true
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-xl border border-white/20 overflow-hidden">
+    <div className="overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 backdrop-blur-md text-white p-6 border-b border-white/20">
+      <div className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 backdrop-blur-md text-white p-6">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-2xl">
             👥
@@ -33,7 +33,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       <div className="p-6 space-y-6">
         {/* Group Information */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-sm">
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-sm">
           <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
             <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
             Group Information
@@ -41,11 +41,11 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
           <div className="grid grid-cols-1 gap-3 text-sm">
             <div className="flex flex-col gap-1">
               <span className="text-white/70 font-medium">Group ID:</span>
-              <p className="font-mono text-xs text-white/80 bg-white/10 px-3 py-2 rounded border border-white/20 break-all">{group.id}</p>
+              <p className="font-mono text-xs text-white/80 bg-white/10 px-3 py-2 rounded break-all">{group.id}</p>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-white/70 font-medium">Group Types:</span>
-              <p className="text-white/80 bg-white/10 px-3 py-2 rounded border border-white/20">
+              <p className="text-white/80 bg-white/10 px-3 py-2 rounded">
                 {group.groupTypes.length > 0 ? group.groupTypes.join(', ') : 'Unified'}
               </p>
             </div>
@@ -54,7 +54,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
         {/* Members Section */}
         {group.members && group.members.length > 0 && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-sm">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-sm">
             <h4 className="font-semibold text-white mb-3 flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-400 rounded-full"></span>
@@ -69,7 +69,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                 <button
                   key={member.id}
                   onClick={() => onMemberSelect(member)}
-                  className="w-full p-3 text-left bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 hover:shadow-md transition-all duration-200 border border-white/20 hover:border-white/40"
+                  className="w-full p-3 text-left bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 hover:shadow-md transition-all duration-200 hover:border-white/40"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md ${
@@ -105,7 +105,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
         {/* Member Of Section */}
         {group.memberOf && group.memberOf.length > 0 && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-sm">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-sm">
             <h4 className="font-semibold text-white mb-3 flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
@@ -119,7 +119,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
               {group.memberOf.map((parentGroup) => (
                 <div
                   key={parentGroup.id}
-                  className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 shadow-sm hover:shadow-md transition-shadow duration-200"
+                  className="p-4 bg-white/10 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white text-sm font-medium shadow-sm">
@@ -141,7 +141,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
         {/* Empty State */}
         {(!group.members || group.members.length === 0) && (!group.memberOf || group.memberOf.length === 0) && (
           <div className="text-center py-8 text-white/70">
-            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3 border border-white/20">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">👥</span>
             </div>
             <p className="text-sm">No additional group details available</p>

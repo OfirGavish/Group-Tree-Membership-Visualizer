@@ -619,7 +619,7 @@ export default function SimpleHomePage() {
             <div className="space-y-6">
               {/* Selected User/Group Info */}
               {selectedUser && (
-                <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-6 border border-white/20">
+                <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4">Selected User</h3>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
@@ -637,7 +637,7 @@ export default function SimpleHomePage() {
               )}
 
               {selectedGroup && (
-                <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-6 border border-white/20">
+                <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4">Selected Group</h3>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">

@@ -53,7 +53,7 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
       </div>
 
       {isOpen && searchTerm && (
-        <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-blue-500/15 via-cyan-500/10 to-blue-500/15 backdrop-blur-xl border border-blue-300/25 rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
+        <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-blue-500/15 via-cyan-500/10 to-blue-500/15 backdrop-blur-xl rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
           {/* Animated gradient background */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 animate-pulse"></div>
           
