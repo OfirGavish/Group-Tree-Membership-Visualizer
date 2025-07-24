@@ -34,11 +34,13 @@
       "defaultValue": "main",
       "allowedValues": [
         "main",
+        "deploy",
+        "release",
         "development",
         "v1.0-production-ready"
       ],
       "metadata": {
-        "description": "GitHub repository branch to deploy from. Use 'main' for latest stable version."
+        "description": "GitHub repository branch to deploy from. Use 'main' for production, 'deploy' for manual deployments."
       }
     },
     "location": {

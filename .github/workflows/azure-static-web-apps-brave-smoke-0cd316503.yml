@@ -1,19 +1,55 @@
 name: Azure Static Web Apps CI/CD
 
 on:
+  # Manual trigger for Deploy to Azure button and user deployments
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      
+  # Allow this workflow to be called by other workflows
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: string
+    secrets:
+      AZURE_STATIC_WEB_APPS_API_TOKEN:
+        required: true
+  
+  # Push to specific branches (for your development workflow)
   push:
     branches:
-      - main
+      - deploy  # Only deploy when pushing to 'deploy' branch
+      - release # Or release branch
+    paths-ignore:
+      - '**.md'  # Ignore documentation changes
+      
+  # Pull requests for preview deployments (optional)
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - main
+      - deploy
+      - release
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: |
+      github.event_name == 'push' || 
+      github.event_name == 'workflow_dispatch' || 
+      github.event_name == 'workflow_call' ||
+      (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
+    environment: ${{ inputs.environment || 'production' }}
     permissions:
        id-token: write
        contents: read
@@ -43,7 +79,7 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503 }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503 || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
@@ -62,4 +98,5 @@ jobs:
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503 || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "close"

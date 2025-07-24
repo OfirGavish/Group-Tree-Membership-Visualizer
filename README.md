@@ -48,6 +48,22 @@
 
 ### Option 1: One-Click Azure Deployment (Recommended)
 
+**Perfect for end users - no technical setup required!**
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+
+1. **Click the Deploy to Azure button** above
+2. **Fill in the deployment parameters** (app name, location, etc.)
+3. **Wait for deployment** to complete (2-3 minutes)
+4. **Configure Azure AD** by downloading and running:
+   ```powershell
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
+   .\configure-app.ps1 -StaticWebAppName "your-app-name"
+   ```
+5. **Access your application** and start exploring group memberships!
+
+> **Note**: The Deploy to Azure button uses manual workflow triggers, so it won't interfere with ongoing development. Perfect for organizational deployments!
+
 1. **Deploy to Azure** - Click the button below:
    
    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)

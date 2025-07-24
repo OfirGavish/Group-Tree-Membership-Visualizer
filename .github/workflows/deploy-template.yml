@@ -1,0 +1,147 @@
+name: Azure Static Web Apps CI/CD
+
+on:
+  # Manual trigger - perfect for Deploy to Azure button
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+      force_deploy:
+        description: 'Force deployment even if no changes detected'
+        required: false
+        default: false
+        type: boolean
+      
+  # Allow this workflow to be called by other workflows
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: string
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      AZURE_STATIC_WEB_APPS_API_TOKEN:
+        required: true
+  
+  # Push to deployment branches only (for maintainer development)
+  push:
+    branches:
+      - deploy      # Create this branch for deployments
+      - release     # Or use release branch
+      - main        # Keep main for compatibility with existing deploys
+    paths-ignore:
+      - '**.md'     # Ignore documentation changes
+      - 'docs/**'   # Ignore docs folder
+      
+  # Pull requests for preview deployments
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - deploy
+      - release
+      - main
+
+env:
+  NODE_VERSION: '18'  # LTS version
+
+jobs:
+  build_and_deploy_job:
+    if: |
+      github.event_name == 'push' || 
+      github.event_name == 'workflow_dispatch' || 
+      github.event_name == 'workflow_call' ||
+      (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    environment: ${{ inputs.environment || 'production' }}
+    permissions:
+       id-token: write
+       contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          lfs: false
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: |
+          npm run build
+          npm run export
+        env:
+          NODE_ENV: production
+          
+      - name: Configure Tenant ID in config files
+        run: |
+          echo "Configuration files use template placeholders that get replaced by configure-app.ps1"
+          echo "Tenant ID will be configured during post-deployment setup"
+          echo "Current trigger: ${{ github.event_name }}"
+          echo "Environment: ${{ inputs.environment || 'production' }}"
+        shell: bash
+        
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+        
+      - name: Get Id Token
+        uses: actions/github-script@v7
+        id: idtoken
+        with:
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
+           
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "upload"
+          ###### Repository/Build Configurations ######
+          app_location: "/"
+          api_location: "api"
+          output_location: "out"
+          github_id_token: ${{ steps.idtoken.outputs.result }}
+          ###### End of Repository/Build Configurations ######
+          
+      - name: Deployment Summary
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "📍 Static Web App URL: ${{ steps.builddeploy.outputs.static_web_app_url }}"
+          echo "🔧 Next step: Run configure-app.ps1 to set up Azure AD integration"
+          echo "📖 See DEPLOYMENT_GUIDE.md for detailed instructions"
+
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "close"
+          app_location: "/"
