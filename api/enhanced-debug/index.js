@@ -31,6 +31,7 @@ module.exports = async function (context, req) {
         // Check user's delegated token
         const userToken = req.headers['x-ms-token-aad-access-token'];
         const authHeader = req.headers['authorization'];
+        const authToken = req.headers['x-ms-auth-token'];
         const allHeaders = Object.keys(req.headers).filter(h => h.startsWith('x-ms')).reduce((acc, key) => {
             acc[key] = req.headers[key] ? 'Present' : 'Not present';
             return acc;
@@ -39,11 +40,31 @@ module.exports = async function (context, req) {
         let tokenInfo = {
             userToken: userToken ? 'Present' : 'Not present',
             authHeader: authHeader ? 'Present' : 'Not present',
+            authToken: authToken ? 'Present' : 'Not present',
             msHeaders: allHeaders
         };
         let tokenScopes = 'No scopes found';
         let meApiTest = 'Not tested';
         let usersApiTest = 'Not tested';
+        
+        // Try to decode the x-ms-auth-token to see what it contains
+        if (authToken) {
+            try {
+                const tokenParts = authToken.split('.');
+                if (tokenParts.length === 3) {
+                    const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+                    tokenInfo.authTokenInfo = {
+                        audience: payload.aud,
+                        issuer: payload.iss,
+                        scopes: payload.scp || payload.scope || payload.roles || 'No scopes found',
+                        appId: payload.appid,
+                        expires: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'Unknown'
+                    };
+                }
+            } catch (error) {
+                tokenInfo.authTokenDecodeError = error.message;
+            }
+        }
         
         if (userToken) {
             tokenInfo.status = 'User token present';
@@ -97,6 +118,49 @@ module.exports = async function (context, req) {
                 }
             } catch (error) {
                 tokenScopes = `Error decoding token: ${error.message}`;
+            }
+        } else if (authToken) {
+            // Try using the x-ms-auth-token as a fallback
+            tokenInfo.status = 'Trying x-ms-auth-token as fallback';
+            
+            // Test calling /me endpoint with auth token
+            try {
+                const meResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (meResponse.ok) {
+                    const meData = await meResponse.json();
+                    meApiTest = `Success with auth token - Got user: ${meData.displayName} (${meData.userPrincipalName})`;
+                } else {
+                    const errorText = await meResponse.text();
+                    meApiTest = `Failed with auth token - HTTP ${meResponse.status}: ${errorText}`;
+                }
+            } catch (error) {
+                meApiTest = `Error with auth token: ${error.message}`;
+            }
+            
+            // Test calling /users endpoint with auth token
+            try {
+                const usersResponse = await fetch('https://graph.microsoft.com/v1.0/users?$top=5&$select=displayName,userPrincipalName', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (usersResponse.ok) {
+                    const usersData = await usersResponse.json();
+                    usersApiTest = `Success with auth token - Found ${usersData.value.length} users`;
+                } else {
+                    const errorText = await usersResponse.text();
+                    usersApiTest = `Failed with auth token - HTTP ${usersResponse.status}: ${errorText}`;
+                }
+            } catch (error) {
+                usersApiTest = `Error with auth token: ${error.message}`;
             }
         }
 
