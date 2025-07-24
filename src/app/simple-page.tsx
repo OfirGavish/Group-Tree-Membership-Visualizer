@@ -656,15 +656,39 @@ export default function SimpleHomePage() {
             <p className="text-gray-600 mb-6">
               Explore Entra ID group memberships and hierarchies with interactive visualizations
             </p>
+            
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+            
             <button
               onClick={async () => {
                 try {
                   setAuthLoading(true)
-                  await authService.signIn()
-                  await checkAuthStatus()
+                  setError(null)
+                  const account = await authService.signIn()
+                  console.log('Sign in successful, account:', account)
+                  
+                  // Force a fresh auth check
+                  const user = await authService.getCurrentUser()
+                  if (user) {
+                    console.log('User authenticated:', user)
+                    setIsAuthenticated(true)
+                    setCurrentUser(user)
+                    // Load data after successful authentication
+                    await loadUsers()
+                    await loadGroups()
+                    await loadDevices()
+                  } else {
+                    console.error('No user found after sign in')
+                    setError('Authentication succeeded but user info not available. Please try refreshing.')
+                  }
                 } catch (error) {
                   console.error('Sign in failed:', error)
-                  setError('Sign in failed. Please try again.')
+                  const errorMessage = error instanceof Error ? error.message : 'Please try again.'
+                  setError(`Sign in failed: ${errorMessage}`)
                 } finally {
                   setAuthLoading(false)
                 }
@@ -687,10 +711,10 @@ export default function SimpleHomePage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-pink-400/20 rounded-full blur-3xl animate-float-delayed"></div>
-        <div className="absolute top-1/2 right-1/2 w-48 h-48 bg-indigo-400/25 rounded-full blur-2xl animate-pulse delay-3000"></div>
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-400/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-3/4 right-1/4 w-40 h-40 bg-purple-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-28 h-28 bg-pink-400/20 rounded-full blur-3xl animate-float-delayed"></div>
+        <div className="absolute top-1/2 right-1/2 w-24 h-24 bg-indigo-400/25 rounded-full blur-2xl animate-pulse delay-3000"></div>
         <div className="absolute top-1/6 right-1/3 w-40 h-40 bg-teal-400/15 rounded-full blur-2xl animate-bounce"></div>
         <div className="absolute bottom-1/3 right-1/6 w-56 h-56 bg-cyan-400/20 rounded-full blur-3xl animate-float"></div>
       </div>
