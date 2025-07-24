@@ -16,9 +16,15 @@ class MsalAuthService {
     try {
       await this.msalInstance.initialize();
       this.initialized = true;
-      console.log('MSAL initialized successfully');
+      console.log('[MSAL] Initialized successfully');
+      
+      // Handle redirect response if any
+      const response = await this.msalInstance.handleRedirectPromise();
+      if (response) {
+        console.log('[MSAL] Redirect response received:', response.account?.username);
+      }
     } catch (error) {
-      console.error('Failed to initialize MSAL:', error);
+      console.error('[MSAL] Failed to initialize:', error);
       throw error;
     }
   }
@@ -27,11 +33,12 @@ class MsalAuthService {
     await this.initialize();
 
     try {
+      console.log('[MSAL] Starting sign-in process...');
       const response = await this.msalInstance.loginPopup(loginRequest);
-      console.log('Sign-in successful:', response.account?.username);
+      console.log('[MSAL] Sign-in successful:', response.account?.username);
       return response.account;
     } catch (error) {
-      console.error('Sign-in failed:', error);
+      console.error('[MSAL] Sign-in failed:', error);
       throw error;
     }
   }
@@ -40,68 +47,94 @@ class MsalAuthService {
     await this.initialize();
 
     try {
-      await this.msalInstance.logoutPopup();
-      console.log('Sign-out successful');
+      const account = this.msalInstance.getActiveAccount() || this.msalInstance.getAllAccounts()[0];
+      if (account) {
+        await this.msalInstance.logoutPopup({
+          account: account,
+          postLogoutRedirectUri: msalConfig.auth.postLogoutRedirectUri
+        });
+      }
+      console.log('[MSAL] Sign-out successful');
     } catch (error) {
-      console.error('Sign-out failed:', error);
+      console.error('[MSAL] Sign-out failed:', error);
       throw error;
     }
   }
 
-  async getAccount(): Promise<AccountInfo | null> {
+  async getCurrentUser(): Promise<AccountInfo | null> {
     await this.initialize();
-
-    const accounts = this.msalInstance.getAllAccounts();
-    return accounts.length > 0 ? accounts[0] : null;
-  }
-
-  async getAccessToken(): Promise<string | null> {
-    await this.initialize();
-
-    const account = await this.getAccount();
-    if (!account) {
-      console.log('No account found, user needs to sign in');
-      return null;
+    
+    const account = this.msalInstance.getActiveAccount();
+    if (account) {
+      return account;
     }
 
-    const silentRequest: SilentRequest = {
-      scopes: graphScopes,
-      account: account
-    };
+    // If no active account, check if we have any accounts
+    const accounts = this.msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      this.msalInstance.setActiveAccount(accounts[0]);
+      return accounts[0];
+    }
+
+    return null;
+  }
+
+  async getAccessToken(): Promise<string> {
+    await this.initialize();
+
+    const account = await this.getCurrentUser();
+    if (!account) {
+      throw new Error('No account found. Please sign in.');
+    }
 
     try {
-      const response: AuthenticationResult = await this.msalInstance.acquireTokenSilent(silentRequest);
-      console.log('Access token acquired silently');
+      // Try silent token acquisition first
+      const silentRequest: SilentRequest = {
+        scopes: graphScopes,
+        account: account,
+      };
+
+      const response = await this.msalInstance.acquireTokenSilent(silentRequest);
+      console.log('[MSAL] Token acquired silently');
       return response.accessToken;
     } catch (error) {
-      console.warn('Silent token acquisition failed, trying interactive:', error);
+      console.warn('[MSAL] Silent token acquisition failed, trying interactive:', error);
 
       try {
+        // Fall back to interactive token acquisition
         const response = await this.msalInstance.acquireTokenPopup({
           scopes: graphScopes,
-          account: account
+          account: account,
         });
-        console.log('Access token acquired interactively');
+        console.log('[MSAL] Token acquired interactively');
         return response.accessToken;
       } catch (interactiveError) {
-        console.error('Interactive token acquisition failed:', interactiveError);
-        throw interactiveError;
+        console.error('[MSAL] Interactive token acquisition failed:', interactiveError);
+        throw new Error('Failed to acquire access token. Please sign in again.');
       }
     }
   }
 
+  async isSignedIn(): Promise<boolean> {
+    try {
+      const user = await this.getCurrentUser();
+      return user !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  // Legacy compatibility methods
+  async getAccount(): Promise<AccountInfo | null> {
+    return await this.getCurrentUser();
+  }
+
   async isAuthenticated(): Promise<boolean> {
-    await this.initialize();
-    const account = await this.getAccount();
-    return account !== null;
+    return await this.isSignedIn();
   }
 
   async getUserInfo(): Promise<AccountInfo | null> {
-    return await this.getAccount();
-  }
-
-  async isSignedIn(): Promise<boolean> {
-    return await this.isAuthenticated();
+    return await this.getCurrentUser();
   }
 
   getActiveAccount(): AccountInfo | null {
@@ -110,47 +143,14 @@ class MsalAuthService {
     return accounts.length > 0 ? accounts[0] : null;
   }
 
-  /**
-   * Get current user info (compatibility method)
-   */
-  async getCurrentUser() {
-    try {
-      const account = await this.getAccount();
-      if (!account) {
-        return null;
-      }
-
-      // Return user info from the account
-      return {
-        userPrincipalName: account.username,
-        displayName: account.name || account.username,
-        givenName: account.idTokenClaims?.given_name || '',
-        surname: account.idTokenClaims?.family_name || '',
-        id: account.localAccountId,
-        mail: account.username
-      };
-    } catch (error) {
-      console.error('Error getting current user:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get login URL (for MSAL this is handled by redirect/popup)
-   */
   getLoginUrl(): string {
-    // For MSAL, we don't use URLs but this method is for compatibility
     return '#';
   }
 
-  /**
-   * Get logout URL (for MSAL this is handled by redirect/popup)
-   */
   getLogoutUrl(): string {
-    // For MSAL, we don't use URLs but this method is for compatibility  
     return '#';
   }
 }
 
-// Create a singleton instance
+// Export singleton instance
 export const authService = new MsalAuthService();

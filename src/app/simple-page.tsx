@@ -711,12 +711,12 @@ export default function SimpleHomePage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-8 h-8 bg-blue-400/20 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute top-3/4 right-1/4 w-10 h-10 bg-purple-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-6 h-6 bg-pink-400/20 rounded-full blur-3xl animate-float-delayed"></div>
-        <div className="absolute top-1/2 right-1/2 w-4 h-4 bg-indigo-400/25 rounded-full blur-2xl animate-pulse delay-3000"></div>
-        <div className="absolute top-1/6 right-1/3 w-16 h-16 bg-teal-400/15 rounded-full blur-2xl animate-bounce"></div>
-        <div className="absolute bottom-1/3 right-1/6 w-20 h-20 bg-cyan-400/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-400/20 rounded-full blur-2xl animate-float"></div>
+        <div className="absolute top-3/4 right-1/4 w-4 h-4 bg-purple-400/15 rounded-full blur-2xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-pink-400/20 rounded-full blur-xl animate-float-delayed"></div>
+        <div className="absolute top-1/2 right-1/2 w-1 h-1 bg-indigo-400/25 rounded-full blur-sm animate-pulse delay-3000"></div>
+        <div className="absolute top-1/6 right-1/3 w-6 h-6 bg-teal-400/15 rounded-full blur-xl animate-bounce"></div>
+        <div className="absolute bottom-1/3 right-1/6 w-8 h-8 bg-cyan-400/20 rounded-full blur-2xl animate-float"></div>
       </div>
 
       {/* Header */}
