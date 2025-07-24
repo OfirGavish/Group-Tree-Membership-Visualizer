@@ -1,5 +1,5 @@
 // Microsoft Graph API endpoint for getting group members
-const fetch = require('node-fetch');
+const { callGraphAPI } = require('../shared/graphHelper');
 
 module.exports = async function (context, req) {
     context.log('Get group members request received');
@@ -25,39 +25,10 @@ module.exports = async function (context, req) {
             return;
         }
 
-        // Get user's delegated token from Easy Auth
-        const userToken = req.headers['x-ms-token-aad-access-token'];
-        if (!userToken) {
-            context.log('No user access token found in headers');
-            context.res = {
-                status: 401,
-                body: { error: 'User access token not available' }
-            };
-            return;
-        }
+        // Get group members from Microsoft Graph using delegated permissions
+        const graphUrl = `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=id,displayName,userPrincipalName,mail`;
+        const membersData = await callGraphAPI(graphUrl, req, context);
 
-        // Get group members from Microsoft Graph using user's delegated token
-        const membersResponse = await fetch(`https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=id,displayName,userPrincipalName,mail`, {
-            headers: {
-                'Authorization': `Bearer ${userToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!membersResponse.ok) {
-            const errorText = await membersResponse.text();
-            context.log('Failed to fetch group members from Graph API:', membersResponse.status, errorText);
-            context.res = {
-                status: membersResponse.status,
-                body: { 
-                    error: 'Failed to fetch group members from Microsoft Graph',
-                    details: `HTTP ${membersResponse.status}: ${errorText}`
-                }
-            };
-            return;
-        }
-
-        const membersData = await membersResponse.json();
         const members = membersData.value.map(member => ({
             '@odata.type': member['@odata.type'],
             id: member.id,

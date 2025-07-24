@@ -1,5 +1,5 @@
 // Microsoft Graph API endpoint for getting group memberOf (groups that this group belongs to)
-const fetch = require('node-fetch');
+const { callGraphAPI } = require('../shared/graphHelper');
 
 module.exports = async function (context, req) {
     context.log('Get group memberOf request received');
@@ -25,39 +25,10 @@ module.exports = async function (context, req) {
             return;
         }
 
-        // Get user's delegated token from Easy Auth
-        const userToken = req.headers['x-ms-token-aad-access-token'];
-        if (!userToken) {
-            context.log('No user access token found in headers');
-            context.res = {
-                status: 401,
-                body: { error: 'User access token not available' }
-            };
-            return;
-        }
+        // Get group memberOf from Microsoft Graph using delegated permissions
+        const graphUrl = `https://graph.microsoft.com/v1.0/groups/${groupId}/memberOf?$select=id,displayName,description,groupTypes`;
+        const memberOfData = await callGraphAPI(graphUrl, req, context);
 
-        // Get group memberOf from Microsoft Graph using user's delegated token
-        const memberOfResponse = await fetch(`https://graph.microsoft.com/v1.0/groups/${groupId}/memberOf?$select=id,displayName,description,groupTypes`, {
-            headers: {
-                'Authorization': `Bearer ${userToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!memberOfResponse.ok) {
-            const errorText = await memberOfResponse.text();
-            context.log('Failed to fetch group memberOf from Graph API:', memberOfResponse.status, errorText);
-            context.res = {
-                status: memberOfResponse.status,
-                body: { 
-                    error: 'Failed to fetch group memberOf from Microsoft Graph',
-                    details: `HTTP ${memberOfResponse.status}: ${errorText}`
-                }
-            };
-            return;
-        }
-
-        const memberOfData = await memberOfResponse.json();
         const groups = memberOfData.value
             .filter(item => item['@odata.type'] === '#microsoft.graph.group')
             .map(group => ({

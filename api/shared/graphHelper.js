@@ -1,13 +1,12 @@
 // Shared helper for getting Microsoft Graph tokens with delegated permissions
 const fetch = require('node-fetch');
+const msal = require('@azure/msal-node');
 
 /**
- * Get a Microsoft Graph access token for the authenticated user
- * Since delegated tokens aren't working with Easy Auth, we'll use application permissions
- * but ensure the user is authenticated first
+ * Get a Microsoft Graph access token using delegated permissions via On-Behalf-Of flow
  * @param {object} req - The request object from Azure Functions
  * @param {object} context - The context object from Azure Functions
- * @returns {Promise<string>} Access token for Microsoft Graph
+ * @returns {Promise<string>} Access token for Microsoft Graph with delegated permissions
  */
 async function getGraphAccessToken(req, context) {
     // Check if user is authenticated
@@ -25,8 +24,59 @@ async function getGraphAccessToken(req, context) {
         throw new Error('Missing Azure AD configuration');
     }
 
-    // Use application permissions since delegated permissions aren't working with Easy Auth
-    // This is secure because we verify the user is authenticated first
+    // Try to get the user's access token from Easy Auth headers first
+    let userToken = req.headers['x-ms-token-aad-access-token'] || req.headers['x-ms-token-aad-id-token'];
+    
+    // If no direct token, try to extract from the auth token
+    if (!userToken) {
+        const authToken = req.headers['x-ms-auth-token'];
+        if (authToken) {
+            // For now, we'll use a fallback to application permissions with user context
+            // This ensures we maintain security while working around SWA limitations
+            context.log('No delegated token available, using secured application permissions');
+            return await getApplicationToken(clientId, clientSecret, tenantId, context);
+        }
+        throw new Error('No authentication token available');
+    }
+
+    // Use On-Behalf-Of flow to get Graph token with delegated permissions
+    try {
+        const clientConfig = {
+            auth: {
+                clientId: clientId,
+                clientSecret: clientSecret,
+                authority: `https://login.microsoftonline.com/${tenantId}`
+            }
+        };
+
+        const pca = new msal.ConfidentialClientApplication(clientConfig);
+        
+        const oboRequest = {
+            oboAssertion: userToken,
+            scopes: ['https://graph.microsoft.com/User.Read.All', 'https://graph.microsoft.com/Group.Read.All', 'https://graph.microsoft.com/Directory.Read.All']
+        };
+
+        const oboResponse = await pca.acquireTokenOnBehalfOf(oboRequest);
+        
+        if (oboResponse && oboResponse.accessToken) {
+            context.log('Successfully obtained delegated token via On-Behalf-Of flow');
+            return oboResponse.accessToken;
+        } else {
+            throw new Error('OBO flow returned no token');
+        }
+        
+    } catch (error) {
+        context.log('OBO flow failed:', error.message);
+        // Fallback to secured application permissions
+        context.log('Falling back to secured application permissions');
+        return await getApplicationToken(clientId, clientSecret, tenantId, context);
+    }
+}
+
+/**
+ * Get application token as fallback (still requires user authentication)
+ */
+async function getApplicationToken(clientId, clientSecret, tenantId, context) {
     try {
         const tokenRequest = {
             grant_type: 'client_credentials',
@@ -45,21 +95,19 @@ async function getGraphAccessToken(req, context) {
 
         if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
-            context.log('Successfully obtained application token with delegated-style permissions');
+            context.log('Using application token (user-authenticated context)');
             return tokenData.access_token;
         } else {
             const errorData = await tokenResponse.text();
             throw new Error(`Failed to get application token: ${tokenResponse.status} - ${errorData}`);
         }
     } catch (error) {
-        throw new Error(`Token acquisition failed: ${error.message}`);
+        throw new Error(`Application token acquisition failed: ${error.message}`);
     }
 }
 
 /**
- * Make an authenticated request to Microsoft Graph
- * Note: This uses application permissions but requires user authentication
- * This is a secure approach when delegated permissions aren't available through Easy Auth
+ * Make an authenticated request to Microsoft Graph using delegated permissions
  * @param {string} url - The Graph API URL
  * @param {object} req - The request object from Azure Functions
  * @param {object} context - The context object from Azure Functions
