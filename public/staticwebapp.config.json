@@ -18,7 +18,7 @@
     },
     {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
@@ -26,7 +26,6 @@
     "exclude": ["/.auth/*", "/api/*"]
   },
   "auth": {
-    "rolesSource": "/api/getRolesForUsers",
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {

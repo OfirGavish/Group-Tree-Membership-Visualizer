@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { StaticWebAppAuthService } from '@/lib/static-web-app-auth'
+import { authService } from '@/lib/msal-auth-service'
 import { ApiGraphService } from '@/lib/api-graph-service'
 import { CacheService } from '@/lib/cache-service'
 import { User, Group, TreeNode, TreeData, GroupMember, Device } from '@/types'
@@ -29,8 +29,6 @@ export default function SimpleHomePage() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [searchType, setSearchType] = useState<'user' | 'group' | 'device'>('user')
   const [cacheStats, setCacheStats] = useState({ totalItems: 0, totalSize: 0 })
-
-  const authService = new StaticWebAppAuthService()
 
   // Cache management functions
   const updateCacheStats = () => {
@@ -658,14 +656,26 @@ export default function SimpleHomePage() {
             <p className="text-gray-600 mb-6">
               Explore Entra ID group memberships and hierarchies with interactive visualizations
             </p>
-            <a
-              href={authService.getLoginUrl()}
-              className="w-full inline-block bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
+            <button
+              onClick={async () => {
+                try {
+                  setAuthLoading(true)
+                  await authService.signIn()
+                  await checkAuthStatus()
+                } catch (error) {
+                  console.error('Sign in failed:', error)
+                  setError('Sign in failed. Please try again.')
+                } finally {
+                  setAuthLoading(false)
+                }
+              }}
+              disabled={authLoading}
+              className="w-full inline-block bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
             >
-              Sign in with Microsoft
-            </a>
+              {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
+            </button>
             <p className="text-xs text-gray-500 mt-4">
-              Using Azure Static Web Apps built-in authentication
+              Using MSAL.js with delegated permissions
             </p>
           </div>
         </div>
@@ -710,12 +720,28 @@ export default function SimpleHomePage() {
                   {currentUser.displayName}
                 </span>
               )}
-              <a
-                href={authService.getLogoutUrl()}
+              <button
+                onClick={async () => {
+                  try {
+                    await authService.signOut()
+                    setIsAuthenticated(false)
+                    setCurrentUser(null)
+                    setUsers([])
+                    setGroups([])
+                    setDevices([])
+                    setSelectedUser(null)
+                    setSelectedDevice(null)
+                    setTreeData({ nodes: [], links: [] })
+                    setSelectedNode(null)
+                    setSelectedGroup(null)
+                  } catch (error) {
+                    console.error('Sign out failed:', error)
+                  }
+                }}
                 className="text-sm text-white/80 hover:text-white px-3 py-1 rounded-md hover:bg-white/10 transition-colors"
               >
                 Sign out
-              </a>
+              </button>
             </div>
           </div>
         </div>

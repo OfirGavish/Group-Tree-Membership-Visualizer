@@ -21,6 +21,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@azure/msal-browser": "^3.28.1",
+    "@azure/msal-react": "^2.0.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/d3": "^7.4.3",

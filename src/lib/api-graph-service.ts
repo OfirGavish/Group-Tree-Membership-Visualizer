@@ -1,8 +1,24 @@
 import { User, Group, GroupMember, TreeNode, Device } from '@/types'
 import { CacheService } from './cache-service'
+import { authService } from './msal-auth-service'
 
 export class ApiGraphService {
   private baseUrl = ''
+
+  /**
+   * Get authorization headers with delegated access token
+   */
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    const accessToken = await authService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('No access token available. Please sign in.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'X-Delegated-Access-Token': accessToken // Pass the delegated token to the API
+    };
+  }
 
   async getAllUsers(): Promise<User[]> {
     try {
@@ -13,8 +29,11 @@ export class ApiGraphService {
         return cached
       }
 
-      // Fetch from API
-      const response = await fetch('/api/getUsers')
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
+      const response = await fetch('/api/getUsers', { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch users: ${response.status}`)
       }
@@ -45,9 +64,12 @@ export class ApiGraphService {
         }
       }
 
-      // Fetch from API
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
       const url = search ? `/api/getGroups?search=${encodeURIComponent(search)}` : '/api/getGroups'
-      const response = await fetch(url)
+      const response = await fetch(url, { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch groups: ${response.status}`)
       }
@@ -75,8 +97,11 @@ export class ApiGraphService {
         return cached
       }
 
-      // Fetch from API
-      const response = await fetch(`/api/getUserGroups?userId=${encodeURIComponent(userId)}`)
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
+      const response = await fetch(`/api/getUserGroups?userId=${encodeURIComponent(userId)}`, { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch user groups: ${response.status}`)
       }
@@ -102,8 +127,11 @@ export class ApiGraphService {
         return cached
       }
 
-      // Fetch from API
-      const response = await fetch(`/api/getGroupMembers?groupId=${encodeURIComponent(groupId)}`)
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
+      const response = await fetch(`/api/getGroupMembers?groupId=${encodeURIComponent(groupId)}`, { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch group members: ${response.status}`)
       }
@@ -134,9 +162,12 @@ export class ApiGraphService {
         }
       }
 
-      // Fetch from API
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
       const url = search ? `/api/getDevices?search=${encodeURIComponent(search)}` : '/api/getDevices'
-      const response = await fetch(url)
+      const response = await fetch(url, { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch devices: ${response.status}`)
       }
@@ -164,8 +195,11 @@ export class ApiGraphService {
         return cached
       }
 
-      // Fetch from API
-      const response = await fetch(`/api/getDeviceGroups?deviceId=${encodeURIComponent(deviceId)}`)
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
+      const response = await fetch(`/api/getDeviceGroups?deviceId=${encodeURIComponent(deviceId)}`, { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch device groups: ${response.status}`)
       }
@@ -191,8 +225,11 @@ export class ApiGraphService {
         return cached
       }
 
-      // Fetch from API
-      const response = await fetch(`/api/getGroupMemberOf?groupId=${encodeURIComponent(groupId)}`)
+      // Get delegated token headers
+      const headers = await this.getAuthHeaders();
+
+      // Fetch from API with delegated token
+      const response = await fetch(`/api/getGroupMemberOf?groupId=${encodeURIComponent(groupId)}`, { headers })
       if (!response.ok) {
         throw new Error(`Failed to fetch group memberOf: ${response.status}`)
       }

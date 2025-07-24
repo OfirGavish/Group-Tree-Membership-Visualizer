@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const msal = require('@azure/msal-node');
 
 /**
- * Get a Microsoft Graph access token using delegated permissions via On-Behalf-Of flow
+ * Get a Microsoft Graph access token using delegated permissions
  * @param {object} req - The request object from Azure Functions
  * @param {object} context - The context object from Azure Functions
  * @returns {Promise<string>} Access token for Microsoft Graph with delegated permissions
@@ -15,7 +15,14 @@ async function getGraphAccessToken(req, context) {
         throw new Error('User not authenticated');
     }
 
-    // Environment variables
+    // First, check for client-side delegated token
+    const delegatedToken = req.headers['x-delegated-access-token'];
+    if (delegatedToken) {
+        context.log('Using client-side delegated access token');
+        return delegatedToken;
+    }
+
+    // Environment variables for fallback
     const clientId = process.env.AZURE_CLIENT_ID;
     const clientSecret = process.env.AZURE_CLIENT_SECRET;
     const tenantId = process.env.AZURE_TENANT_ID;
@@ -24,17 +31,16 @@ async function getGraphAccessToken(req, context) {
         throw new Error('Missing Azure AD configuration');
     }
 
-    // Try to get the user's access token from Easy Auth headers first
+    // Try to get the user's access token from Easy Auth headers
     let userToken = req.headers['x-ms-token-aad-access-token'] || req.headers['x-ms-token-aad-id-token'];
     
     // If no direct token, try to extract from the auth token
     if (!userToken) {
         const authToken = req.headers['x-ms-auth-token'];
         if (authToken) {
-            // For now, we'll use a fallback to application permissions with user context
-            // This ensures we maintain security while working around SWA limitations
-            context.log('No delegated token available, using secured application permissions');
-            return await getApplicationToken(clientId, clientSecret, tenantId, context);
+            // Log warning about fallback
+            context.log.warn('No delegated token available from client or Easy Auth. This should not happen with MSAL.js implementation.');
+            throw new Error('No delegated token available - please ensure user is signed in via MSAL.js');
         }
         throw new Error('No authentication token available');
     }
@@ -66,43 +72,9 @@ async function getGraphAccessToken(req, context) {
         }
         
     } catch (error) {
-        context.log('OBO flow failed:', error.message);
-        // Fallback to secured application permissions
-        context.log('Falling back to secured application permissions');
-        return await getApplicationToken(clientId, clientSecret, tenantId, context);
-    }
-}
-
-/**
- * Get application token as fallback (still requires user authentication)
- */
-async function getApplicationToken(clientId, clientSecret, tenantId, context) {
-    try {
-        const tokenRequest = {
-            grant_type: 'client_credentials',
-            client_id: clientId,
-            client_secret: clientSecret,
-            scope: 'https://graph.microsoft.com/.default'
-        };
-
-        const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams(tokenRequest)
-        });
-
-        if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            context.log('Using application token (user-authenticated context)');
-            return tokenData.access_token;
-        } else {
-            const errorData = await tokenResponse.text();
-            throw new Error(`Failed to get application token: ${tokenResponse.status} - ${errorData}`);
-        }
-    } catch (error) {
-        throw new Error(`Application token acquisition failed: ${error.message}`);
+        context.log.error('OBO flow failed:', error.message);
+        // No fallback - we require delegated permissions only
+        throw new Error(`Delegated token acquisition failed: ${error.message}. Please ensure user is signed in with MSAL.js and has proper permissions.`);
     }
 }
 
