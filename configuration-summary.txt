@@ -1,0 +1,20 @@
+Group Tree Membership Visualizer Configuration
+================================================
+
+Generated: 07/24/2025 19:04:38
+
+Azure AD Application:
+- Name: Group Tree Membership Visualizer
+- App ID: 4c4814af-7b2a-4a96-bed9-59c394641f29
+- Tenant ID: df5c1b3a-b49f-406f-b067-a4a6fae72629
+
+Static Web App:
+- Name: group-tree-dev
+- Resource Group: rg-group-tree-dev
+- Application URL: https://red-sky-0da39dc03.1.azurestaticapps.net
+- Setup Guide: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/SETUP_GUIDE.md
+- Troubleshooting: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/TROUBLESHOOTING.md
+
+Manual Configuration Commands:
+az staticwebapp appsettings set --name "group-tree-dev" --resource-group "rg-group-tree-dev" --setting-names AZURE_CLIENT_ID="4c4814af-7b2a-4a96-bed9-59c394641f29" AZURE_CLIENT_SECRET="your-secret" AZURE_TENANT_ID="df5c1b3a-b49f-406f-b067-a4a6fae72629"
+
