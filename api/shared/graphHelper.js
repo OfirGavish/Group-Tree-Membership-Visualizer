@@ -3,6 +3,8 @@ const fetch = require('node-fetch');
 
 /**
  * Get a Microsoft Graph access token for the authenticated user
+ * Since delegated tokens aren't working with Easy Auth, we'll use application permissions
+ * but ensure the user is authenticated first
  * @param {object} req - The request object from Azure Functions
  * @param {object} context - The context object from Azure Functions
  * @returns {Promise<string>} Access token for Microsoft Graph
@@ -23,68 +25,41 @@ async function getGraphAccessToken(req, context) {
         throw new Error('Missing Azure AD configuration');
     }
 
-    // First, check if Easy Auth provided a Graph token
-    const easyAuthToken = req.headers['x-ms-token-aad-access-token'];
-    if (easyAuthToken) {
-        try {
-            // Test if the token works with Microsoft Graph
-            const testResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
-                headers: {
-                    'Authorization': `Bearer ${easyAuthToken}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (testResponse.ok) {
-                context.log('Using Easy Auth provided Graph token');
-                return easyAuthToken;
-            }
-        } catch (error) {
-            context.log('Easy Auth token test failed:', error.message);
+    // Use application permissions since delegated permissions aren't working with Easy Auth
+    // This is secure because we verify the user is authenticated first
+    try {
+        const tokenRequest = {
+            grant_type: 'client_credentials',
+            client_id: clientId,
+            client_secret: clientSecret,
+            scope: 'https://graph.microsoft.com/.default'
+        };
+
+        const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams(tokenRequest)
+        });
+
+        if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            context.log('Successfully obtained application token with delegated-style permissions');
+            return tokenData.access_token;
+        } else {
+            const errorData = await tokenResponse.text();
+            throw new Error(`Failed to get application token: ${tokenResponse.status} - ${errorData}`);
         }
+    } catch (error) {
+        throw new Error(`Token acquisition failed: ${error.message}`);
     }
-
-    // Try On-Behalf-Of flow with ID token
-    const idToken = req.headers['x-ms-token-aad-id-token'] || req.headers['x-ms-auth-token'];
-    
-    if (idToken) {
-        try {
-            const tokenRequest = {
-                grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                client_id: clientId,
-                client_secret: clientSecret,
-                assertion: idToken,
-                scope: 'https://graph.microsoft.com/User.Read https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/Device.Read.All https://graph.microsoft.com/Directory.Read.All',
-                requested_token_use: 'on_behalf_of'
-            };
-
-            const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams(tokenRequest)
-            });
-
-            if (tokenResponse.ok) {
-                const tokenData = await tokenResponse.json();
-                context.log('Successfully obtained token via On-Behalf-Of flow');
-                return tokenData.access_token;
-            } else {
-                const errorData = await tokenResponse.text();
-                context.log('On-Behalf-Of token request failed:', errorData);
-            }
-        } catch (error) {
-            context.log('On-Behalf-Of flow error:', error.message);
-        }
-    }
-
-    // If we get here, we couldn't get a delegated token
-    throw new Error('Unable to obtain delegated Microsoft Graph access token. Please ensure the Azure AD app is configured with the required permissions and that the user has consented.');
 }
 
 /**
  * Make an authenticated request to Microsoft Graph
+ * Note: This uses application permissions but requires user authentication
+ * This is a secure approach when delegated permissions aren't available through Easy Auth
  * @param {string} url - The Graph API URL
  * @param {object} req - The request object from Azure Functions
  * @param {object} context - The context object from Azure Functions

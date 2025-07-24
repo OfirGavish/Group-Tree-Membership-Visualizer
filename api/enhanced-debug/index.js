@@ -32,6 +32,7 @@ module.exports = async function (context, req) {
         const userToken = req.headers['x-ms-token-aad-access-token'];
         const authHeader = req.headers['authorization'];
         const authToken = req.headers['x-ms-auth-token'];
+        const idToken = req.headers['x-ms-token-aad-id-token'];
         const allHeaders = Object.keys(req.headers).filter(h => h.startsWith('x-ms')).reduce((acc, key) => {
             acc[key] = req.headers[key] ? 'Present' : 'Not present';
             return acc;
@@ -41,13 +42,14 @@ module.exports = async function (context, req) {
             userToken: userToken ? 'Present' : 'Not present',
             authHeader: authHeader ? 'Present' : 'Not present',
             authToken: authToken ? 'Present' : 'Not present',
+            idToken: idToken ? 'Present' : 'Not present',
             msHeaders: allHeaders
         };
         let tokenScopes = 'No scopes found';
         let meApiTest = 'Not tested';
         let usersApiTest = 'Not tested';
         
-        // Try to decode the x-ms-auth-token to see what it contains
+        // Try to decode ALL available tokens to see what they contain
         if (authToken) {
             try {
                 const tokenParts = authToken.split('.');
@@ -58,11 +60,30 @@ module.exports = async function (context, req) {
                         issuer: payload.iss,
                         scopes: payload.scp || payload.scope || payload.roles || 'No scopes found',
                         appId: payload.appid,
+                        tokenType: payload.idtyp || 'unknown',
                         expires: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'Unknown'
                     };
                 }
             } catch (error) {
                 tokenInfo.authTokenDecodeError = error.message;
+            }
+        }
+        
+        if (idToken) {
+            try {
+                const tokenParts = idToken.split('.');
+                if (tokenParts.length === 3) {
+                    const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+                    tokenInfo.idTokenInfo = {
+                        audience: payload.aud,
+                        issuer: payload.iss,
+                        subject: payload.sub,
+                        tokenType: payload.idtyp || 'unknown',
+                        expires: payload.exp ? new Date(payload.exp * 1000).toISOString() : 'Unknown'
+                    };
+                }
+            } catch (error) {
+                tokenInfo.idTokenDecodeError = error.message;
             }
         }
         
