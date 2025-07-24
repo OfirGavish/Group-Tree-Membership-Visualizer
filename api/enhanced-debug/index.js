@@ -30,13 +30,23 @@ module.exports = async function (context, req) {
 
         // Check user's delegated token
         const userToken = req.headers['x-ms-token-aad-access-token'];
-        let tokenInfo = 'No user token found';
+        const authHeader = req.headers['authorization'];
+        const allHeaders = Object.keys(req.headers).filter(h => h.startsWith('x-ms')).reduce((acc, key) => {
+            acc[key] = req.headers[key] ? 'Present' : 'Not present';
+            return acc;
+        }, {});
+        
+        let tokenInfo = {
+            userToken: userToken ? 'Present' : 'Not present',
+            authHeader: authHeader ? 'Present' : 'Not present',
+            msHeaders: allHeaders
+        };
         let tokenScopes = 'No scopes found';
         let meApiTest = 'Not tested';
         let usersApiTest = 'Not tested';
         
         if (userToken) {
-            tokenInfo = 'User token present';
+            tokenInfo.status = 'User token present';
             
             // Test calling /me endpoint
             try {
