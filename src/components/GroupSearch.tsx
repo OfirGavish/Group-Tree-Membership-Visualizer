@@ -80,20 +80,20 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
                     
                     <div className="relative">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="font-medium text-white group-hover:text-purple-100 transition-colors duration-300 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></span>
-                            {group.displayName}
+                            <span className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0"></span>
+                            <span className="truncate">{group.displayName}</span>
                             {group.isEmpty && (
-                              <span className="px-2 py-1 text-xs bg-gradient-to-r from-red-500/80 to-pink-500/60 text-red-100 rounded-full shadow-lg border border-red-400/30">
+                              <span className="px-2 py-1 text-xs bg-gradient-to-r from-red-500/80 to-pink-500/60 text-red-100 rounded-full shadow-lg border border-red-400/30 flex-shrink-0">
                                 Empty
                               </span>
                             )}
                           </div>
                           {group.description && (
-                            <div className="text-sm text-purple-200/70 group-hover:text-purple-100/80 transition-colors duration-300 truncate ml-4">{group.description}</div>
+                            <div className="text-sm text-purple-200/70 group-hover:text-purple-100/80 transition-colors duration-300 truncate ml-4 mt-1">{group.description}</div>
                           )}
-                          <div className="text-xs text-purple-200/60 group-hover:text-purple-100/70 transition-colors duration-300 ml-4">
+                          <div className="text-xs text-purple-200/60 group-hover:text-purple-100/70 transition-colors duration-300 ml-4 mt-1 font-medium">
                             {group.memberCount} members • {group.groupTypes.join(', ') || 'Standard Group'}
                           </div>
                         </div>

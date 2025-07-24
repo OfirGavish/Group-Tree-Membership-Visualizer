@@ -644,8 +644,10 @@ export default function SimpleHomePage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center relative">
+        {/* Ensure no background elements leak through */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 z-0"></div>
+        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
             <div className="mx-auto w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <svg className="w-2 h-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -711,12 +713,14 @@ export default function SimpleHomePage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-400/20 rounded-full blur-2xl animate-float"></div>
-        <div className="absolute top-3/4 right-1/4 w-2 h-2 bg-purple-400/15 rounded-full blur-xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-pink-400/20 rounded-full blur-sm animate-float-delayed"></div>
-        <div className="absolute top-1/2 right-1/2 w-1 h-1 bg-indigo-400/25 rounded-full blur-sm animate-pulse delay-3000"></div>
-        <div className="absolute top-1/6 right-1/3 w-2 h-2 bg-teal-400/15 rounded-full blur-sm animate-bounce"></div>
-        <div className="absolute bottom-1/3 right-1/6 w-2 h-2 bg-cyan-400/20 rounded-full blur-xl animate-float"></div>
+        <div className="absolute top-1/4 left-1/4 w-6 h-6 bg-blue-400/30 rounded-full blur-xl animate-float"></div>
+        <div className="absolute top-3/4 right-1/4 w-4 h-4 bg-purple-400/25 rounded-full blur-lg animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-pink-400/35 rounded-full blur-md animate-float-delayed"></div>
+        <div className="absolute top-1/2 right-1/2 w-2 h-2 bg-indigo-400/40 rounded-full blur-sm animate-pulse delay-3000"></div>
+        <div className="absolute top-1/6 right-1/3 w-5 h-5 bg-teal-400/25 rounded-full blur-lg animate-bounce"></div>
+        <div className="absolute bottom-1/3 right-1/6 w-4 h-4 bg-cyan-400/30 rounded-full blur-xl animate-float"></div>
+        <div className="absolute top-2/3 left-1/6 w-3 h-3 bg-yellow-400/25 rounded-full blur-md animate-pulse delay-2000"></div>
+        <div className="absolute bottom-1/6 left-2/3 w-2 h-2 bg-emerald-400/35 rounded-full blur-sm animate-float delay-4000"></div>
       </div>
 
       {/* Header */}
