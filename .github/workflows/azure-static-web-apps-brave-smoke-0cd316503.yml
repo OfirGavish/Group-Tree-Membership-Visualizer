@@ -28,8 +28,10 @@ on:
   # Push to specific branches (for your development workflow)
   push:
     branches:
-      - deploy  # Only deploy when pushing to 'deploy' branch
-      - release # Or release branch
+      - develop # Your development branch - deploys to DEV environment
+      - deploy  # Staging branch - deploys to STAGING environment 
+      # Note: main branch is for user deployments via "Deploy to Azure" button
+      # No automatic deployment from main - users deploy it themselves
     paths-ignore:
       - '**.md'  # Ignore documentation changes
       
@@ -58,15 +60,53 @@ jobs:
         with:
           submodules: true
           lfs: false
+      
+      - name: Determine deployment environment and token
+        id: env-config
+        run: |
+          # Determine which environment we're deploying to based on branch and input
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ inputs.environment || 'production' }}"
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            ENV="development"
+          elif [[ "${{ github.ref_name }}" == "deploy" ]]; then
+            ENV="staging"
+          else
+            ENV="production"  # default for any other branch (including main)
+          fi
+          
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "Deploying to environment: $ENV"
+          
+          # Set the appropriate token secret name
+          case $ENV in
+            "development")
+              echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_DEV" >> $GITHUB_OUTPUT
+              ;;
+            "staging")
+              echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING" >> $GITHUB_OUTPUT
+              ;;
+            "production")
+              echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503" >> $GITHUB_OUTPUT
+              ;;
+          esac
+        shell: bash
+        
       - name: Configure Tenant ID in config files
         run: |
           # Get tenant ID from Azure context (this will be available during deployment)
           # For now, we'll use a placeholder that gets replaced by the configuration script
           echo "Configuration files use template placeholders that get replaced by configure-app.ps1"
           echo "Tenant ID will be configured during post-deployment setup"
+          echo "Deploying to: ${{ steps.env-config.outputs.environment }}"
         shell: bash
+        
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
+        
       - name: Get Id Token
         uses: actions/github-script@v6
         id: idtoken
@@ -75,11 +115,12 @@ jobs:
                const coredemo = require('@actions/core')
                return await coredemo.getIDToken()
            result-encoding: string
+           
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503 || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets[steps.env-config.outputs.token_secret] }}
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
@@ -94,9 +135,22 @@ jobs:
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
+      - name: Determine deployment token
+        id: env-config
+        run: |
+          # Use the same logic to determine which token to use for closing PR
+          if [[ "${{ github.base_ref }}" == "develop" ]]; then
+            echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_DEV" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.base_ref }}" == "deploy" ]]; then
+            echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING" >> $GITHUB_OUTPUT
+          else
+            echo "token_secret=AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        
       - name: Close Pull Request
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_SMOKE_0CD316503 || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets[steps.env-config.outputs.token_secret] }}
           action: "close"
