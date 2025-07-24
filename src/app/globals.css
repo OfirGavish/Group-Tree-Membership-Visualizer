@@ -15,11 +15,16 @@
 }
 
 html, body {
+  background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #be185d 100%);
   color: var(--foreground);
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
-  /* Remove the global background - let individual pages control it */
-  background: transparent;
+  overflow-x: hidden;
+}
+
+/* Ensure no pseudo-elements create unwanted backgrounds */
+html::before, html::after, body::before, body::after {
+  display: none !important;
 }
 
 /* Custom animations for floating elements */
