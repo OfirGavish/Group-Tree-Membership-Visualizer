@@ -1,6 +1,12 @@
 # 🌳 Group Tree Membership Visualizer
 
-> **A beautiful, interactive Microsoft Entra ID group membership visualizer with stunning D3.js tree visualization**
+> **A beautiful, interactive Microsoft Entra ID grou4. **Automatic Configuration**: The script handles:
+   - 🔧 **Dynamic Tenant ID**: Automatically detects and configures your Azure tenant
+   - 🔐 **App Registration**: Sets up Single-tenant SPA app registration with delegated permissions only
+   - 🌐 **Redirect URIs**: Configures proper redirect URIs for your Static Web App domain and localhost
+   - ⚙️ **Environment Variables**: Configures NEXT_PUBLIC_AZURE_CLIENT_ID, AZURE_TENANT_ID
+   - 🎯 **MSAL Configuration**: Updates auth-config.ts with your tenant and client ID
+   - 🛡️ **PKCE Security**: Configures Proof Key for Code Exchange for secure SPA authenticationership visualizer with stunning D3.js tree visualization**
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,16 +33,17 @@
 - **📊 Status Indicators**: Device compliance and management status badges
 
 ### 🔐 Security & Authentication
-- **🔒 Microsoft OAuth**: Secure authentication using your organization's Entra ID
+- **🔒 MSAL Authentication**: Modern Microsoft Authentication Library for secure OAuth 2.0 flows
 - **🛡️ Permission-based Access**: Respects your existing directory permissions
-- **🔑 Secure API**: All API calls are authenticated and authorized
+- **🔑 Secure API**: All API calls are authenticated with bearer tokens
 - **🏢 Single Tenant**: Designed for organizational use with proper security boundaries
+- **⚡ Client-side Authentication**: No server-side session management, pure client-side token handling
 
 ### 🚀 Technical Excellence
 - **⚡ Serverless Architecture**: Built on Azure Static Web Apps for automatic scaling
 - **🔄 Smart Caching**: Optimized performance with intelligent client-side caching
-- **📊 Microsoft Graph Integration**: Direct integration with Microsoft Graph API
-- **🏗️ Modern Stack**: Next.js 15, TypeScript, Tailwind CSS, and D3.js
+- **📊 Microsoft Graph Integration**: Direct integration with Microsoft Graph API using MSAL tokens
+- **🏗️ Modern Stack**: Next.js 15, TypeScript, Tailwind CSS, MSAL.js, and D3.js
 
 ## 🎬 Demo
 
@@ -55,7 +62,7 @@
 1. **Click the Deploy to Azure button** above
 2. **Fill in the deployment parameters** (app name, location, etc.)
 3. **Wait for deployment** to complete (2-3 minutes)
-4. **Configure Azure AD** by downloading and running:
+4. **Configure MSAL Authentication** by downloading and running:
    ```powershell
    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
    .\configure-app.ps1 -StaticWebAppName "your-app-name"
@@ -84,16 +91,18 @@
    # The script will automatically:
    # - Install Microsoft Graph PowerShell SDK (modern replacement for deprecated AzureAD module)
    # - Get your tenant ID from Azure context
-   # - Update configuration files with your tenant ID
-   # - Create/update App Registration with delegated permissions
+   # - Create/update App Registration with MSAL configuration
+   # - Configure delegated permissions for Microsoft Graph
+   # - Set up redirect URIs for MSAL authentication
    # - Configure environment variables in your Static Web App
    ```
 
 4. **Automatic Configuration**: The script handles:
    - 🔧 **Dynamic Tenant ID**: Automatically detects and configures your Azure tenant
-   - 🔐 **App Registration**: Sets up delegated permissions for Microsoft Graph
-   - ⚙️ **Environment Variables**: Configures ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET
-   - 🌐 **Configuration Files**: Updates staticwebapp.config.json with your tenant
+   - 🔐 **App Registration**: Sets up MSAL-compatible app registration with delegated permissions
+   - 🌐 **Redirect URIs**: Configures proper redirect URIs for your Static Web App domain
+   - ⚙️ **Environment Variables**: Configures NEXT_PUBLIC_AZURE_CLIENT_ID, AZURE_TENANT_ID
+   - � **MSAL Configuration**: Updates auth-config.ts with your tenant and client ID
 
 5. **Done!** 🎉 Your app is ready at `https://your-app-name.azurestaticapps.net`
 
@@ -145,16 +154,18 @@ graph TB
     SWA --> Frontend[⚛️ Next.js Frontend]
     SWA --> API[🔧 Azure Functions API]
     
+    Frontend --> MSAL[🔐 MSAL.js Authentication]
     Frontend --> Cache[🗄️ Client Cache<br/>localStorage]
     Cache --> Frontend
     
-    SWA --> Auth[🔐 Built-in Authentication]
+    MSAL --> EID[🏢 Entra ID]
     API --> Graph[📊 Microsoft Graph API]
-    
-    Auth --> EID[🏢 Entra ID]
     Graph --> EID
     
     Frontend --> D3[📈 D3.js Visualization]
+    
+    MSAL -.-> API
+    note[Token passed to API calls]
 ```
 
 ### Tech Stack
@@ -164,7 +175,7 @@ graph TB
 | **Frontend** | Next.js 15 + TypeScript | React framework with static generation |
 | **Styling** | Tailwind CSS | Utility-first CSS with custom glass morphism |
 | **Visualization** | D3.js v7 | Interactive tree diagrams and animations |
-| **Authentication** | Azure Static Web Apps | Built-in Microsoft OAuth integration |
+| **Authentication** | MSAL.js | Microsoft Authentication Library for OAuth 2.0 |
 | **API** | Azure Functions | Serverless backend endpoints |
 | **Data Source** | Microsoft Graph | Entra ID users and groups |
 | **Hosting** | Azure Static Web Apps | Global CDN with automatic scaling |
@@ -201,7 +212,28 @@ graph TB
 - **Policy Assignment**: Understand which policies apply to devices through group visualization
 - **Device Access Reviews**: Review device-based group memberships for security
 
-## 🛠️ Development
+## � MSAL Authentication Benefits
+
+### Why MSAL Instead of Built-in Authentication?
+
+| Feature | MSAL.js | Built-in Auth |
+|---------|---------|---------------|
+| **Client-side Tokens** | ✅ Direct access to tokens | ❌ Server-side only |
+| **Token Refresh** | ✅ Automatic refresh | ❌ Manual handling |
+| **Development** | ✅ Works locally | ❌ Requires deployment |
+| **Flexibility** | ✅ Full control | ❌ Limited options |
+| **Performance** | ✅ No server roundtrips | ❌ Server dependency |
+| **Graph API Calls** | ✅ Direct from frontend | ❌ Requires proxy |
+
+### Key MSAL Features
+- **🔄 Automatic Token Refresh**: Seamless user experience with background token renewal
+- **📱 Silent Authentication**: Users stay logged in across sessions
+- **🛡️ PKCE Security**: Industry-standard security for public clients (Single Page Applications)
+- **⚡ Performance**: Direct API calls without server proxy
+- **🏠 Local Development**: Full functionality in development environment
+- **🏢 Single-tenant Security**: Restricted to your organization only for enhanced security
+
+## �🛠️ Development
 
 ### Local Development Setup
 
@@ -211,7 +243,7 @@ git clone https://github.com/OfirGavish/Group-Tree-Membership-Visualizer.git
 cd Group-Tree-Membership-Visualizer
 npm install
 
-# Set up environment variables
+# Set up environment variables for MSAL
 cp .env.example .env.local
 # Edit .env.local with your Azure app registration details
 
@@ -219,13 +251,30 @@ cp .env.example .env.local
 npm run dev
 ```
 
+**MSAL Development Notes:**
+- The app uses MSAL.js for client-side authentication
+- No server-side session management required
+- Tokens are automatically refreshed by MSAL
+- Local development works with your Azure AD tenant
+- Use `localhost:3000` as a redirect URI in your app registration
+
 ### Environment Variables
 
 ```env
-AZURE_CLIENT_ID=your-app-registration-id
-AZURE_CLIENT_SECRET=your-client-secret
+# MSAL Authentication Configuration
+NEXT_PUBLIC_AZURE_CLIENT_ID=your-app-registration-id
 AZURE_TENANT_ID=your-tenant-id
+
+# Optional: For development and API functions
+AZURE_CLIENT_SECRET=your-client-secret-if-needed
 ```
+
+**Environment Variables Explained:**
+- `NEXT_PUBLIC_AZURE_CLIENT_ID`: Your Azure App Registration Client ID (public, used by MSAL.js)
+- `AZURE_TENANT_ID`: Your Azure AD Tenant ID (used for MSAL configuration and API functions)
+
+**Why No Client Secret?**
+MSAL Single Page Applications use PKCE (Proof Key for Code Exchange) for security instead of client secrets. This is more secure for client-side applications and eliminates the need to store secrets in the frontend.
 
 ### Project Structure
 
@@ -233,7 +282,13 @@ AZURE_TENANT_ID=your-tenant-id
 ├── src/
 │   ├── app/                    # Next.js app router pages
 │   ├── components/             # React components
+│   │   ├── AuthProvider.tsx    # MSAL authentication provider
+│   │   ├── LoginButton.tsx     # MSAL login component
+│   │   └── ...                 # Other UI components
 │   ├── lib/                    # Utilities and services
+│   │   ├── auth-config.ts      # MSAL configuration
+│   │   ├── msal-auth-service.ts # MSAL authentication service
+│   │   └── ...                 # Other services
 │   └── types/                  # TypeScript definitions
 ├── api/                        # Azure Functions API
 ├── public/                     # Static assets and configuration
@@ -244,6 +299,8 @@ AZURE_TENANT_ID=your-tenant-id
 
 ### Required Microsoft Graph Permissions
 
+**For MSAL Client-side Authentication (Delegated Permissions Only):**
+
 | Permission | Type | Purpose |
 |------------|------|---------|
 | `User.Read` | Delegated | Basic user profile access |
@@ -252,19 +309,51 @@ AZURE_TENANT_ID=your-tenant-id
 | `Device.Read.All` | Delegated | Read device information based on user's permissions |
 | `Directory.Read.All` | Delegated | Access directory objects based on user's permissions |
 
-**🔐 Delegated vs Application Permissions:**
-- **Delegated Permissions**: Users only see data they have permission to access in your organization
-- **Application Permissions**: Used as fallback for admin operations when needed
-- **User Experience**: Each user sees only what their directory permissions allow
+**🔐 Why Only Delegated Permissions?**
+- **User Context**: MSAL authenticates users with their own credentials
+- **Existing Permissions**: Users see only data they already have access to
+- **Security**: No elevated application-level permissions required
+- **Compliance**: Respects existing organizational access controls
+
+**🏢 App Registration Configuration:**
+- **Supported Account Types**: Single tenant (your organization only)
+- **Platform Type**: Single Page Application (SPA) with PKCE
+- **Redirect URIs**: Your domain + localhost for development
 
 ### Security Features
 
-- ✅ **OAuth 2.0 Authentication** with Microsoft Entra ID
-- ✅ **Token-based API Security** with automatic validation
+- ✅ **MSAL.js Authentication** with Microsoft Entra ID
+- ✅ **OAuth 2.0 + PKCE** for secure client-side authentication
+- ✅ **Bearer Token Security** with automatic token refresh
 - ✅ **Permission-based Access** respecting directory permissions
 - ✅ **HTTPS Only** with secure headers and CSP
 - ✅ **Input Sanitization** and validation on all endpoints
 - ✅ **Rate Limiting** to prevent abuse
+- ✅ **Client-side Token Storage** with secure token caching
+- ✅ **Single-tenant Restriction** for organizational security
+
+## 🔧 App Registration Requirements
+
+### Platform Configuration
+- **Application Type**: Single Page Application (SPA)
+- **Supported Account Types**: Single tenant (your organization only)
+- **Redirect URIs**: 
+  - `https://your-domain.azurestaticapps.net`
+  - `https://your-domain.azurestaticapps.net/`
+  - `http://localhost:3000` (for development)
+  - `https://localhost:3000` (for development)
+
+### Why Single Tenant?
+- **Security**: Only users from your organization can access the app
+- **Compliance**: Easier to meet organizational security requirements  
+- **Control**: Full control over who can authenticate and use the application
+- **Simplicity**: No need to handle multi-tenant scenarios
+
+### Why Single Page Application (SPA)?
+- **PKCE Security**: Uses Proof Key for Code Exchange instead of client secrets
+- **Modern Standard**: Industry best practice for client-side applications
+- **No Secrets**: No need to manage client secrets in the frontend
+- **Token Management**: MSAL.js handles token acquisition and refresh automatically
 
 ## 🌟 Advanced Features
 
@@ -309,16 +398,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 | Issue | Solution |
 |-------|----------|
-| Authentication fails | Verify app registration and permissions |
-| Empty tree display | Check Microsoft Graph API permissions |
-| Performance issues | Review caching configuration and clear cache |
-| Deployment fails | Check Azure CLI authentication |
+| MSAL authentication fails | Verify app registration and redirect URIs |
+| Token refresh errors | Check app registration permissions and tenant configuration |
+| Empty tree display | Verify Microsoft Graph API permissions are granted |
+| Performance issues | Review caching configuration and clear browser cache |
+| Deployment fails | Check Azure CLI authentication and app registration |
+| CORS errors | Ensure redirect URIs include your domain |
 
 For detailed troubleshooting, check the error messages in the browser console.
 
 ## 🙏 Acknowledgments
 
 - **Microsoft Graph Team** - For the excellent Graph API
+- **Microsoft Identity Team** - For the powerful MSAL.js library
 - **D3.js Community** - For the amazing visualization library
 - **Next.js Team** - For the fantastic React framework
 - **Azure Static Web Apps** - For the seamless hosting platform

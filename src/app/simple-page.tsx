@@ -415,16 +415,16 @@ export default function SimpleHomePage() {
           const deviceGroups = await graphService.getDeviceGroups(deviceId)
           console.log('Device groups loaded:', deviceGroups.length)
           
-          // Update tree data to include the device's groups
+          // Update tree data to include the device's groups with path-specific IDs
           const updateTreeData = (nodeToUpdate: TreeNode): TreeNode => {
             if (nodeToUpdate.id === node.id) {
               return {
                 ...nodeToUpdate,
                 children: deviceGroups.map(group => ({
-                  id: `group-${group.id}`,
+                  id: `${node.id}-group-${group.id}`, // Create unique ID based on device path
                   name: group.displayName,
                   type: 'group' as const,
-                  data: group,
+                  data: { ...group, originalId: group.id }, // Store original ID
                   children: []
                 }))
               }
@@ -510,6 +510,20 @@ export default function SimpleHomePage() {
                 data: { ...user, originalId: user.id }, // Store original ID
                 children: undefined
               }
+            } else if (member['@odata.type'].includes('device')) {
+              const device: Device = {
+                id: member.id,
+                displayName: member.displayName,
+                deviceId: member.deviceId || member.id,
+                operatingSystem: member.operatingSystem || 'Unknown',
+              }
+              return {
+                id: `${node.id}-device-${member.id}`, // Create unique ID based on group path
+                name: member.displayName,
+                type: 'device' as const,
+                data: { ...device, originalId: device.id }, // Store original ID
+                children: []
+              }
             } else {
               const group: Group = {
                 id: member.id,
@@ -527,14 +541,35 @@ export default function SimpleHomePage() {
             }
           })
           
+          // Helper function to extract group IDs from the current path
+          const extractGroupIdsFromPath = (nodeId: string): string[] => {
+            // Parse the path-specific ID to extract all group IDs in the current path
+            const parts = nodeId.split('-')
+            const groupIds: string[] = []
+            
+            for (let i = 0; i < parts.length; i++) {
+              if (parts[i] === 'group' && i + 1 < parts.length) {
+                groupIds.push(parts[i + 1])
+              }
+            }
+            
+            return groupIds
+          }
+          
+          // Get the current path's group IDs to avoid showing duplicates
+          const currentPathGroupIds = extractGroupIdsFromPath(node.id)
+          
           // Create new parent nodes for groups this group belongs to with path-specific IDs
-          const parentNodes: TreeNode[] = memberOf.map(parentGroup => ({
-            id: `${node.id}-parent-${parentGroup.id}`, // Create unique ID based on path
-            name: `${parentGroup.displayName} (parent)`,
-            type: 'group',
-            data: { ...parentGroup, originalId: parentGroup.id }, // Store original ID
-            children: []
-          }))
+          // Filter out parents that are already in the current navigation path
+          const parentNodes: TreeNode[] = memberOf
+            .filter(parentGroup => !currentPathGroupIds.includes(parentGroup.id))
+            .map(parentGroup => ({
+              id: `${node.id}-parent-${parentGroup.id}`, // Create unique ID based on path
+              name: `${parentGroup.displayName} (parent)`,
+              type: 'group',
+              data: { ...parentGroup, originalId: parentGroup.id }, // Store original ID
+              children: []
+            }))
           
           // Update the node with new children
           const updateTreeData = (nodes: TreeNode[]): TreeNode[] => {
@@ -608,6 +643,15 @@ export default function SimpleHomePage() {
         mail: member.mail,
       }
       await handleUserSelect(user)
+    } else if (member['@odata.type'].includes('device')) {
+      // Create a device object and select it
+      const device: Device = {
+        id: member.id,
+        displayName: member.displayName,
+        deviceId: member.deviceId || member.id,
+        operatingSystem: member.operatingSystem || 'Unknown',
+      }
+      await handleDeviceSelect(device)
     } else if (member['@odata.type'].includes('group')) {
       // Create a tree node for the group and select it
       const group: Group = {

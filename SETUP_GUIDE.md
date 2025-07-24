@@ -1,14 +1,15 @@
 # 📚 Setup Guide
 
-This guide will walk you through setting up the Group Tree Membership Visualizer after deployment.
+This guide will walk you through setting up the Group Tree Membership Visualizer with MSAL authentication after deployment.
 
 ## 🎯 Overview
 
 The setup process involves:
 1. Deploying the application to Azure
-2. Configuring app registration and permissions
-3. Testing the application
-4. Optional customization
+2. Configuring MSAL app registration (Single Page Application)
+3. Setting up delegated permissions (no client secrets required)
+4. Testing the application
+5. Optional customization
 
 ## 🚀 Step 1: Deploy to Azure
 
@@ -42,9 +43,9 @@ az deployment group create \
   --parameters staticWebAppName="your-app-name"
 ```
 
-## ⚙️ Step 2: Configure App Registration
+## ⚙️ Step 2: Configure MSAL App Registration
 
-After deployment, you need to configure the Microsoft Graph API permissions.
+After deployment, you need to configure the Microsoft Graph API permissions for MSAL authentication.
 
 ### 🔍 Find Your App Details
 
@@ -69,33 +70,34 @@ az account show --query tenantId -o tsv
 (Get-AzContext).Tenant.Id
 ```
 
-### 🔧 Run Configuration Script
+### 🔧 Run MSAL Configuration Script
 
 1. Download the configuration script:
 ```powershell
-# Download the script
+# Download the updated script for MSAL
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
 ```
 
-2. Edit the script variables:
+2. Run the script with your Static Web App name:
 ```powershell
-# Open the script and update these values:
-$STATIC_WEB_APP_NAME = "your-static-web-app-name"
-$TENANT_ID = "your-tenant-id"
+# Execute the script (requires admin permissions for consent)
+.\configure-app.ps1 -StaticWebAppName "your-static-web-app-name"
 ```
 
-3. Run the script:
-```powershell
-# Execute as administrator
-.\configure-app.ps1
-```
-
-The script will:
-- ✅ Create an app registration
-- ✅ Set environment variables
-- ✅ Configure Graph API permissions
-- ✅ Attempt admin consent
+The script will automatically:
+- ✅ Create a **Single-tenant SPA** app registration
+- ✅ Configure **PKCE authentication** (no client secrets)
+- ✅ Set up proper **redirect URIs** for your domain
+- ✅ Configure **delegated permissions only**
+- ✅ Set **MSAL environment variables**
+- ✅ Request **admin consent** for Graph API permissions
 - ✅ Test the configuration
+
+**What the script creates:**
+- **App Registration**: Single Page Application with PKCE
+- **Platform**: SPA platform with proper redirect URIs
+- **Permissions**: Delegated permissions for Microsoft Graph
+- **Environment Variables**: `NEXT_PUBLIC_AZURE_CLIENT_ID` and `AZURE_TENANT_ID`
 
 ## 🔐 Step 3: Grant Admin Consent
 
@@ -108,24 +110,29 @@ If admin consent wasn't granted automatically:
 5. Click **Grant admin consent for [Your Organization]**
 6. Confirm the consent
 
-### Required Permissions
+### Required Delegated Permissions
 
-Verify these permissions are present:
+Verify these **delegated permissions** are present (MSAL uses delegated permissions only):
 
 | Permission | Type | Status |
 |------------|------|--------|
-| User.Read.All | Application | ✅ Granted |
-| Group.Read.All | Application | ✅ Granted |
-| Directory.Read.All | Application | ✅ Granted |
-| GroupMember.Read.All | Application | ✅ Granted |
+| User.Read | Delegated | ✅ Auto-granted |
+| User.Read.All | Delegated | ✅ Requires admin consent |
+| Group.Read.All | Delegated | ✅ Requires admin consent |
+| Directory.Read.All | Delegated | ✅ Requires admin consent |
+| Device.Read.All | Delegated | ✅ Requires admin consent |
+
+**Important**: MSAL uses **delegated permissions only** - users will see only data they already have access to.
 
 ## 🧪 Step 4: Test Your Application
 
-### Test Authentication
+### Test MSAL Authentication
 1. Open your app URL: `https://your-app-name.azurestaticapps.net`
-2. You should see a sign-in page
-3. Click "Sign in with Microsoft"
-4. Authenticate with your work account
+2. You should see the application interface
+3. If not authenticated, you'll see a "Sign In" button
+4. Click "Sign In" to trigger MSAL popup authentication
+5. Authenticate with your work account
+6. You should see the main application interface
 
 ### Test API Endpoints
 Visit the debug endpoint to verify API access:
@@ -137,11 +144,12 @@ Expected response:
 ```json
 {
   "authenticated": true,
+  "authMethod": "MSAL Bearer Token",
   "user": {
     "displayName": "Your Name",
     "mail": "your.email@domain.com"
   },
-  "permissions": ["User.Read.All", "Group.Read.All", ...],
+  "permissions": ["User.Read", "User.Read.All", "Group.Read.All", ...],
   "status": "success"
 }
 ```
@@ -202,25 +210,29 @@ Add your organization logo:
 
 ### Common Issues
 
-#### 1. Authentication Fails
-- ✅ Verify app registration exists
-- ✅ Check admin consent was granted
-- ✅ Ensure user has appropriate permissions
+#### 1. MSAL Authentication Fails
+- ✅ Verify app registration is configured as **Single Page Application (SPA)**
+- ✅ Check redirect URIs include your Static Web App domain
+- ✅ Ensure admin consent was granted for delegated permissions
+- ✅ Verify user account exists in the tenant
 
-#### 2. API Returns 403 Forbidden
-- ✅ Verify Graph API permissions are granted
-- ✅ Check admin consent status
-- ✅ Ensure app secret is configured
+#### 2. API Returns 401 Unauthorized
+- ✅ Check MSAL token is being passed to API calls
+- ✅ Verify Bearer token format in Authorization header
+- ✅ Ensure user has appropriate directory permissions
+- ✅ Test token acquisition in browser console
 
 #### 3. No Users/Groups Visible
-- ✅ Check user has directory read permissions
-- ✅ Verify organization allows app access
-- ✅ Test with different user account
+- ✅ Check user has directory read permissions in your organization
+- ✅ Verify delegated permissions are granted (not application permissions)
+- ✅ Ensure user can access Microsoft Graph data through other apps
+- ✅ Test with different user account (admin vs regular user)
 
-#### 4. Empty Groups Not Highlighted
-- ✅ Verify the user has Group.Read.All permission
-- ✅ Check that getGroups API is working
-- ✅ Test the API endpoint directly
+#### 4. MSAL Token Issues
+- ✅ Clear browser localStorage/sessionStorage
+- ✅ Check browser console for MSAL errors
+- ✅ Verify `NEXT_PUBLIC_AZURE_CLIENT_ID` environment variable
+- ✅ Ensure app registration client ID matches environment variable
 
 ### Debug Steps
 
@@ -228,18 +240,37 @@ Add your organization logo:
 ```powershell
 # List Static Web App settings
 az staticwebapp appsettings list --name "your-app-name"
+
+# Should show:
+# NEXT_PUBLIC_AZURE_CLIENT_ID: your-client-id
+# AZURE_TENANT_ID: your-tenant-id
 ```
 
-2. **Test API Directly**:
+2. **Test MSAL Authentication**:
+```javascript
+// Open browser console on your app
+// Check MSAL instance
+console.log(window.msal?.getAllAccounts());
+
+// Check token acquisition
+window.msal?.acquireTokenSilent({
+  scopes: ['User.Read'],
+  account: window.msal.getAllAccounts()[0]
+}).then(response => console.log(response.accessToken));
+```
+
+3. **Test API with Bearer Token**:
 ```bash
-# Test the debug endpoint
-curl https://your-app-name.azurestaticapps.net/api/debug
+# Get token from browser console first, then:
+curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+     https://your-app-name.azurestaticapps.net/api/debug
 ```
 
-3. **Check App Registration**:
-   - Verify redirect URIs include your Static Web App URL
-   - Ensure API permissions are granted
-   - Check client secret is not expired
+4. **Check App Registration**:
+   - Platform: Single Page Application ✅
+   - Redirect URIs: Include your domain ✅
+   - Delegated permissions: Granted ✅
+   - No client secrets: PKCE only ✅
 
 ### Get Help
 
@@ -254,10 +285,19 @@ If you're still having issues:
 ## 🎉 Success!
 
 Once everything is working, you should have:
-- ✅ A fully functional group membership visualizer
+- ✅ A fully functional group membership visualizer with **MSAL authentication**
+- ✅ **Single Page Application** with PKCE security (no client secrets)
+- ✅ **Delegated permissions** that respect user's existing access
 - ✅ Beautiful tree visualizations of your organization
-- ✅ User and group search capabilities
-- ✅ Real-time data from Microsoft Graph
-- ✅ Secure authentication for your users
+- ✅ User, group, and device search capabilities
+- ✅ Real-time data from Microsoft Graph API
+- ✅ Secure **client-side authentication** for your users
+
+**Key Benefits of Your MSAL Setup:**
+- 🔐 **Enhanced Security**: PKCE authentication without client secrets
+- 👥 **User-based Access**: Users see only what they're permitted to see
+- ⚡ **Better Performance**: Direct client-side token acquisition
+- 🛠️ **Easier Maintenance**: No client secret rotation required
+- 🏢 **Organizational Security**: Single-tenant restriction
 
 Enjoy exploring your organization's structure! 🌳

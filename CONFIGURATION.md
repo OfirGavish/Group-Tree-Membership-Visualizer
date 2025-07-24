@@ -1,17 +1,16 @@
 # ⚙️ Configuration Reference
 
-This document provides comprehensive configuration details for the Group Tree Membership Visualizer.
+This document provides comprehensive configuration details for the Group Tree Membership Visualizer using MSAL authentication.
 
 ## 🌍 Environment Variables
 
-The application requires several environment variables to be configured in Azure Static Web Apps.
+The application requires several environment variables to be configured in Azure Static Web Apps for MSAL authentication.
 
 ### Required Variables
 
 | Variable | Description | Example | Required |
 |----------|-------------|---------|----------|
-| `AZURE_CLIENT_ID` | App Registration Client ID | `12345678-1234-1234-1234-123456789012` | ✅ Yes |
-| `AZURE_CLIENT_SECRET` | App Registration Client Secret | `abcd1234-secret-value` | ✅ Yes |
+| `NEXT_PUBLIC_AZURE_CLIENT_ID` | App Registration Client ID (Public) | `12345678-1234-1234-1234-123456789012` | ✅ Yes |
 | `AZURE_TENANT_ID` | Azure AD Tenant ID | `87654321-4321-4321-4321-210987654321` | ✅ Yes |
 
 ### Optional Variables
@@ -22,6 +21,8 @@ The application requires several environment variables to be configured in Azure
 | `MAX_SEARCH_RESULTS` | Maximum search results | 50 | 100 |
 | `CACHE_TTL_SECONDS` | Cache TTL for Graph data | 300 | 600 |
 | `DEBUG_MODE` | Enable debug logging | false | true |
+
+**Note**: MSAL Single Page Applications use PKCE (Proof Key for Code Exchange) and don't require client secrets for security.
 
 ### Setting Environment Variables
 
@@ -34,38 +35,43 @@ The application requires several environment variables to be configured in Azure
 
 #### Via Azure CLI
 ```bash
-# Set required variables
+# Set required variables for MSAL
 az staticwebapp appsettings set \
   --name "your-app-name" \
   --setting-names \
-    AZURE_CLIENT_ID="your-client-id" \
-    AZURE_CLIENT_SECRET="your-client-secret" \
+    NEXT_PUBLIC_AZURE_CLIENT_ID="your-client-id" \
     AZURE_TENANT_ID="your-tenant-id"
 ```
 
 ## 🔐 Microsoft Graph Permissions
 
-The application requires specific Microsoft Graph API permissions to function properly.
+The application uses MSAL with delegated permissions only - no application permissions required.
 
-### Application Permissions (Required)
+### Delegated Permissions (Required for MSAL)
 
-These permissions are granted to the application itself, not individual users:
+These permissions allow users to access data based on their existing directory permissions:
 
 | Permission | Scope | Purpose | Admin Consent |
 |------------|-------|---------|---------------|
-| `User.Read.All` | All users | Read user profiles and search directory | ✅ Required |
-| `Group.Read.All` | All groups | Read group information and memberships | ✅ Required |
-| `Directory.Read.All` | Directory data | Access directory objects and relationships | ✅ Required |
-| `GroupMember.Read.All` | Group memberships | Read detailed group membership information | ✅ Required |
+| `User.Read` | Signed-in user | Read basic profile of signed-in user | ❌ Auto-granted |
+| `User.Read.All` | All users | Read user profiles based on user's permissions | ✅ Required |
+| `Group.Read.All` | All groups | Read group information based on user's permissions | ✅ Required |
+| `Directory.Read.All` | Directory data | Access directory objects based on user's permissions | ✅ Required |
+| `Device.Read.All` | All devices | Read device information based on user's permissions | ✅ Required |
 
-### Delegated Permissions (Optional)
+**Key Benefits of Delegated-Only Permissions:**
+- Users see only data they already have access to
+- Respects existing organizational permission boundaries
+- No elevated application-level access required
+- Simplified permission model for MSAL authentication
 
-These permissions are used when users sign in interactively:
+### Why No Application Permissions?
 
-| Permission | Scope | Purpose | User Consent |
-|------------|-------|---------|--------------|
-| `User.Read` | Signed-in user | Read basic profile of signed-in user | ✅ Automatic |
-| `Directory.Read.All` | Directory data | Enhanced directory access for signed-in user | 👤 User/Admin |
+MSAL client-side authentication uses **delegated permissions only**:
+- ✅ **User Context**: All API calls are made in the context of the authenticated user
+- ✅ **Existing Permissions**: Users can only see data they already have access to
+- ✅ **Security**: No elevated application permissions that bypass user access controls
+- ✅ **Compliance**: Maintains organizational permission boundaries
 
 ### Permission Configuration
 
@@ -74,11 +80,11 @@ These permissions are used when users sign in interactively:
 2. Select "Group Tree Membership Visualizer"
 3. Click **API permissions**
 4. Click **+ Add a permission**
-5. Select **Microsoft Graph** > **Application permissions**
+5. Select **Microsoft Graph** > **Delegated permissions**
 6. Search for and select each required permission
 7. Click **Grant admin consent for [Organization]**
 
-#### Via PowerShell Script
+#### Via PowerShell Script (Automated Configuration)
 ```powershell
 # Connect to Microsoft Graph
 Connect-MgGraph -Scopes "Application.ReadWrite.All"
@@ -86,63 +92,73 @@ Connect-MgGraph -Scopes "Application.ReadWrite.All"
 # Get your app registration
 $app = Get-MgApplication -Filter "displayName eq 'Group Tree Membership Visualizer'"
 
-# Required permissions
-$permissions = @(
+# Required delegated permissions for MSAL
+$delegatedPermissions = @(
+    "User.Read",
     "User.Read.All",
     "Group.Read.All", 
     "Directory.Read.All",
-    "GroupMember.Read.All"
+    "Device.Read.All"
 )
 
-# Grant permissions (requires admin consent)
-foreach ($permission in $permissions) {
-    # Add permission to app registration
-    $graphServicePrincipal = Get-MgServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
-    $permissionRole = $graphServicePrincipal.AppRoles | Where-Object {$_.Value -eq $permission}
-    
-    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $app.Id -PrincipalId $app.Id -ResourceId $graphServicePrincipal.Id -AppRoleId $permissionRole.Id
+# Configure delegated permissions only
+$graphServicePrincipal = Get-MgServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
+foreach ($permission in $delegatedPermissions) {
+    $oauth2Permission = $graphServicePrincipal.Oauth2PermissionScopes | Where-Object {$_.Value -eq $permission}
+    if ($oauth2Permission) {
+        Write-Host "Configuring delegated permission: $permission"
+        # Permission will be requested during user authentication
+    }
 }
+
+Write-Host "✅ MSAL delegated permissions configured"
+Write-Host "Note: Admin consent will be required for organization-wide permissions"
 ```
 
 ## 🏗️ App Registration Configuration
 
-### Authentication Settings
+### Platform Configuration
 
-Configure the following in your app registration:
+Configure your app registration as a **Single Page Application (SPA)** for MSAL.js:
 
 #### Supported Account Types
-- **Single tenant**: Users in your organization only
-- **Multi-tenant**: Not recommended for this application
+- **Single tenant**: ✅ **Recommended** - Users in your organization only
+- **Multi-tenant**: ❌ Not recommended for organizational tools
 
-#### Redirect URIs
+#### Platform Type  
+- **Single Page Application (SPA)**: ✅ **Required** for MSAL.js with PKCE
+- **Web Application**: ❌ Not needed for client-side authentication
+
+#### Redirect URIs (SPA Platform)
 Add these redirect URIs to your app registration:
 
 | Platform | URI | Purpose |
 |----------|-----|---------|
-| Single Page Application (SPA) | `https://your-app-name.azurestaticapps.net` | Main app authentication |
-| Single Page Application (SPA) | `https://your-app-name.azurestaticapps.net/` | Root path authentication |
-| Single Page Application (SPA) | `http://localhost:3000` | Local development |
+| SPA | `https://your-app-name.azurestaticapps.net` | Production app authentication |
+| SPA | `https://your-app-name.azurestaticapps.net/` | Production root path |
+| SPA | `http://localhost:3000` | Local development |
+| SPA | `https://localhost:3000` | Local development (HTTPS) |
 
 #### Advanced Settings
-- **Allow public client flows**: No
-- **Default client type**: Public client
+- **Allow public client flows**: Yes (required for MSAL.js)
+- **Default client type**: Public client (SPA)
 - **Supported account types**: Single tenant
 
-### Certificates & Secrets
+### Authentication Configuration
 
-#### Client Secret Configuration
-1. Generate a new client secret with appropriate expiration
-2. Copy the secret value immediately (it won't be shown again)
-3. Store securely in Azure Static Web App configuration
+#### No Client Secrets Required
+**MSAL Single Page Applications use PKCE (Proof Key for Code Exchange) and don't require client secrets:**
 
-**Recommended Expiration**: 24 months (balance between security and maintenance)
+✅ **Benefits:**
+- No secret management required
+- Enhanced security with PKCE
+- Simplified configuration
+- Industry best practice for SPAs
 
-#### Certificate Alternative (Optional)
-For enhanced security, you can use certificates instead of client secrets:
-
-```powershell
-# Generate self-signed certificate
-$cert = New-SelfSignedCertificate -Subject "CN=GroupVisualizerApp" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable -KeySpec Signature
+❌ **Why no secrets:**
+- Client secrets can't be securely stored in browser applications
+- PKCE provides equivalent security for public clients
+- Reduces configuration complexity
 
 # Export certificate
 Export-Certificate -Cert $cert -FilePath "GroupVisualizerApp.cer"

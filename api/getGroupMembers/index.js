@@ -18,7 +18,8 @@ module.exports = async function (context, req) {
         }
 
         // Get group members from Microsoft Graph using delegated permissions
-        const graphUrl = `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=id,displayName,userPrincipalName,mail`;
+        // Include @odata.type to properly identify user/group/device types
+        const graphUrl = `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=@odata.type,id,displayName,userPrincipalName,mail,deviceId,operatingSystem`;
         const membersData = await callGraphAPI(graphUrl, req, context);
 
         const members = membersData.value.map(member => ({
@@ -27,6 +28,9 @@ module.exports = async function (context, req) {
             displayName: member.displayName,
             userPrincipalName: member.userPrincipalName,
             mail: member.mail,
+            // Include device-specific fields
+            deviceId: member.deviceId,
+            operatingSystem: member.operatingSystem,
         }));
 
         context.res = {

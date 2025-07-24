@@ -135,42 +135,31 @@ if ($existingApp) {
     Write-Host "✅ Found existing app registration: $($existingApp.AppId)" -ForegroundColor Green
     $app = $existingApp
 } else {
-    Write-Host "📝 Creating new app registration..." -ForegroundColor Green
+    Write-Host "📝 Creating new Single-tenant SPA app registration..." -ForegroundColor Green
     
-    # Create app registration with redirect URIs
+    # Create app registration as Single Page Application (SPA) for MSAL.js
     $appParams = @{
         DisplayName = $appDisplayName
-        Web = @{
-            RedirectUris = @($appUrl, "$appUrl/", "http://localhost:3000")
+        SignInAudience = "AzureADMyOrg"  # Single tenant only
+        Spa = @{
+            RedirectUris = @(
+                $appUrl,
+                "$appUrl/",
+                "http://localhost:3000",
+                "https://localhost:3000"
+            )
         }
+        RequiredResourceAccess = @()  # Will be set later
     }
     
     $app = New-MgApplication @appParams
-    Write-Host "✅ Created app registration: $($app.AppId)" -ForegroundColor Green
+    Write-Host "✅ Created Single-tenant SPA app registration: $($app.AppId)" -ForegroundColor Green
+    Write-Host "  📋 Configured as Single Page Application with PKCE support" -ForegroundColor Blue
 }
 
-# Generate client secret
-Write-Host "🔑 Generating client secret..." -ForegroundColor Green
-$secretDisplayName = "GroupVisualizerSecret-$(Get-Date -Format 'yyyy-MM-dd')"
-$secretEndDate = (Get-Date).AddMonths(24)
-
-try {
-    $existingSecrets = Get-MgApplicationPasswordCredential -ApplicationId $app.Id
-    if ($existingSecrets) {
-        Write-Host "⚠️  Existing secrets found. Creating additional secret..." -ForegroundColor Yellow
-    }
-    
-    $passwordCredential = @{
-        displayName = $secretDisplayName
-        endDateTime = $secretEndDate
-    }
-    
-    $clientSecret = Add-MgApplicationPassword -ApplicationId $app.Id -PasswordCredential $passwordCredential
-    Write-Host "✅ Client secret created (expires: $($secretEndDate.ToString('yyyy-MM-dd')))" -ForegroundColor Green
-} catch {
-    Write-Error "❌ Failed to create client secret: $($_.Exception.Message)"
-    exit 1
-}
+# Note: MSAL Single Page Applications use PKCE and don't require client secrets
+Write-Host "🔐 MSAL SPA Configuration: No client secret needed (using PKCE)" -ForegroundColor Green
+Write-Host "  📋 Single Page Applications use Proof Key for Code Exchange (PKCE) for security" -ForegroundColor Blue
 
 # Update configuration files with tenant ID
 Write-Host "⚙️  Updating configuration files with tenant ID..." -ForegroundColor Green
@@ -197,7 +186,7 @@ try {
     Write-Warning "⚠️  Failed to update configuration files: $($_.Exception.Message)"
 }
 
-# Required Microsoft Graph permissions for delegated access
+# Required Microsoft Graph permissions for MSAL delegated access only
 $requiredDelegatedPermissions = @(
     @{ Value = "User.Read"; Type = "Scope" },
     @{ Value = "User.Read.All"; Type = "Scope" },
@@ -206,49 +195,43 @@ $requiredDelegatedPermissions = @(
     @{ Value = "Device.Read.All"; Type = "Scope" }
 )
 
-# Required Microsoft Graph permissions for application access (fallback)
-$requiredApplicationPermissions = @(
-    @{ Value = "User.Read.All"; Type = "Role" },
-    @{ Value = "Group.Read.All"; Type = "Role" },
-    @{ Value = "Directory.Read.All"; Type = "Role" },
-    @{ Value = "GroupMember.Read.All"; Type = "Role" },
-    @{ Value = "Device.Read.All"; Type = "Role" }
-)
-
-Write-Host "🔐 Configuring Microsoft Graph permissions (delegated + application)..." -ForegroundColor Green
+Write-Host "🔐 Configuring Microsoft Graph delegated permissions for MSAL..." -ForegroundColor Green
 
 # Get Microsoft Graph service principal
 $graphServicePrincipal = Get-MgServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
 
-# Update app registration to support web platform for delegated permissions
-Write-Host "🌐 Updating app registration for web platform..." -ForegroundColor Green
+# Update app registration to support SPA platform for MSAL.js
+Write-Host "🌐 Updating app registration for Single Page Application platform..." -ForegroundColor Green
 try {
-    # Add web platform if not exists
+    # Add SPA platform redirect URIs for MSAL.js
     $redirectUris = @(
-        "$appUrl/.auth/login/aad/callback",
-        "https://localhost:3000/.auth/login/aad/callback"
+        $appUrl,
+        "$appUrl/",
+        "http://localhost:3000",
+        "https://localhost:3000"
     )
     
-    # Update the application to support web platform
-    $webParams = @{
+    # Update the application to support SPA platform
+    $spaParams = @{
         ApplicationId = $app.Id
-        Web = @{
+        Spa = @{
             RedirectUris = $redirectUris
         }
     }
-    Update-MgApplication @webParams
-    Write-Host "✅ Web platform configured with redirect URIs" -ForegroundColor Green
+    Update-MgApplication @spaParams
+    Write-Host "✅ SPA platform configured with redirect URIs for MSAL.js" -ForegroundColor Green
+    Write-Host "  📋 Configured URIs: $($redirectUris -join ', ')" -ForegroundColor Blue
 } catch {
-    Write-Warning "⚠️  Failed to update web platform configuration: $($_.Exception.Message)"
+    Write-Warning "⚠️  Failed to update SPA platform configuration: $($_.Exception.Message)"
 }
 
-# Add Microsoft Graph API permissions
-Write-Host "🔐 Configuring Microsoft Graph API permissions..." -ForegroundColor Green
+# Add Microsoft Graph API permissions (delegated only for MSAL)
+Write-Host "🔐 Configuring Microsoft Graph API delegated permissions..." -ForegroundColor Green
 try {
     # Build required resource access for Microsoft Graph
     $requiredResourceAccess = @()
     
-    # Add delegated permissions (scopes)
+    # Add delegated permissions (scopes) only
     $delegatedPermissions = @()
     foreach ($permission in $requiredDelegatedPermissions) {
         $oauth2Permission = $graphServicePrincipal.Oauth2PermissionScopes | Where-Object {$_.Value -eq $permission.Value}
@@ -261,26 +244,10 @@ try {
         }
     }
     
-    # Add application permissions (roles)
-    $applicationPermissions = @()
-    foreach ($permission in $requiredApplicationPermissions) {
-        $appRole = $graphServicePrincipal.AppRoles | Where-Object {$_.Value -eq $permission.Value}
-        if ($appRole) {
-            $applicationPermissions += @{
-                Id = $appRole.Id
-                Type = "Role"
-            }
-            Write-Host "  ✅ Will request application permission: $($permission.Value)" -ForegroundColor Green
-        }
-    }
-    
-    # Combine all permissions
-    $allPermissions = $delegatedPermissions + $applicationPermissions
-    
-    if ($allPermissions.Count -gt 0) {
+    if ($delegatedPermissions.Count -gt 0) {
         $requiredResourceAccess += @{
             ResourceAppId = "00000003-0000-0000-c000-000000000000"  # Microsoft Graph
-            ResourceAccess = $allPermissions
+            ResourceAccess = $delegatedPermissions
         }
         
         # Update the application with required permissions
@@ -289,7 +256,8 @@ try {
             RequiredResourceAccess = $requiredResourceAccess
         }
         Update-MgApplication @updateParams
-        Write-Host "✅ Microsoft Graph API permissions configured" -ForegroundColor Green
+        Write-Host "✅ Microsoft Graph API delegated permissions configured" -ForegroundColor Green
+        Write-Host "  📋 Note: Only delegated permissions are used for MSAL SPA authentication" -ForegroundColor Blue
     }
 } catch {
     Write-Warning "⚠️  Failed to configure API permissions: $($_.Exception.Message)"
@@ -317,21 +285,19 @@ if (!$SkipAdminConsent) {
     Write-Host "⏭️  Skipping admin consent (use -SkipAdminConsent:$false to enable)" -ForegroundColor Yellow
 }
 
-# Configure Static Web App environment variables
-Write-Host "⚙️  Configuring Static Web App environment variables..." -ForegroundColor Green
+# Configure Static Web App environment variables for MSAL
+Write-Host "⚙️  Configuring Static Web App environment variables for MSAL..." -ForegroundColor Green
 
 $appSettings = @{
-    "ENTRA_CLIENT_ID" = $app.AppId
-    "ENTRA_CLIENT_SECRET" = $clientSecret.SecretText
-    "AZURE_CLIENT_ID" = $app.AppId  # Keeping for backward compatibility
-    "AZURE_CLIENT_SECRET" = $clientSecret.SecretText  # Keeping for backward compatibility
-    "AZURE_TENANT_ID" = $TenantId
+    "NEXT_PUBLIC_AZURE_CLIENT_ID" = $app.AppId  # Public variable for MSAL.js frontend
+    "AZURE_TENANT_ID" = $TenantId               # Tenant ID for MSAL configuration
+    # Note: No client secret needed for MSAL SPA with PKCE
 }
 
 try {
     if ($azCliAvailable) {
         # Use Azure CLI for setting Static Web App settings as it's more reliable
-        Write-Host "  🔧 Setting environment variables using Azure CLI..." -ForegroundColor Blue
+        Write-Host "  🔧 Setting MSAL environment variables using Azure CLI..." -ForegroundColor Blue
         
         foreach ($setting in $appSettings.GetEnumerator()) {
             $settingString = "$($setting.Key)=$($setting.Value)"
@@ -342,18 +308,15 @@ try {
                 Write-Warning "    ⚠️  Failed to set $($setting.Key)"
             }
         }
-        Write-Host "✅ Environment variables configured" -ForegroundColor Green
+        Write-Host "✅ MSAL environment variables configured" -ForegroundColor Green
+        Write-Host "  📋 Note: MSAL SPA uses PKCE - no client secret required" -ForegroundColor Blue
     } else {
         throw "Azure CLI not available"
     }
 } catch {
     Write-Warning "⚠️  Failed to set environment variables automatically. Please set them manually using Azure CLI:"
     foreach ($setting in $appSettings.GetEnumerator()) {
-        if ($setting.Key -like "*SECRET*") {
-            Write-Host "  az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names `"$($setting.Key)=[HIDDEN]`"" -ForegroundColor Yellow
-        } else {
-            Write-Host "  az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names `"$($setting.Key)=$($setting.Value)`"" -ForegroundColor Yellow
-        }
+        Write-Host "  az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names `"$($setting.Key)=$($setting.Value)`"" -ForegroundColor Yellow
     }
 }
 
@@ -396,35 +359,37 @@ Write-Host "  3. Test group membership visualization" -ForegroundColor Green
 Write-Host "  4. Review the documentation for customization options" -ForegroundColor Green
 Write-Host ""
 
-# Save configuration details
+# Save configuration details for MSAL setup
 $configFile = "group-visualizer-config.txt"
 $appIdValue = $app.AppId
 $currentDate = Get-Date
 
 # Build configuration content without here-string to avoid parsing issues
-$configContent = "Group Tree Membership Visualizer - Configuration Details`n"
+$configContent = "Group Tree Membership Visualizer - MSAL Configuration Details`n"
 $configContent += "Generated: $currentDate`n`n"
-$configContent += "App Registration:`n"
+$configContent += "App Registration (Single-tenant SPA):`n"
 $configContent += "- Display Name: $appDisplayName`n"
 $configContent += "- Application ID: $appIdValue`n"
-$configContent += "- Tenant ID: $TenantId`n`n"
+$configContent += "- Tenant ID: $TenantId`n"
+$configContent += "- Platform: Single Page Application (SPA)`n"
+$configContent += "- Authentication: MSAL.js with PKCE`n`n"
 $configContent += "Static Web App:`n"
 $configContent += "- Name: $StaticWebAppName`n"
 $configContent += "- Resource Group: $ResourceGroupName`n"
 $configContent += "- URL: $appUrl`n`n"
-$configContent += "Environment Variables:`n"
-$configContent += "- AZURE_CLIENT_ID: $appIdValue`n"
-$configContent += "- AZURE_CLIENT_SECRET: [HIDDEN - Check Azure Portal]`n"
-$configContent += "- AZURE_TENANT_ID: $TenantId`n`n"
+$configContent += "Environment Variables (MSAL):`n"
+$configContent += "- NEXT_PUBLIC_AZURE_CLIENT_ID: $appIdValue`n"
+$configContent += "- AZURE_TENANT_ID: $TenantId`n"
+$configContent += "- Note: No client secret needed for MSAL SPA with PKCE`n`n"
 $configContent += "Important Links:`n"
 $configContent += "- Application URL: $appUrl`n"
 $configContent += "- Setup Guide: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/SETUP_GUIDE.md`n"
 $configContent += "- Troubleshooting: https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/TROUBLESHOOTING.md`n`n"
-$configContent += "Manual Configuration Commands:`n"
-$configContent += "az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names AZURE_CLIENT_ID=`"$appIdValue`" AZURE_CLIENT_SECRET=`"your-secret`" AZURE_TENANT_ID=`"$TenantId`"`n"
+$configContent += "Manual Configuration Commands (if needed):`n"
+$configContent += "az staticwebapp appsettings set --name `"$StaticWebAppName`" --resource-group `"$ResourceGroupName`" --setting-names NEXT_PUBLIC_AZURE_CLIENT_ID=`"$appIdValue`" AZURE_TENANT_ID=`"$TenantId`"`n"
 
 $configContent | Out-File -FilePath $configFile -Encoding UTF8
-Write-Host "💾 Configuration details saved to: $configFile" -ForegroundColor Blue
+Write-Host "💾 MSAL configuration details saved to: $configFile" -ForegroundColor Blue
 
 Write-Host ""
 Write-Host "🚀 Your Group Tree Membership Visualizer is ready to use!" -ForegroundColor Cyan

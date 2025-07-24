@@ -46,7 +46,7 @@ The Group Tree Membership Visualizer is a modern web application built with Next
 |------------|---------|---------|
 | **Azure Functions** | 4.x | Serverless API endpoints |
 | **Microsoft Graph SDK** | 3.x | Azure AD API integration |
-| **MSAL Node** | 2.x | Authentication library |
+| **MSAL.js** | 3.x | Client-side authentication library |
 
 ### Infrastructure
 
@@ -65,17 +65,20 @@ graph TB
     SWA --> Frontend[⚛️ Next.js Frontend]
     SWA --> API[🔧 Azure Functions API]
     
-    Frontend --> Auth[🔐 MSAL Authentication]
+    Frontend --> MSAL[🔐 MSAL.js Authentication]
+    Frontend --> Cache[💾 Client-side Cache]
     API --> Graph[📊 Microsoft Graph API]
     
-    Auth --> AAD[🏢 Azure Active Directory]
+    MSAL --> AAD[🏢 Azure Active Directory]
     Graph --> AAD
     
     Frontend --> D3[📈 D3.js Visualization]
-    Frontend --> Cache[💾 Client-side Cache]
     
     API --> GraphSDK[📚 Graph SDK]
     API --> AuthMiddleware[🛡️ Auth Middleware]
+    
+    MSAL -.-> API
+    note[Bearer tokens passed to API]
 ```
 
 ### Architecture Layers
@@ -93,7 +96,7 @@ graph TB
 - **Error Handling**: Centralized error management
 
 #### 3. Integration Layer
-- **MSAL Authentication**: OAuth 2.0 / OpenID Connect
+- **MSAL.js Authentication**: OAuth 2.0 + PKCE for client-side authentication
 - **Microsoft Graph SDK**: Typed API client
 - **Caching Layer**: Performance optimization
 
@@ -178,12 +181,15 @@ src/
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   └── LoadingSpinner.tsx
-│   ├── GroupTree.tsx           # D3.js tree visualization
+│   ├── AuthProvider.tsx        # MSAL authentication provider
+│   ├── LoginButton.tsx         # MSAL login component
+│   ├── TreeVisualization.tsx   # D3.js tree visualization
 │   ├── UserSearch.tsx          # User search component
 │   └── GroupSearch.tsx         # Group search component
 ├── lib/
-│   ├── ApiGraphService.ts      # Microsoft Graph API client
-│   ├── auth.ts                 # MSAL configuration
+│   ├── api-graph-service.ts    # Microsoft Graph API client
+│   ├── auth-config.ts          # MSAL configuration
+│   ├── msal-auth-service.ts    # MSAL authentication service
 │   └── utils.ts                # Utility functions
 └── types/
     ├── graph.ts                # Microsoft Graph types
@@ -312,19 +318,36 @@ const errorResponses = {
 
 ## 🔐 Authentication Flow
 
-### MSAL Configuration
+### MSAL.js Configuration
 
 ```typescript
-const msalConfig = {
+const msalConfig: Configuration = {
   auth: {
-    clientId: process.env.AZURE_CLIENT_ID!,
+    clientId: process.env.NEXT_PUBLIC_AZURE_CLIENT_ID!,
     authority: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}`,
-    redirectUri: process.env.REDIRECT_URI || window.location.origin
+    redirectUri: typeof window !== 'undefined' ? window.location.origin : 'https://your-app.azurestaticapps.net',
+    postLogoutRedirectUri: typeof window !== 'undefined' ? window.location.origin : 'https://your-app.azurestaticapps.net',
   },
   cache: {
-    cacheLocation: "localStorage",
-    storeAuthStateInCookie: true
+    cacheLocation: 'localStorage',
+    storeAuthStateInCookie: false,
+  },
+  system: {
+    allowNativeBroker: false,
+    loggerOptions: {
+      loggerCallback: (level, message, containsPii) => {
+        if (containsPii) return;
+        console.log(`[MSAL] ${message}`);
+      },
+      logLevel: LogLevel.Info
+    }
   }
+};
+
+// Login request with required scopes
+export const loginRequest: PopupRequest = {
+  scopes: ['openid', 'profile', 'User.Read'],
+  prompt: 'select_account'
 };
 ```
 
@@ -333,56 +356,125 @@ const msalConfig = {
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant A as App
-    participant M as MSAL
+    participant A as App (MSAL.js)
     participant AAD as Azure AD
-    participant API as Graph API
+    participant API as Azure Functions
+    participant G as Graph API
     
     U->>A: Access protected resource
-    A->>M: Get access token
+    A->>A: Check token cache
     
     alt Token cached and valid
-        M-->>A: Return cached token
+        A->>API: API call with Bearer token
     else Token expired or missing
-        M->>AAD: Redirect to login
+        A->>AAD: Popup/redirect authentication
         AAD->>U: Present login page
         U->>AAD: Enter credentials
-        AAD-->>M: Return auth code
-        M->>AAD: Exchange for tokens
-        AAD-->>M: Access + refresh tokens
-        M-->>A: Return access token
+        AAD-->>A: Return tokens (PKCE flow)
+        A->>A: Cache tokens securely
+        A->>API: API call with Bearer token
     end
     
-    A->>API: API call with token
-    API-->>A: API response
-    A-->>U: Display data
+    API->>API: Validate Bearer token
+    API->>G: Call Graph API with On-Behalf-Of token
+    G-->>API: Return data
+    API-->>A: Return processed data
+    A-->>U: Display visualization
 ```
 
-### Middleware Authentication
+### Bearer Token Authentication
 
 ```typescript
 // Authentication middleware for API endpoints
 export async function withAuth(request: HttpRequest, handler: Function) {
   try {
-    const token = extractTokenFromHeader(request);
-    const validatedToken = await validateToken(token);
-    const graphClient = getGraphClient(token);
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new Error('Missing or invalid authorization header');
+    }
+    
+    const token = authHeader.substring(7);
+    const validatedToken = await validateBearerToken(token);
+    const graphClient = getOnBehalfOfGraphClient(token);
     
     return await handler(request, { user: validatedToken, graph: graphClient });
   } catch (error) {
     return {
       status: 401,
-      body: { error: 'Authentication failed' }
+      body: { error: 'Authentication failed', message: error.message }
     };
   }
 }
+
+// Token validation function
+const validateBearerToken = async (token: string): Promise<UserInfo> => {
+  const decodedToken = jwt.decode(token, { complete: true });
+  
+  // Verify token signature, expiration, audience, issuer
+  const publicKey = await getSigningKey(decodedToken.header.kid);
+  const isValid = jwt.verify(token, publicKey, {
+    audience: process.env.AZURE_CLIENT_ID,
+    issuer: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`
+  });
+  
+  if (!isValid) {
+    throw new Error('Invalid token');
+  }
+  
+  return decodedToken.payload;
+};
 ```
 
 ## 🗃️ State Management
 
-### React State Pattern
+### MSAL React State Pattern
 
 ```typescript
+// MSAL authentication state management
+const useMsalAuthentication = () => {
+  const { instance, accounts } = useMsal();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    setIsAuthenticated(accounts.length > 0);
+  }, [accounts]);
+
+  const login = async () => {
+    try {
+      const response = await instance.loginPopup(loginRequest);
+      setAccessToken(response.accessToken);
+      return response;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    await instance.logoutPopup();
+    setAccessToken(null);
+  };
+
+  const getAccessToken = async (scopes: string[]) => {
+    if (!accounts[0]) throw new Error('No active account');
+    
+    try {
+      const response = await instance.acquireTokenSilent({
+        scopes,
+        account: accounts[0]
+      });
+      return response.accessToken;
+    } catch (error) {
+      // Fallback to popup if silent acquisition fails
+      const response = await instance.acquireTokenPopup({ scopes });
+      return response.accessToken;
+    }
+  };
+
+  return { isAuthenticated, login, logout, getAccessToken };
+};
+
 // Main application state
 const useAppState = () => {
   const [state, setState] = useState<AppState>({
@@ -547,19 +639,48 @@ const renderTreeOnCanvas = (canvas: HTMLCanvasElement, data: TreeNode[]) => {
 
 ### Authentication Security
 
-1. **Token Validation**
+1. **Bearer Token Validation**
 ```typescript
-const validateToken = async (token: string): Promise<User> => {
+const validateBearerToken = async (token: string): Promise<UserInfo> => {
   const decodedToken = jwt.decode(token, { complete: true });
   
+  // Get public key for signature verification
+  const publicKey = await getSigningKey(decodedToken.header.kid);
+  
   // Verify signature, expiration, audience, issuer
-  const isValid = await jwt.verify(token, getPublicKey(decodedToken.header.kid));
+  const payload = jwt.verify(token, publicKey, {
+    audience: process.env.NEXT_PUBLIC_AZURE_CLIENT_ID,
+    issuer: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`,
+    clockTolerance: 60 // Allow 60 seconds clock skew
+  });
   
-  if (!isValid) {
-    throw new Error('Invalid token');
+  return payload as UserInfo;
+};
+```
+
+2. **MSAL Security Configuration**
+```typescript
+const msalConfig: Configuration = {
+  auth: {
+    clientId: process.env.NEXT_PUBLIC_AZURE_CLIENT_ID!,
+    authority: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}`,
+    knownAuthorities: [`${process.env.AZURE_TENANT_ID}.b2clogin.com`],
+    redirectUri: window.location.origin,
+    postLogoutRedirectUri: window.location.origin,
+    navigateToLoginRequestUrl: false
+  },
+  cache: {
+    cacheLocation: 'localStorage', // Use localStorage for persistence
+    storeAuthStateInCookie: false,  // Don't use cookies for SPA
+    secureCookies: true
+  },
+  system: {
+    allowNativeBroker: false, // Disable for web apps
+    loggerOptions: {
+      logLevel: LogLevel.Error, // Only log errors in production
+      piiLoggingEnabled: false  // Don't log PII
+    }
   }
-  
-  return decodedToken.payload;
 };
 ```
 

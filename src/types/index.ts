@@ -38,6 +38,9 @@ export interface GroupMember {
   displayName: string
   userPrincipalName?: string
   mail?: string
+  // Device-specific properties (when member is a device)
+  deviceId?: string
+  operatingSystem?: string
 }
 
 // Tree visualization types
