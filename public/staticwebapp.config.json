@@ -36,7 +36,7 @@
         },
         "login": {
           "loginParameters": [
-            "resource=https://graph.microsoft.com"
+            "scope=openid profile email https://graph.microsoft.com/User.Read https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/Device.Read.All https://graph.microsoft.com/Directory.Read.All"
           ]
         }
       }
