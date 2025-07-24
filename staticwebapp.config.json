@@ -33,7 +33,8 @@
         },
         "login": {
           "loginParameters": [
-            "scope=openid profile email https://graph.microsoft.com/User.Read https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/Device.Read.All https://graph.microsoft.com/Directory.Read.All"
+            "response_type=code id_token",
+            "scope=openid offline_access profile https://graph.microsoft.com/User.Read https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/Device.Read.All https://graph.microsoft.com/Directory.Read.All"
           ]
         }
       }
