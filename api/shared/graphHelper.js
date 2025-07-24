@@ -9,17 +9,22 @@ const msal = require('@azure/msal-node');
  * @returns {Promise<string>} Access token for Microsoft Graph with delegated permissions
  */
 async function getGraphAccessToken(req, context) {
-    // Check if user is authenticated
-    const clientPrincipal = req.headers['x-ms-client-principal'];
-    if (!clientPrincipal) {
-        throw new Error('User not authenticated');
-    }
-
-    // First, check for client-side delegated token
+    // Log all headers for debugging
+    context.log('Request headers:', Object.keys(req.headers));
+    context.log('Looking for x-delegated-access-token header...');
+    
+    // First, check for client-side delegated token (MSAL.js)
     const delegatedToken = req.headers['x-delegated-access-token'];
     if (delegatedToken) {
         context.log('Using client-side delegated access token');
         return delegatedToken;
+    }
+
+    // Fallback: Check if user is authenticated via Easy Auth (legacy)
+    const clientPrincipal = req.headers['x-ms-client-principal'];
+    if (!clientPrincipal) {
+        context.log('No x-delegated-access-token found and no Easy Auth principal');
+        throw new Error('No delegated token provided. Please ensure user is signed in via MSAL.js.');
     }
 
     // Environment variables for fallback

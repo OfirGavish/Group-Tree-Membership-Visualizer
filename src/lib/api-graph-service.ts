@@ -16,7 +16,7 @@ export class ApiGraphService {
 
     return {
       'Content-Type': 'application/json',
-      'X-Delegated-Access-Token': accessToken // Pass the delegated token to the API
+      'x-delegated-access-token': accessToken // Pass the delegated token to the API
     };
   }
 
