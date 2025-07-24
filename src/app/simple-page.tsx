@@ -665,44 +665,43 @@ export default function SimpleHomePage() {
               </div>
             )}
             
-            <button
-              onClick={async () => {
-                try {
-                  setAuthLoading(true)
-                  setError(null)
-                  const account = await authService.signIn()
-                  console.log('Sign in successful, account:', account)
-                  
-                  // Force a fresh auth check
-                  const user = await authService.getCurrentUser()
-                  if (user) {
-                    console.log('User authenticated:', user)
-                    setIsAuthenticated(true)
-                    setCurrentUser(user)
-                    // Load data after successful authentication
-                    await loadUsers()
-                    await loadGroups()
-                    await loadDevices()
-                  } else {
-                    console.error('No user found after sign in')
-                    setError('Authentication succeeded but user info not available. Please try refreshing.')
+            <div className="flex justify-center">
+              <button
+                onClick={async () => {
+                  try {
+                    setAuthLoading(true)
+                    setError(null)
+                    const account = await authService.signIn()
+                    console.log('Sign in successful, account:', account)
+                    
+                    // Force a fresh auth check
+                    const user = await authService.getCurrentUser()
+                    if (user) {
+                      console.log('User authenticated:', user)
+                      setIsAuthenticated(true)
+                      setCurrentUser(user)
+                      // Load data after successful authentication
+                      await loadUsers()
+                      await loadGroups()
+                      await loadDevices()
+                    } else {
+                      console.error('No user found after sign in')
+                      setError('Authentication succeeded but user info not available. Please try refreshing.')
+                    }
+                  } catch (error) {
+                    console.error('Sign in failed:', error)
+                    const errorMessage = error instanceof Error ? error.message : 'Please try again.'
+                    setError(`Sign in failed: ${errorMessage}`)
+                  } finally {
+                    setAuthLoading(false)
                   }
-                } catch (error) {
-                  console.error('Sign in failed:', error)
-                  const errorMessage = error instanceof Error ? error.message : 'Please try again.'
-                  setError(`Sign in failed: ${errorMessage}`)
-                } finally {
-                  setAuthLoading(false)
-                }
-              }}
-              disabled={authLoading}
-              className="w-full inline-block bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
-            >
-              {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
-            </button>
-            <p className="text-xs text-gray-500 mt-4">
-              Using MSAL.js with delegated permissions
-            </p>
+                }}
+                disabled={authLoading}
+                className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
+              >
+                {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
