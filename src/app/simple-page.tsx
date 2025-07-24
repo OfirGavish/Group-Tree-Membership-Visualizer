@@ -712,11 +712,11 @@ export default function SimpleHomePage() {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-400/20 rounded-full blur-2xl animate-float"></div>
-        <div className="absolute top-3/4 right-1/4 w-4 h-4 bg-purple-400/15 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-pink-400/20 rounded-full blur-xl animate-float-delayed"></div>
+        <div className="absolute top-3/4 right-1/4 w-2 h-2 bg-purple-400/15 rounded-full blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-pink-400/20 rounded-full blur-sm animate-float-delayed"></div>
         <div className="absolute top-1/2 right-1/2 w-1 h-1 bg-indigo-400/25 rounded-full blur-sm animate-pulse delay-3000"></div>
-        <div className="absolute top-1/6 right-1/3 w-6 h-6 bg-teal-400/15 rounded-full blur-xl animate-bounce"></div>
-        <div className="absolute bottom-1/3 right-1/6 w-4 h-4 bg-cyan-400/20 rounded-full blur-2xl animate-float"></div>
+        <div className="absolute top-1/6 right-1/3 w-2 h-2 bg-teal-400/15 rounded-full blur-sm animate-bounce"></div>
+        <div className="absolute bottom-1/3 right-1/6 w-2 h-2 bg-cyan-400/20 rounded-full blur-xl animate-float"></div>
       </div>
 
       {/* Header */}
@@ -873,7 +873,7 @@ export default function SimpleHomePage() {
         </div>
 
         {/* Visualization and Details */}
-        {(selectedUser || selectedGroup) && (
+        {(selectedUser || selectedGroup || selectedDevice) && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Tree Visualization */}
             <div className="lg:col-span-2">
@@ -887,7 +887,7 @@ export default function SimpleHomePage() {
 
             {/* Details Panel */}
             <div className="space-y-6">
-              {/* Selected User/Group Info */}
+              {/* Selected User/Group/Device Info */}
               {selectedUser && (
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4">Selected User</h3>
@@ -900,6 +900,26 @@ export default function SimpleHomePage() {
                       <div className="text-sm text-white/70">{selectedUser.userPrincipalName}</div>
                       {selectedUser.jobTitle && (
                         <div className="text-xs text-white/60">{selectedUser.jobTitle}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedDevice && (
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Selected Device</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
+                      {selectedDevice.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-medium text-white">{selectedDevice.displayName}</div>
+                      {selectedDevice.operatingSystem && (
+                        <div className="text-sm text-white/70">{selectedDevice.operatingSystem}</div>
+                      )}
+                      {selectedDevice.deviceId && (
+                        <div className="text-xs text-white/60">ID: {selectedDevice.deviceId}</div>
                       )}
                     </div>
                   </div>

@@ -3,18 +3,10 @@ const { callGraphAPI } = require('../shared/graphHelper');
 
 module.exports = async function (context, req) {
     context.log('Get user groups request received');
+    context.log('Request headers:', Object.keys(req.headers));
+    context.log('Has x-delegated-access-token:', !!req.headers['x-delegated-access-token']);
 
     try {
-        // Check if user is authenticated
-        const clientPrincipal = req.headers['x-ms-client-principal'];
-        if (!clientPrincipal) {
-            context.res = {
-                status: 401,
-                body: { error: 'Not authenticated' }
-            };
-            return;
-        }
-
         // Get user ID from query parameters
         const userId = req.query.userId;
         if (!userId) {
