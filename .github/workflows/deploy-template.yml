@@ -41,7 +41,7 @@ on:
     branches:
       - deploy      # Create this branch for deployments
       - release     # Or use release branch
-      - main        # Keep main for compatibility with existing deploys
+      # Note: main branch deployments are manual only via Deploy to Azure button
     paths-ignore:
       - '**.md'     # Ignore documentation changes
       - 'docs/**'   # Ignore docs folder
@@ -52,7 +52,7 @@ on:
     branches:
       - deploy
       - release
-      - main
+      # Note: main branch PRs don't trigger automatic deployments
 
 env:
   NODE_VERSION: '18'  # LTS version

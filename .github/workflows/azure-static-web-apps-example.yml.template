@@ -1,22 +1,29 @@
 # This file will be automatically created by Azure Static Web Apps
 # This is just an example of what it will look like
+# THIS WORKFLOW IS DISABLED - it's just a template/example
 
-name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD (EXAMPLE - DISABLED)
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
+  # Disabled - this is just an example template
+  # Uncomment the below if you want to use this workflow
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
+  #   types: [opened, synchronize, reopened, closed]
+  #   branches:
+  #     - main
+  
+  # Manual trigger only for testing this example
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    # This job is disabled since this is just an example
+    if: false  # github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    name: Build and Deploy Job (EXAMPLE - DISABLED)
     steps:
       - uses: actions/checkout@v3
         with:
@@ -33,9 +40,10 @@ jobs:
           output_location: "out" # Built app content directory - optional
 
   close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    # This job is disabled since this is just an example
+    if: false  # github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    name: Close Pull Request Job
+    name: Close Pull Request Job (EXAMPLE - DISABLED)
     steps:
       - name: Close Pull Request
         id: closepullrequest
