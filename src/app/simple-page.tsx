@@ -965,7 +965,7 @@ export default function SimpleHomePage() {
               )}
               {loading && (
                 <div className="mt-4 text-sm text-white/70 flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
                   Loading...
                 </div>
               )}
