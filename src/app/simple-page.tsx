@@ -728,12 +728,12 @@ export default function SimpleHomePage() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center relative">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
-            <div className="mx-auto w-32 h-32 flex items-center justify-center mb-4">
+            <div className="mx-auto w-40 h-40 flex items-center justify-center mb-4">
               <Image 
                 src="/logo.png" 
                 alt="Logo" 
-                width={120}
-                height={120}
+                width={150}
+                height={150}
                 className="object-contain"
               />
             </div>
@@ -966,9 +966,9 @@ export default function SimpleHomePage() {
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-full overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="lg:col-span-2 min-w-0">
+            <div className="lg:col-span-2 min-w-0 h-[600px]">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -978,10 +978,10 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="space-y-6 max-w-full overflow-hidden min-w-0">
+            <div className="space-y-6 max-w-full min-w-0 h-[600px] overflow-y-auto flex flex-col">
               {/* Selected User Info */}
               {selectedUser && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
                     <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
@@ -1026,7 +1026,7 @@ export default function SimpleHomePage() {
 
               {/* Selected Device Info */}
               {selectedDevice && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
                     <h3 className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
@@ -1079,7 +1079,7 @@ export default function SimpleHomePage() {
 
               {/* Selected Group Info */}
               {selectedGroup && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
                     <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -1140,10 +1140,12 @@ export default function SimpleHomePage() {
 
               {/* Group Details */}
               {selectedGroup && (
-                <GroupDetails
-                  group={selectedGroup}
-                  onMemberSelect={handleGroupMemberSelect}
-                />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <GroupDetails
+                    group={selectedGroup}
+                    onMemberSelect={handleGroupMemberSelect}
+                  />
+                </div>
               )}
             </div>
           </div>

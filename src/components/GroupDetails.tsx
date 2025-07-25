@@ -66,7 +66,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             </h4>
           </div>
           
-          <div className="space-y-1 max-h-32 overflow-y-auto">
+          <div className="space-y-1 max-h-40 overflow-y-auto">
             {group.members.slice(0, 5).map((member) => (
               <button
                 key={member.id}
@@ -116,7 +116,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             </h4>
           </div>
           
-          <div className="space-y-1">
+          <div className="space-y-1 max-h-32 overflow-y-auto">
             {group.memberOf.slice(0, 3).map((parentGroup) => (
               <div
                 key={parentGroup.id}
