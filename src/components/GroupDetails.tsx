@@ -6,9 +6,9 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
   const isSecurityGroup = group.groupTypes.includes('Unified') ? false : true
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full overflow-hidden">
       {/* Modern Header */}
-      <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+      <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl max-w-full">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
           <h3 className="text-base font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -66,7 +66,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       {/* Members Section - Compact */}
       {group.members && group.members.length > 0 && (
-        <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+        <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl max-w-full">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
             <h4 className="text-base font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
@@ -79,11 +79,11 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
               <button
                 key={member.id}
                 onClick={() => onMemberSelect(member)}
-                className="group w-full bg-gradient-to-br from-white/5 via-white/3 to-transparent backdrop-blur-lg border border-white/10 rounded-lg p-3 hover:border-white/30 hover:from-white/10 hover:shadow-lg transition-all duration-300 text-left"
+                className="group w-full max-w-full bg-gradient-to-br from-white/5 via-white/3 to-transparent backdrop-blur-lg border border-white/10 rounded-lg p-2 hover:border-white/30 hover:from-white/10 hover:shadow-lg transition-all duration-300 text-left flex-shrink-0"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <div className="relative flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md ${
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md ${
                       member['@odata.type'].includes('user') 
                         ? 'bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600' 
                         : member['@odata.type'].includes('device')
@@ -92,7 +92,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                     }`}>
                       {member.displayName.charAt(0).toUpperCase()}
                     </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs">
                         {member['@odata.type'].includes('user') ? '👤' : 
                          member['@odata.type'].includes('device') ? '💻' : '👥'}
@@ -100,8 +100,8 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                     </div>
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white group-hover:text-blue-200 transition-colors truncate text-sm">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="font-medium text-white group-hover:text-blue-200 transition-colors truncate text-xs">
                       {member.displayName}
                     </div>
                     {member.userPrincipalName && (
@@ -128,7 +128,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       {/* Member Of Section - Compact */}
       {group.memberOf && group.memberOf.length > 0 && (
-        <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+        <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl max-w-full">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 bg-gradient-to-r from-orange-400 to-red-400 rounded-full animate-pulse"></div>
             <h4 className="text-base font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
@@ -140,14 +140,14 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             {group.memberOf.slice(0, 5).map((parentGroup) => (
               <div
                 key={parentGroup.id}
-                className="bg-gradient-to-br from-white/5 via-white/3 to-transparent backdrop-blur-lg border border-white/10 rounded-lg p-3 hover:border-white/20 transition-all duration-300"
+                className="bg-gradient-to-br from-white/5 via-white/3 to-transparent backdrop-blur-lg border border-white/10 rounded-lg p-2 hover:border-white/20 transition-all duration-300 max-w-full"
               >
-                <div className="flex items-start gap-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md flex-shrink-0">
+                <div className="flex items-start gap-2 min-w-0">
+                  <div className="w-5 h-5 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md flex-shrink-0">
                     👥
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white truncate text-sm">{parentGroup.displayName}</div>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="font-medium text-white truncate text-xs">{parentGroup.displayName}</div>
                     {parentGroup.description && (
                       <div className="text-xs text-white/70 line-clamp-1">{parentGroup.description}</div>
                     )}
