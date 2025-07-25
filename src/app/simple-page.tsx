@@ -901,8 +901,8 @@ export default function SimpleHomePage() {
                 Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
               </h2>
               
-              {/* Search Box inline with title - fixed position and width */}
-              <div className="flex-shrink-0" style={{ width: searchType === 'group' ? '450px' : '320px' }}>
+              {/* Search Box inline with title - fixed position and width for all types */}
+              <div className="flex-shrink-0" style={{ width: '450px' }}>
                 {searchType === 'user' ? (
                   <UserSearch users={users} onUserSelect={handleUserSelect} />
                 ) : searchType === 'group' ? (
