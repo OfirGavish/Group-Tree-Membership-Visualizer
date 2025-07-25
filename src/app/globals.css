@@ -15,7 +15,7 @@
 }
 
 html, body {
-  background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #be185d 100%);
+  background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #000000 100%);
   color: var(--foreground);
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
@@ -214,4 +214,33 @@ div[class*="from-purple-500"][class*="z-10"] {
   fill: none;
   stroke: #ccc;
   stroke-width: 2px;
+}
+
+/* Force GroupDetails button styling to override any conflicting CSS */
+.space-y-1 .group-member-btn,
+div[class*="space-y-1"] button[class*="group-member-btn"],
+.space-y-1 button.group-member-btn,
+button.group-member-btn.group {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+.space-y-1 .group-member-btn:hover,
+div[class*="space-y-1"] button[class*="group-member-btn"]:hover,
+.space-y-1 button.group-member-btn:hover,
+button.group-member-btn.group:hover {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Force spacing for sidebar sections */
+.col-span-1 .space-y-1 > * + * {
+  margin-top: 0.25rem !important; /* Equivalent to space-y-1 */
+}
+
+/* Ensure background gradients work properly - force black endings */
+.min-h-screen[class*="bg-gradient-to-br"] {
+  background: linear-gradient(to bottom right, rgb(30 27 75), rgb(124 58 237), rgb(0 0 0)) !important;
 }
