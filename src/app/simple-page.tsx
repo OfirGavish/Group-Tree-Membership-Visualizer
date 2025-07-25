@@ -722,8 +722,8 @@ export default function SimpleHomePage() {
                 className="object-contain"
               />
             </div>
-          <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+          <div className="flex justify-center mb-4">
+            <div className="animate-spin h-8 w-8 border-4 border-white/30 border-t-white rounded-full"></div>
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">Loading...</h2>
           <p className="text-white/70">Checking authentication status</p>

@@ -54,6 +54,20 @@ html::before, html::after, body::before, body::after {
   }
 }
 
+/* Ensure spinner animation works */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Fix search input styling to match glass morphism design */
 input[type="text"], input[placeholder*="Search"] {
   background: linear-gradient(to right, 
@@ -131,7 +145,15 @@ button:not(.group-member-btn):not(.no-style):not([class*="animate"]):hover {
   backdrop-filter: none !important;
   border-radius: 0.375rem !important; /* Use Tailwind's rounded-md */
   box-shadow: none !important;
-  transition: border-color 0.15s ease-in-out !important;
+  transition: background-color 0.15s ease-in-out !important;
+  border: none !important;
+  font-family: inherit !important;
+}
+
+.group-member-btn:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 /* Fix dropdown text visibility */
