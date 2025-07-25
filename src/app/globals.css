@@ -17,6 +17,9 @@
 html, body {
   color: var(--foreground);
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+  /* Ensure basic background as fallback */
+  background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #000000 100%);
 }
 
 /* Custom animations for floating elements */
@@ -79,8 +82,67 @@ html, body {
   stroke-width: 2px;
 }
 
-/* Ensure sidebar background is properly applied */
+/* Ensure sidebar background is properly applied - only background properties */
 .col-span-1.space-y-1 {
   background-color: rgba(0, 0, 0, 0.3) !important;
   backdrop-filter: blur(16px) !important;
+  /* Limit sidebar width to prevent buttons from being too long */
+  max-width: 320px !important;
+}
+
+/* Explicit fallbacks for critical Tailwind classes */
+.bg-gradient-to-br {
+  background: linear-gradient(to bottom right, #1e1b4b, #7c3aed, #000000) !important;
+}
+
+.text-white {
+  color: white !important;
+}
+
+.min-h-screen {
+  min-height: 100vh !important;
+}
+
+.grid {
+  display: grid !important;
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.col-span-3 {
+  grid-column: span 3 / span 3 !important;
+}
+
+.col-span-1 {
+  grid-column: span 1 / span 1 !important;
+}
+
+.space-y-1 > * + * {
+  margin-top: 0.25rem !important;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem !important;
+}
+
+.p-6 {
+  padding: 1.5rem !important;
+}
+
+.p-4 {
+  padding: 1rem !important;
+}
+
+.flex {
+  display: flex !important;
+}
+
+.items-center {
+  align-items: center !important;
+}
+
+.justify-center {
+  justify-content: center !important;
 }
