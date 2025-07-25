@@ -54,19 +54,7 @@ html::before, html::after, body::before, body::after {
   }
 }
 
-/* Ensure spinner animation works */
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Remove custom spinner animation to use Tailwind's built-in */
 
 /* Fix search input styling to match glass morphism design */
 input[type="text"], input[placeholder*="Search"] {

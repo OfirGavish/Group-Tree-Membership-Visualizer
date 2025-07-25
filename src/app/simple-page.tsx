@@ -723,7 +723,7 @@ export default function SimpleHomePage() {
               />
             </div>
           <div className="flex justify-center mb-4">
-            <div className="animate-spin h-8 w-8 border-2 border-white/20 border-t-2 border-t-white rounded-full"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-white/30 border-t-4 border-t-white rounded-full"></div>
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">Loading...</h2>
           <p className="text-white/70">Checking authentication status</p>
@@ -977,7 +977,7 @@ export default function SimpleHomePage() {
         {(selectedUser || selectedGroup || selectedDevice) && (
           <div className="grid grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-2 min-w-0 h-[750px] relative">
+            <div className="col-span-2 min-w-0 h-[650px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -987,7 +987,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[750px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
+            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[650px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">

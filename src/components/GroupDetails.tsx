@@ -8,7 +8,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
   return (
     <div className="space-y-4 w-full">
       {/* Enhanced Header */}
-      <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10">
+      <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
           <h3 className="text-base font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">
@@ -18,10 +18,10 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
         
         <div className="flex items-start gap-3">
           <div className="relative flex-shrink-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg ring-2 ring-white/20">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
               {group.displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-md">
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-md">
               <span className="text-xs">👥</span>
             </div>
           </div>
@@ -34,14 +34,14 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm ${
                 isSecurityGroup 
-                  ? 'bg-gradient-to-r from-red-500/30 to-red-400/20 text-red-200 border border-red-400/30'
-                  : 'bg-gradient-to-r from-green-500/30 to-green-400/20 text-green-200 border border-green-400/30'
+                  ? 'bg-gradient-to-r from-red-500/30 to-red-400/20 text-red-200'
+                  : 'bg-gradient-to-r from-green-500/30 to-green-400/20 text-green-200'
               }`}>
                 {isSecurityGroup ? '🔒 Security' : '🏢 M365'}
               </div>
               
               {group.members && (
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-400/20 border border-blue-400/30 backdrop-blur-sm">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-400/20 backdrop-blur-sm">
                   <span className="text-blue-200 text-sm font-semibold">
                     👤 {group.members.length} members
                   </span>
@@ -58,7 +58,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       {/* Enhanced Members Section */}
       {group.members && group.members.length > 0 && (
-        <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10">
+        <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
             <h4 className="text-base font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-green-500 bg-clip-text text-transparent">
@@ -71,7 +71,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
               <button
                 key={member.id}
                 onClick={() => onMemberSelect(member)}
-                className="group-member-btn group w-full bg-gradient-to-r from-white/5 via-white/8 to-white/5 hover:from-white/15 hover:via-white/20 hover:to-white/15 rounded-xl p-3 hover:scale-[1.02] transition-all duration-200 text-left border border-white/10 hover:border-white/20 shadow-lg hover:shadow-xl"
+                className="group-member-btn group w-full bg-gradient-to-r from-white/5 via-white/8 to-white/5 hover:from-white/15 hover:via-white/20 hover:to-white/15 rounded-xl p-3 hover:scale-[1.02] transition-all duration-200 text-left shadow-lg hover:shadow-xl"
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold shadow-md ${
@@ -103,7 +103,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             ))}
             {group.members.length > 5 && (
               <div className="text-center py-2">
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-400/30 backdrop-blur-sm">
+                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full backdrop-blur-sm">
                   <span className="text-purple-200 text-sm font-medium">+{group.members.length - 5} more members</span>
                 </div>
               </div>
@@ -114,7 +114,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       {/* Enhanced Parent Groups Section */}
       {group.memberOf && group.memberOf.length > 0 && (
-        <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10">
+        <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-2 h-2 bg-gradient-to-r from-orange-400 to-red-400 rounded-full animate-pulse"></div>
             <h4 className="text-base font-bold bg-gradient-to-r from-orange-400 via-red-400 to-orange-500 bg-clip-text text-transparent">
@@ -126,7 +126,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             {group.memberOf.slice(0, 3).map((parentGroup) => (
               <div
                 key={parentGroup.id}
-                className="bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl p-3 border border-white/15 shadow-md hover:shadow-lg transition-all duration-200"
+                className="bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-200"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-sm shadow-md">
@@ -141,7 +141,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             ))}
             {group.memberOf.length > 3 && (
               <div className="text-center py-2">
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full border border-orange-400/30 backdrop-blur-sm">
+                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full backdrop-blur-sm">
                   <span className="text-orange-200 text-sm font-medium">+{group.memberOf.length - 3} more parent groups</span>
                 </div>
               </div>
@@ -152,8 +152,8 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
 
       {/* Enhanced Empty State */}
       {(!group.members || group.members.length === 0) && (!group.memberOf || group.memberOf.length === 0) && (
-        <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-6 shadow-2xl text-center border border-white/10">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500/30 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-400/30">
+        <div className="bg-gradient-to-br from-white/15 via-white/8 to-white/5 backdrop-blur-xl rounded-2xl p-6 shadow-2xl text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500/30 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">👥</span>
           </div>
           <h4 className="text-lg font-bold text-white mb-2">No Group Details</h4>
