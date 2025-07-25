@@ -878,9 +878,9 @@ export default function SimpleHomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-2 relative z-10">
         {error && (
-          <div className="mb-6 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
+          <div className="mb-4 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
             <div className="flex">
               <div className="text-red-100 text-sm">{error}</div>
               <button
@@ -894,11 +894,25 @@ export default function SimpleHomePage() {
         )}
 
         {/* Search Section */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-medium text-white">
-              Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
-            </h2>
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-6">
+              <h2 className="text-lg font-medium text-white">
+                Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
+              </h2>
+              
+              {/* Search Box inline with title */}
+              <div className="w-full" style={{ maxWidth: searchType === 'group' ? '400px' : '320px' }}>
+                {searchType === 'user' ? (
+                  <UserSearch users={users} onUserSelect={handleUserSelect} />
+                ) : searchType === 'group' ? (
+                  <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
+                ) : (
+                  <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
+                )}
+              </div>
+            </div>
+            
             <div className="flex bg-white/5 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
               <button
                 onClick={() => setSearchType('user')}
@@ -959,28 +973,21 @@ export default function SimpleHomePage() {
               </button>
             </div>
           </div>
-          <div className="flex justify-center p-3">
-            <div className="w-full max-w-xs" style={{ maxWidth: '320px' }}>
-              {searchType === 'user' ? (
-                <UserSearch users={users} onUserSelect={handleUserSelect} />
-              ) : searchType === 'group' ? (
-                <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
-              ) : (
-                <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
-              )}
-              {loading && (
-                <div className="mt-4 text-sm text-white/70 flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                  Loading...
-                </div>
-              )}
+          
+          {/* Loading indicator */}
+          {loading && (
+            <div className="flex justify-center">
+              <div className="text-sm text-white/70 flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                Loading...
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-6 gap-4 max-w-full overflow-hidden min-h-0">
+          <div className="grid grid-cols-6 gap-4 w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
             <div className="col-span-4 min-w-0 h-[750px] relative">
               <TreeVisualization
@@ -992,7 +999,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-2 space-y-1 max-w-full min-w-0 h-[750px] overflow-y-auto flex flex-col rounded-xl p-4 relative z-10 sidebar-panel">
+            <div className="col-span-2 space-y-1 max-w-full min-w-0 h-[750px] overflow-y-auto flex flex-col rounded-xl p-3 relative z-10 sidebar-panel">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
