@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { authService } from '@/lib/msal-auth-service'
 import { ApiGraphService } from '@/lib/api-graph-service'
 import { CacheService } from '@/lib/cache-service'
@@ -271,6 +272,20 @@ export default function SimpleHomePage() {
 
     console.log('Node selected:', node.name, node.type, 'Current expanded nodes:', Array.from(expandedNodes))
     setSelectedNode(node)
+    
+    // Clear previous selections and set the appropriate one based on node type
+    setSelectedUser(null)
+    setSelectedDevice(null)
+    setSelectedGroup(null)
+    
+    // Set the specific selection based on node type
+    if (node.type === 'user') {
+      setSelectedUser(node.data as User)
+    } else if (node.type === 'device') {
+      setSelectedDevice(node.data as Device)
+    } else if (node.type === 'group') {
+      setSelectedGroup(node.data as Group)
+    }
     
     // Handle user node selection - check if expanding or collapsing
     if (node.type === 'user') {
@@ -698,8 +713,17 @@ export default function SimpleHomePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+          <div className="mx-auto w-60 h-60 flex items-center justify-center mb-4">
+              <Image 
+                src="/logo.png" 
+                alt="Logo" 
+                width={150}
+                height={150}
+                className="object-contain"
+              />
+            </div>
+          <div className="flex justify-center mb-4">
+            <div className="animate-spin h-8 w-8 border-4 border-white/30 border-t-4 border-t-white rounded-full"></div>
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">Loading...</h2>
           <p className="text-white/70">Checking authentication status</p>
@@ -713,11 +737,13 @@ export default function SimpleHomePage() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center relative">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
-            <div className="mx-auto w-12 h-12 flex items-center justify-center mb-4">
-              <img 
+            <div className="mx-auto w-80 h-80 flex items-center justify-center mb-4">
+              <Image 
                 src="/logo.png" 
                 alt="Logo" 
-                className="w-10 h-10 object-contain"
+                width={200}
+                height={200}
+                className="object-contain"
               />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Group Tree Membership Visualizer</h1>
@@ -939,7 +965,7 @@ export default function SimpleHomePage() {
               )}
               {loading && (
                 <div className="mt-4 text-sm text-white/70 flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
                   Loading...
                 </div>
               )}
@@ -949,9 +975,9 @@ export default function SimpleHomePage() {
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="lg:col-span-2">
+            <div className="col-span-2 min-w-0 h-[700px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -960,64 +986,153 @@ export default function SimpleHomePage() {
               />
             </div>
 
-            {/* Details Panel */}
-            <div className="space-y-6">
-              {/* Selected User/Group/Device Info */}
+            {/* Modern Details Panel */}
+            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[700px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
+              {/* Selected User Info */}
               {selectedUser && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Selected User</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedUser.displayName.charAt(0).toUpperCase()}
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                      Selected User
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-start gap-6">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        👤
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-white">{selectedUser.displayName}</div>
-                      <div className="text-sm text-white/70">{selectedUser.userPrincipalName}</div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                        {selectedUser.displayName}
+                      </h4>
+                      <p className="text-blue-300 text-sm mb-2 truncate">
+                        {selectedUser.userPrincipalName}
+                      </p>
                       {selectedUser.jobTitle && (
-                        <div className="text-xs text-white/60">{selectedUser.jobTitle}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedDevice && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Selected Device</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedDevice.displayName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">{selectedDevice.displayName}</div>
-                      {selectedDevice.operatingSystem && (
-                        <div className="text-sm text-white/70">{selectedDevice.operatingSystem}</div>
-                      )}
-                      {selectedDevice.deviceId && (
-                        <div className="text-xs text-white/60">ID: {selectedDevice.deviceId}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Selected Group</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedGroup.displayName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">{selectedGroup.displayName}</div>
-                      {selectedGroup.description && (
-                        <div className="text-sm text-white/70">{selectedGroup.description}</div>
-                      )}
-                      {selectedGroup.members && (
-                        <div className="text-xs text-white/60">
-                          {selectedGroup.members.length} member{selectedGroup.members.length !== 1 ? 's' : ''}
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                          <span className="text-blue-300 text-xs font-medium">{selectedUser.jobTitle}</span>
                         </div>
                       )}
+                      
+                      {/* User ID */}
+                      <div className="mt-3 p-2 bg-black/20 rounded-lg">
+                        <div className="text-xs text-white/60 mb-1">User ID</div>
+                        <div className="text-xs text-white/80 font-mono break-all">
+                          {selectedUser.id}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Device Info */}
+              {selectedDevice && (
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                      Selected Device
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-start gap-6">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        💻
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                        {selectedDevice.displayName}
+                      </h4>
+                      {selectedDevice.operatingSystem && (
+                        <p className="text-green-300 text-sm mb-2">
+                          {selectedDevice.operatingSystem}
+                        </p>
+                      )}
+                      
+                      {/* Device Details */}
+                      <div className="space-y-2 mt-3">
+                        {selectedDevice.deviceId && (
+                          <div className="p-2 bg-black/20 rounded-lg">
+                            <div className="text-xs text-white/60 mb-1">Device ID</div>
+                            <div className="text-xs text-white/80 font-mono break-all">
+                              {selectedDevice.deviceId}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="p-2 bg-black/20 rounded-lg">
+                          <div className="text-xs text-white/60 mb-1">Object ID</div>
+                          <div className="text-xs text-white/80 font-mono break-all">
+                            {selectedDevice.id}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Group Info */}
+              {selectedGroup && (
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                      Selected Group
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-start gap-6">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        👥
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                        {selectedGroup.displayName}
+                      </h4>
+                      {selectedGroup.description && (
+                        <p className="text-purple-300 text-sm mb-2">
+                          {selectedGroup.description}
+                        </p>
+                      )}
+                      
+                      {/* Group Stats */}
+                      <div className="flex items-center gap-3 mt-3 mb-3">
+                        {selectedGroup.members && (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                            <span className="text-purple-300 text-xs font-medium">
+                              {selectedGroup.members.length} member{selectedGroup.members.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {selectedGroup.groupTypes && selectedGroup.groupTypes.length > 0 && (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30">
+                            <span className="text-pink-300 text-xs font-medium">
+                              {selectedGroup.groupTypes[0]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Group ID */}
+                      <div className="p-2 bg-black/20 rounded-lg">
+                        <div className="text-xs text-white/60 mb-1">Group ID</div>
+                        <div className="text-xs text-white/80 font-mono break-all">
+                          {selectedGroup.id}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1025,10 +1140,12 @@ export default function SimpleHomePage() {
 
               {/* Group Details */}
               {selectedGroup && (
-                <GroupDetails
-                  group={selectedGroup}
-                  onMemberSelect={handleGroupMemberSelect}
-                />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <GroupDetails
+                    group={selectedGroup}
+                    onMemberSelect={handleGroupMemberSelect}
+                  />
+                </div>
               )}
             </div>
           </div>
