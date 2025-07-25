@@ -102,7 +102,7 @@ input[placeholder*="group"]::placeholder {
 }
 
 /* Modern rounded corners for all interactive elements - exclude GroupDetails */
-button:not(.group-member-btn):not(.no-style), .btn, input, select, textarea {
+button:not(.group-member-btn):not(.no-style):not([class*="animate"]), .btn, input, select, textarea {
   border-radius: 1rem !important;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-weight: 500;
@@ -114,13 +114,13 @@ input[type="text"], input[placeholder*="Search"], input[placeholder*="search"] {
   width: 100% !important;
 }
 
-/* Enhanced button styling - exclude GroupDetails buttons */
-button:not(.group-member-btn):not(.no-style) {
+/* Enhanced button styling - exclude GroupDetails buttons and animated elements */
+button:not(.group-member-btn):not(.no-style):not([class*="animate"]) {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   backdrop-filter: blur(8px) !important;
 }
 
-button:not(.group-member-btn):not(.no-style):hover {
+button:not(.group-member-btn):not(.no-style):not([class*="animate"]):hover {
   transform: translateY(-1px) !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
 }

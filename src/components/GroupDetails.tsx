@@ -71,10 +71,10 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
               <button
                 key={member.id}
                 onClick={() => onMemberSelect(member)}
-                className="group-member-btn group w-full bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-md p-1.5 hover:border-white/30 transition-all text-left"
+                className="group-member-btn group w-full bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-md p-1 hover:border-white/30 transition-all text-left text-xs"
               >
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-4 h-4 rounded flex items-center justify-center text-xs font-bold ${
+                <div className="flex items-center gap-1">
+                  <div className={`w-3 h-3 rounded flex items-center justify-center text-xs font-bold ${
                     member['@odata.type'].includes('user') 
                       ? 'bg-blue-500' 
                       : member['@odata.type'].includes('device')
