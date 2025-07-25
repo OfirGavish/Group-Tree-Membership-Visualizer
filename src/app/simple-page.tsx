@@ -723,7 +723,7 @@ export default function SimpleHomePage() {
               />
             </div>
           <div className="flex justify-center mb-4">
-            <div className="animate-spin h-8 w-8 border-4 border-white/30 border-t-white rounded-full"></div>
+            <div className="animate-spin h-8 w-8 border-2 border-white/20 border-t-2 border-t-white rounded-full"></div>
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">Loading...</h2>
           <p className="text-white/70">Checking authentication status</p>
@@ -987,10 +987,10 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[600px] overflow-y-auto flex flex-col bg-black/10 rounded-xl border border-white/20 p-4 relative z-10">
+            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[600px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
               {/* Selected User Info */}
               {selectedUser && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
                     <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
@@ -1022,7 +1022,7 @@ export default function SimpleHomePage() {
                       )}
                       
                       {/* User ID */}
-                      <div className="mt-3 p-2 bg-black/20 rounded-lg border border-white/10">
+                      <div className="mt-3 p-2 bg-black/20 rounded-lg">
                         <div className="text-xs text-white/60 mb-1">User ID</div>
                         <div className="text-xs text-white/80 font-mono break-all">
                           {selectedUser.id}
@@ -1035,7 +1035,7 @@ export default function SimpleHomePage() {
 
               {/* Selected Device Info */}
               {selectedDevice && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
                     <h3 className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
@@ -1066,7 +1066,7 @@ export default function SimpleHomePage() {
                       {/* Device Details */}
                       <div className="space-y-2 mt-3">
                         {selectedDevice.deviceId && (
-                          <div className="p-2 bg-black/20 rounded-lg border border-white/10">
+                          <div className="p-2 bg-black/20 rounded-lg">
                             <div className="text-xs text-white/60 mb-1">Device ID</div>
                             <div className="text-xs text-white/80 font-mono break-all">
                               {selectedDevice.deviceId}
@@ -1074,7 +1074,7 @@ export default function SimpleHomePage() {
                           </div>
                         )}
                         
-                        <div className="p-2 bg-black/20 rounded-lg border border-white/10">
+                        <div className="p-2 bg-black/20 rounded-lg">
                           <div className="text-xs text-white/60 mb-1">Object ID</div>
                           <div className="text-xs text-white/80 font-mono break-all">
                             {selectedDevice.id}
@@ -1088,7 +1088,7 @@ export default function SimpleHomePage() {
 
               {/* Selected Group Info */}
               {selectedGroup && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
                     <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -1136,7 +1136,7 @@ export default function SimpleHomePage() {
                       </div>
                       
                       {/* Group ID */}
-                      <div className="p-2 bg-black/20 rounded-lg border border-white/10">
+                      <div className="p-2 bg-black/20 rounded-lg">
                         <div className="text-xs text-white/60 mb-1">Group ID</div>
                         <div className="text-xs text-white/80 font-mono break-all">
                           {selectedGroup.id}
