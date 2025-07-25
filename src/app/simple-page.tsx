@@ -11,6 +11,7 @@ import GroupSearch from '@/components/GroupSearch'
 import DeviceSearch from '@/components/DeviceSearch'
 import TreeVisualization from '@/components/TreeVisualization'
 import GroupDetails from '@/components/GroupDetails'
+import DragDropModal from '@/components/DragDropModal'
 
 export default function SimpleHomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -30,6 +31,11 @@ export default function SimpleHomePage() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [searchType, setSearchType] = useState<'user' | 'group' | 'device'>('user')
   const [cacheStats, setCacheStats] = useState({ totalItems: 0, totalSize: 0 })
+  
+  // Drag and drop state
+  const [draggedNode, setDraggedNode] = useState<TreeNode | null>(null)
+  const [showDragDropModal, setShowDragDropModal] = useState(false)
+  const [dropTargetNode, setDropTargetNode] = useState<TreeNode | null>(null)
 
   // Cache management functions
   const updateCacheStats = () => {
@@ -708,6 +714,88 @@ export default function SimpleHomePage() {
     }
   }
 
+  // Drag and drop handlers
+  const handleDragStart = (node: TreeNode) => {
+    console.log('Drag started:', node.name, node.type)
+    setDraggedNode(node)
+  }
+
+  const handleDragEnd = () => {
+    console.log('Drag ended')
+    // Don't clear draggedNode here, we need it for the modal
+  }
+
+  const handleDrop = (draggedNode: TreeNode, targetNode: TreeNode) => {
+    console.log('Drop detected:', draggedNode.name, 'onto', targetNode.name)
+    
+    // Only allow dropping users/devices onto groups
+    if ((draggedNode.type === 'user' || draggedNode.type === 'device') && targetNode.type === 'group') {
+      setDropTargetNode(targetNode)
+      setShowDragDropModal(true)
+    } else {
+      console.log('Invalid drop target')
+      setDraggedNode(null)
+    }
+  }
+
+  const handleDragDropConfirm = async (action: 'move' | 'add') => {
+    if (!draggedNode || !dropTargetNode) return
+
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const graphService = new ApiGraphService()
+      
+      // Get the original IDs for the API calls
+      const memberId = (draggedNode.data as any).originalId || draggedNode.data.id
+      const targetGroupId = (dropTargetNode.data as any).originalId || dropTargetNode.data.id
+      
+      console.log(`${action === 'move' ? 'Moving' : 'Adding'} ${draggedNode.name} ${action === 'move' ? 'to' : 'to'} ${dropTargetNode.name}`)
+      
+      if (action === 'move') {
+        // For move operation, we need to find the current group(s) and remove from them
+        // This is complex as we'd need to track the current context
+        // For now, let's just add to the new group (user can manually remove from old groups if needed)
+        await graphService.addGroupMember(targetGroupId, memberId)
+        
+        setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}. Note: Move operation adds to new group - please manually remove from old groups if needed.`)
+      } else {
+        // Add to group
+        await graphService.addGroupMember(targetGroupId, memberId)
+        setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}`)
+      }
+      
+      // Clear the success message after 5 seconds
+      setTimeout(() => setError(null), 5000)
+      
+      // Refresh the tree data to show the changes
+      if (selectedUser) {
+        await handleUserSelect(selectedUser)
+      } else if (selectedDevice) {
+        await handleDeviceSelect(selectedDevice)
+      } else if (selectedGroup) {
+        await handleGroupSelect(selectedGroup)
+      }
+      
+    } catch (error) {
+      console.error('Error in drag drop operation:', error)
+      setError(`Failed to ${action} ${draggedNode.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setLoading(false)
+      setShowDragDropModal(false)
+      setDraggedNode(null)
+      setDropTargetNode(null)
+      updateCacheStats()
+    }
+  }
+
+  const handleDragDropCancel = () => {
+    setShowDragDropModal(false)
+    setDraggedNode(null)
+    setDropTargetNode(null)
+  }
+
   // Show loading screen during initial auth check
   if (authLoading) {
     return (
@@ -995,6 +1083,9 @@ export default function SimpleHomePage() {
                 onNodeSelect={handleNodeSelect}
                 selectedNode={selectedNode || undefined}
                 expandedNodes={expandedNodes}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDrop={handleDrop}
               />
             </div>
 
@@ -1162,6 +1253,17 @@ export default function SimpleHomePage() {
             </div>
           </div>
         )}
+        
+        {/* Drag and Drop Modal */}
+        <DragDropModal
+          isOpen={showDragDropModal}
+          draggedNode={draggedNode}
+          targetNode={dropTargetNode}
+          onConfirm={(action) => {
+            handleDragDropConfirm(action)
+          }}
+          onClose={handleDragDropCancel}
+        />
       </main>
     </div>
   )

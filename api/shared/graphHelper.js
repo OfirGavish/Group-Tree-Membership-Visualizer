@@ -64,7 +64,12 @@ async function getGraphAccessToken(req, context) {
         
         const oboRequest = {
             oboAssertion: userToken,
-            scopes: ['https://graph.microsoft.com/User.Read.All', 'https://graph.microsoft.com/Group.Read.All', 'https://graph.microsoft.com/Directory.Read.All']
+            scopes: [
+                'https://graph.microsoft.com/User.Read.All', 
+                'https://graph.microsoft.com/Group.Read.All', 
+                'https://graph.microsoft.com/Group.ReadWrite.All',  // Added for group membership management
+                'https://graph.microsoft.com/Directory.Read.All'
+            ]
         };
 
         const oboResponse = await pca.acquireTokenOnBehalfOf(oboRequest);

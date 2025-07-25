@@ -333,4 +333,71 @@ export class ApiGraphService {
       throw error
     }
   }
+
+  /**
+   * Add a member to a group
+   */
+  async addGroupMember(groupId: string, memberId: string): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      const response = await fetch('/api/addGroupMember', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          groupId,
+          memberId
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Failed to add member to group: ${response.status}`)
+      }
+
+      // Clear related cache entries after successful operation
+      CacheService.remove(CacheService.keys.groupMembers(groupId))
+      CacheService.remove(CacheService.keys.userGroups(memberId))
+      // Note: Devices would also be impacted, but we'll use userGroups cache key for now
+      CacheService.remove(CacheService.keys.groupMemberOf(groupId))
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error adding group member:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Remove a member from a group
+   */
+  async removeGroupMember(groupId: string, memberId: string): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      const response = await fetch(`/api/removeGroupMember?groupId=${encodeURIComponent(groupId)}&memberId=${encodeURIComponent(memberId)}`, {
+        method: 'DELETE',
+        headers
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Failed to remove member from group: ${response.status}`)
+      }
+
+      // Clear related cache entries after successful operation
+      CacheService.remove(CacheService.keys.groupMembers(groupId))
+      CacheService.remove(CacheService.keys.userGroups(memberId))
+      // Note: Devices would also be impacted, but we'll use userGroups cache key for now
+      CacheService.remove(CacheService.keys.groupMemberOf(groupId))
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error removing group member:', error)
+      throw error
+    }
+  }
 }

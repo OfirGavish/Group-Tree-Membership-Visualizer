@@ -4,7 +4,15 @@ import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { TreeNode, TreeVisualizationProps } from '@/types'
 
-export default function TreeVisualization({ data, onNodeSelect, selectedNode, expandedNodes }: TreeVisualizationProps) {
+export default function TreeVisualization({ 
+  data, 
+  onNodeSelect, 
+  selectedNode, 
+  expandedNodes,
+  onDragStart,
+  onDragEnd,
+  onDrop
+}: TreeVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
@@ -122,7 +130,7 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       .style('stroke-width', 3)
       .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
 
-    // Add nodes with enhanced styling
+    // Add nodes with enhanced styling and drag-and-drop functionality
     const node = g
       .selectAll('.node')
       .data(treeData.descendants())
@@ -137,11 +145,21 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
         onNodeSelect(d.data)
       })
       .on('mouseover', function(event, d) {
-        d3.select(this).select('circle')
-          .transition()
-          .duration(200)
-          .attr('r', 18)
-          .style('filter', 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))')
+        // Enhanced hover effect for groups when drag-drop is enabled
+        if (d.data.type === 'group' && onDrop) {
+          d3.select(this).select('circle')
+            .transition()
+            .duration(200)
+            .attr('r', 18)
+            .style('filter', 'drop-shadow(0 6px 12px rgba(0,0,0,0.4))')
+            .style('stroke-width', 4)
+        } else {
+          d3.select(this).select('circle')
+            .transition()
+            .duration(200)
+            .attr('r', 18)
+            .style('filter', 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))')
+        }
       })
       .on('mouseout', function(event, d) {
         d3.select(this).select('circle')
@@ -149,7 +167,71 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
           .duration(200)
           .attr('r', 15)
           .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+          .style('stroke-width', 3)
       })
+      .call(d3.drag<SVGGElement, d3.HierarchyPointNode<TreeNode>>()
+        .on('start', function(event, d) {
+          // Only allow dragging users and devices
+          if ((d.data.type === 'user' || d.data.type === 'device') && onDragStart) {
+            onDragStart(d.data)
+            
+            // Add visual feedback for the dragged item
+            d3.select(this).select('circle')
+              .style('stroke', '#fbbf24')
+              .style('stroke-width', 4)
+              .style('opacity', 0.8)
+            
+            // Highlight potential drop targets (groups)
+            g.selectAll('.tree-node')
+              .filter((dropTarget: any) => dropTarget.data.type === 'group')
+              .select('circle')
+              .style('stroke', '#10b981')
+              .style('stroke-width', 4)
+              .style('stroke-dasharray', '5,5')
+          } else {
+            // Prevent dragging for groups
+            event.sourceEvent.stopPropagation()
+          }
+        })
+        .on('end', function(event, d) {
+          if ((d.data.type === 'user' || d.data.type === 'device') && onDrop) {
+            // Remove visual feedback from dragged item
+            d3.select(this).select('circle')
+              .style('stroke', '#ffffff')
+              .style('stroke-width', 3)
+              .style('opacity', 1)
+            
+            // Remove drop target highlighting
+            g.selectAll('.tree-node')
+              .filter((dropTarget: any) => dropTarget.data.type === 'group')
+              .select('circle')
+              .style('stroke', '#ffffff')
+              .style('stroke-width', 3)
+              .style('stroke-dasharray', 'none')
+            
+            // Check if dropped on a valid target
+            const [x, y] = d3.pointer(event.sourceEvent, g.node())
+            const dropTargets = g.selectAll('.tree-node')
+              .filter((dropTargetNode: any) => {
+                if (dropTargetNode.data.type !== 'group') return false
+                const distance = Math.sqrt(
+                  Math.pow(x - dropTargetNode.y!, 2) + Math.pow(y - dropTargetNode.x!, 2)
+                )
+                return distance < 30 // Within 30 pixels of the target
+              })
+              .data()
+            
+            if (dropTargets.length > 0) {
+              const targetData = dropTargets[0] as d3.HierarchyPointNode<TreeNode>
+              onDrop(d.data, targetData.data)
+            }
+          }
+          
+          if (onDragEnd) {
+            onDragEnd()
+          }
+        })
+      )
 
     // Add enhanced circles for nodes
     node
@@ -411,14 +493,14 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       
       svg.call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale))
     }
-  }, [data, selectedNode, onNodeSelect, expandedNodes])
+  }, [data, selectedNode, onNodeSelect, expandedNodes, onDragStart, onDragEnd, onDrop])
 
   return (
     <div className="p-6">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-white">Group Membership Tree</h3>
         <p className="text-sm text-white/70">
-          Click on nodes to explore • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom
+          Click on nodes to explore • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom • Drag users/devices to groups to manage memberships
         </p>
       </div>
       <div className="overflow-hidden rounded-lg">
