@@ -62,7 +62,7 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
         </div>
 
         {isOpen && searchTerm && (
-          <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-purple-500/15 via-pink-500/10 to-purple-500/15 backdrop-blur-xl rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden">
+          <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-purple-500/15 via-pink-500/10 to-purple-500/15 backdrop-blur-xl rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden border border-purple-300/20">
             {/* Animated gradient background */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-transparent to-pink-600/10 animate-pulse"></div>
             
@@ -79,22 +79,53 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-pink-400/10 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     <div className="relative">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-white group-hover:text-purple-100 transition-colors duration-300 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0"></span>
-                            <span className="truncate">{group.displayName}</span>
-                            {group.isEmpty && (
-                              <span className="px-2 py-1 text-xs bg-gradient-to-r from-red-500/80 to-pink-500/60 text-red-100 rounded-full shadow-lg border border-red-400/30 flex-shrink-0">
-                                Empty
-                              </span>
-                            )}
-                          </div>
-                          {group.description && (
-                            <div className="text-sm text-purple-200/70 group-hover:text-purple-100/80 transition-colors duration-300 truncate ml-4 mt-1">{group.description}</div>
+                      <div className="flex items-center gap-3">
+                        {/* Status indicator */}
+                        <div className="flex-shrink-0 flex items-center">
+                          {group.isEmpty ? (
+                            <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-pink-400 rounded-full opacity-80 shadow-lg" title="Empty group"></div>
+                          ) : (
+                            <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-80 shadow-lg" title="Has members"></div>
                           )}
-                          <div className="text-xs text-purple-200/60 group-hover:text-purple-100/70 transition-colors duration-300 ml-4 mt-1 font-medium">
-                            {group.memberCount} members • {group.groupTypes.join(', ') || 'Standard Group'}
+                        </div>
+                        
+                        {/* Group info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              {/* Group name with empty badge */}
+                              <div className="font-semibold text-white group-hover:text-purple-100 transition-colors duration-300 flex items-center gap-2 mb-1">
+                                <span className="truncate text-base">{group.displayName}</span>
+                                {group.isEmpty && (
+                                  <span className="px-2 py-0.5 text-xs bg-gradient-to-r from-red-500/90 to-pink-500/70 text-red-100 rounded-full shadow-lg border border-red-400/40 flex-shrink-0 font-medium">
+                                    Empty
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Description */}
+                              {group.description && (
+                                <div className="text-sm text-purple-200/80 group-hover:text-purple-100/90 transition-colors duration-300 truncate mb-1">
+                                  {group.description}
+                                </div>
+                              )}
+                              
+                              {/* Member count and type */}
+                              <div className="flex items-center gap-3 text-xs">
+                                <div className="flex items-center gap-1.5 text-purple-200/70 group-hover:text-purple-100/80 transition-colors duration-300">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                  </svg>
+                                  <span className="font-medium">{group.memberCount || 0} member{(group.memberCount || 0) !== 1 ? 's' : ''}</span>
+                                </div>
+                                
+                                <div className="w-1 h-1 bg-purple-300/40 rounded-full"></div>
+                                
+                                <div className="text-purple-200/60 group-hover:text-purple-100/70 transition-colors duration-300 font-medium">
+                                  {group.groupTypes && group.groupTypes.length > 0 ? group.groupTypes.join(', ') : 'Standard Group'}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -102,11 +133,13 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
                   </button>
                 ))
               ) : (
-                <div className="px-5 py-4 text-purple-200/70 text-sm flex items-center gap-2">
-                  <svg className="w-4 h-4 text-purple-300/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  No groups found
+                <div className="px-5 py-6 text-center">
+                  <div className="flex flex-col items-center gap-2 text-purple-200/70">
+                    <svg className="w-8 h-8 text-purple-300/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="text-sm">No groups found</span>
+                  </div>
                 </div>
               )}
             </div>
