@@ -737,12 +737,12 @@ export default function SimpleHomePage() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center relative">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
-            <div className="mx-auto w-60 h-60 flex items-center justify-center mb-4">
+            <div className="mx-auto w-80 h-80 flex items-center justify-center mb-4">
               <Image 
                 src="/logo.png" 
                 alt="Logo" 
-                width={150}
-                height={150}
+                width={200}
+                height={200}
                 className="object-contain"
               />
             </div>
@@ -977,7 +977,7 @@ export default function SimpleHomePage() {
         {(selectedUser || selectedGroup || selectedDevice) && (
           <div className="grid grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-2 min-w-0 h-[600px] relative">
+            <div className="col-span-2 min-w-0 h-[750px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -987,7 +987,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[600px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
+            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[750px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
