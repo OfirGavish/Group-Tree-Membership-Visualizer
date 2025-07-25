@@ -119,11 +119,6 @@ export default function DeviceSearch({ onDeviceSelect, devices }: DeviceSearchPr
           style={{ maxWidth: '300px' }}
         />
         
-        {/* Search Icon */}
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">
-          💻
-        </div>
-        
         {/* Clear Button */}
         {searchTerm && (
           <button

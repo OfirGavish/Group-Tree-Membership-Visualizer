@@ -807,7 +807,7 @@ export default function SimpleHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-6 h-6 bg-blue-400/30 rounded-full blur-xl animate-float"></div>
@@ -975,9 +975,9 @@ export default function SimpleHomePage() {
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
+          <div className="grid grid-cols-4 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-2 min-w-0 h-[700px] relative">
+            <div className="col-span-3 min-w-0 h-[700px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -987,39 +987,39 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[700px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
+            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[700px] overflow-y-auto flex flex-col bg-black/30 backdrop-blur-md rounded-xl p-4 relative z-10">
               {/* Selected User Info */}
               {selectedUser && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h3 className="text-base font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                       Selected User
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         👤
                       </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                      <h4 className="font-bold text-white text-base mb-1 truncate">
                         {selectedUser.displayName}
                       </h4>
-                      <p className="text-blue-300 text-sm mb-2 truncate">
+                      <p className="text-blue-300 text-xs mb-2 truncate">
                         {selectedUser.userPrincipalName}
                       </p>
                       {selectedUser.jobTitle && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                        <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
                           <span className="text-blue-300 text-xs font-medium">{selectedUser.jobTitle}</span>
                         </div>
                       )}
                       
                       {/* User ID */}
-                      <div className="mt-3 p-2 bg-black/20 rounded-lg">
+                      <div className="mt-2 p-2 bg-black/20 rounded-lg">
                         <div className="text-xs text-white/60 mb-1">User ID</div>
                         <div className="text-xs text-white/80 font-mono break-all">
                           {selectedUser.id}
@@ -1032,33 +1032,33 @@ export default function SimpleHomePage() {
 
               {/* Selected Device Info */}
               {selectedDevice && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                    <h3 className="text-base font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
                       Selected Device
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         💻
                       </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                      <h4 className="font-bold text-white text-base mb-1 truncate">
                         {selectedDevice.displayName}
                       </h4>
                       {selectedDevice.operatingSystem && (
-                        <p className="text-green-300 text-sm mb-2">
+                        <p className="text-green-300 text-xs mb-2">
                           {selectedDevice.operatingSystem}
                         </p>
                       )}
                       
                       {/* Device Details */}
-                      <div className="space-y-2 mt-3">
+                      <div className="space-y-2 mt-2">
                         {selectedDevice.deviceId && (
                           <div className="p-2 bg-black/20 rounded-lg">
                             <div className="text-xs text-white/60 mb-1">Device ID</div>
@@ -1082,35 +1082,35 @@ export default function SimpleHomePage() {
 
               {/* Selected Group Info */}
               {selectedGroup && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    <h3 className="text-base font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                       Selected Group
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         👥
                       </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                      <h4 className="font-bold text-white text-base mb-1 truncate">
                         {selectedGroup.displayName}
                       </h4>
                       {selectedGroup.description && (
-                        <p className="text-purple-300 text-sm mb-2">
+                        <p className="text-purple-300 text-xs mb-2">
                           {selectedGroup.description}
                         </p>
                       )}
                       
                       {/* Group Stats */}
-                      <div className="flex items-center gap-3 mt-3 mb-3">
+                      <div className="flex items-center gap-2 mt-2 mb-2">
                         {selectedGroup.members && (
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                          <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30">
                             <span className="text-purple-300 text-xs font-medium">
                               {selectedGroup.members.length} member{selectedGroup.members.length !== 1 ? 's' : ''}
                             </span>
@@ -1118,7 +1118,7 @@ export default function SimpleHomePage() {
                         )}
                         
                         {selectedGroup.groupTypes && selectedGroup.groupTypes.length > 0 && (
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30">
+                          <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30">
                             <span className="text-pink-300 text-xs font-medium">
                               {selectedGroup.groupTypes[0]}
                             </span>
