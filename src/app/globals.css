@@ -101,8 +101,8 @@ input[placeholder*="group"]::placeholder {
   color: rgba(196, 181, 253, 0.7) !important;
 }
 
-/* Modern rounded corners for all interactive elements */
-button, .btn, input, select, textarea {
+/* Modern rounded corners for all interactive elements - exclude GroupDetails */
+button:not(.group-member-btn):not(.no-style), .btn, input, select, textarea {
   border-radius: 1rem !important;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-weight: 500;
@@ -114,13 +114,13 @@ input[type="text"], input[placeholder*="Search"], input[placeholder*="search"] {
   width: 100% !important;
 }
 
-/* Enhanced button styling */
-button:not(.no-style) {
+/* Enhanced button styling - exclude GroupDetails buttons */
+button:not(.group-member-btn):not(.no-style) {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   backdrop-filter: blur(8px) !important;
 }
 
-button:not(.no-style):hover {
+button:not(.group-member-btn):not(.no-style):hover {
   transform: translateY(-1px) !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
 }
@@ -202,4 +202,24 @@ div[class*="from-purple-500"][class*="z-10"] {
   fill: none;
   stroke: #ccc;
   stroke-width: 2px;
+}
+
+/* GroupDetails specific styles to prevent layout issues */
+.group-member-btn {
+  max-width: 100% !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.group-member-btn:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure GroupDetails container stays within bounds */
+.space-y-3 > div {
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
