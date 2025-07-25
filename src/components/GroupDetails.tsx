@@ -73,8 +73,8 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                 onClick={() => onMemberSelect(member)}
                 className="group-member-btn group w-full bg-gradient-to-r from-white/5 via-white/8 to-white/5 hover:from-white/15 hover:via-white/20 hover:to-white/15 rounded-xl p-3 hover:scale-[1.02] transition-all duration-200 text-left shadow-lg hover:shadow-xl"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold shadow-md ${
+                <div className="flex items-center gap-4">
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold shadow-md flex-shrink-0 ${
                     member['@odata.type'].includes('user') 
                       ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white' 
                       : member['@odata.type'].includes('device')
@@ -85,7 +85,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                      member['@odata.type'].includes('device') ? '💻' : '👥'}
                   </div>
                   
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pl-1">
                     <div className="font-semibold text-white text-sm truncate">
                       {member.displayName}
                     </div>
@@ -128,11 +128,11 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
                 key={parentGroup.id}
                 className="bg-gradient-to-r from-white/8 via-white/12 to-white/8 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-200"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-sm shadow-md">
+                <div className="flex items-center gap-4">
+                  <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center text-sm shadow-md flex-shrink-0">
                     👥
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pl-1">
                     <div className="font-semibold text-white truncate text-sm">{parentGroup.displayName}</div>
                     <div className="text-orange-200/80 text-xs">Parent Group</div>
                   </div>

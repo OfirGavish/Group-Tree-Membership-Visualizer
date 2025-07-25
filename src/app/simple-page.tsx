@@ -977,7 +977,7 @@ export default function SimpleHomePage() {
         {(selectedUser || selectedGroup || selectedDevice) && (
           <div className="grid grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-2 min-w-0 h-[650px] relative">
+            <div className="col-span-2 min-w-0 h-[700px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -987,7 +987,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[650px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
+            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[700px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
