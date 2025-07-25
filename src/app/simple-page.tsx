@@ -1096,13 +1096,10 @@ export default function SimpleHomePage() {
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-6">
                     <div className="relative">
                       <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                        {selectedGroup.displayName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">👥</span>
+                        👥
                       </div>
                     </div>
                     
