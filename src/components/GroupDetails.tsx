@@ -63,7 +63,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             </h4>
           </div>
           
-          <div className="space-y-3 max-h-48 overflow-y-auto">
+          <div className="space-y-1 max-h-48 overflow-y-auto">
             {group.members.slice(0, 5).map((member) => (
               <button
                 key={member.id}

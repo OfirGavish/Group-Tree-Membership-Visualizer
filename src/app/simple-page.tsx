@@ -711,7 +711,7 @@ export default function SimpleHomePage() {
   // Show loading screen during initial auth check
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black flex items-center justify-center">
         <div className="text-center">
           <div className="mx-auto w-60 h-60 flex items-center justify-center mb-4">
               <Image 
@@ -734,7 +734,7 @@ export default function SimpleHomePage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center relative">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black flex items-center justify-center relative">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
             <div className="mx-auto w-80 h-80 flex items-center justify-center mb-4">
@@ -977,7 +977,7 @@ export default function SimpleHomePage() {
         {(selectedUser || selectedGroup || selectedDevice) && (
           <div className="grid grid-cols-4 gap-8 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-3 min-w-0 h-[700px] relative">
+            <div className="col-span-3 min-w-0 h-[720px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -987,7 +987,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[700px] overflow-y-auto flex flex-col bg-black/30 backdrop-blur-md rounded-xl p-4 relative z-10">
+            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[720px] overflow-y-auto flex flex-col bg-black/30 backdrop-blur-md rounded-xl p-4 relative z-10">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
