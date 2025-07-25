@@ -272,6 +272,20 @@ export default function SimpleHomePage() {
     console.log('Node selected:', node.name, node.type, 'Current expanded nodes:', Array.from(expandedNodes))
     setSelectedNode(node)
     
+    // Clear previous selections and set the appropriate one based on node type
+    setSelectedUser(null)
+    setSelectedDevice(null)
+    setSelectedGroup(null)
+    
+    // Set the specific selection based on node type
+    if (node.type === 'user') {
+      setSelectedUser(node.data as User)
+    } else if (node.type === 'device') {
+      setSelectedDevice(node.data as Device)
+    } else if (node.type === 'group') {
+      setSelectedGroup(node.data as Group)
+    }
+    
     // Handle user node selection - check if expanding or collapsing
     if (node.type === 'user') {
       const isUserExpanded = expandedNodes.has(node.id)
@@ -960,64 +974,162 @@ export default function SimpleHomePage() {
               />
             </div>
 
-            {/* Details Panel */}
+            {/* Modern Details Panel */}
             <div className="space-y-6">
-              {/* Selected User/Group/Device Info */}
+              {/* Selected User Info */}
               {selectedUser && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Selected User</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedUser.displayName.charAt(0).toUpperCase()}
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                      Selected User
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {selectedUser.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">👤</span>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-white">{selectedUser.displayName}</div>
-                      <div className="text-sm text-white/70">{selectedUser.userPrincipalName}</div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                        {selectedUser.displayName}
+                      </h4>
+                      <p className="text-blue-300 text-sm mb-2 truncate">
+                        {selectedUser.userPrincipalName}
+                      </p>
                       {selectedUser.jobTitle && (
-                        <div className="text-xs text-white/60">{selectedUser.jobTitle}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedDevice && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Selected Device</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedDevice.displayName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">{selectedDevice.displayName}</div>
-                      {selectedDevice.operatingSystem && (
-                        <div className="text-sm text-white/70">{selectedDevice.operatingSystem}</div>
-                      )}
-                      {selectedDevice.deviceId && (
-                        <div className="text-xs text-white/60">ID: {selectedDevice.deviceId}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {selectedGroup && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Selected Group</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {selectedGroup.displayName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">{selectedGroup.displayName}</div>
-                      {selectedGroup.description && (
-                        <div className="text-sm text-white/70">{selectedGroup.description}</div>
-                      )}
-                      {selectedGroup.members && (
-                        <div className="text-xs text-white/60">
-                          {selectedGroup.members.length} member{selectedGroup.members.length !== 1 ? 's' : ''}
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                          <span className="text-blue-300 text-xs font-medium">{selectedUser.jobTitle}</span>
                         </div>
                       )}
+                      
+                      {/* User ID */}
+                      <div className="mt-3 p-2 bg-black/20 rounded-lg border border-white/10">
+                        <div className="text-xs text-white/60 mb-1">User ID</div>
+                        <div className="text-xs text-white/80 font-mono break-all">
+                          {selectedUser.id}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Device Info */}
+              {selectedDevice && (
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                      Selected Device
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {selectedDevice.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">💻</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                        {selectedDevice.displayName}
+                      </h4>
+                      {selectedDevice.operatingSystem && (
+                        <p className="text-green-300 text-sm mb-2">
+                          {selectedDevice.operatingSystem}
+                        </p>
+                      )}
+                      
+                      {/* Device Details */}
+                      <div className="space-y-2 mt-3">
+                        {selectedDevice.deviceId && (
+                          <div className="p-2 bg-black/20 rounded-lg border border-white/10">
+                            <div className="text-xs text-white/60 mb-1">Device ID</div>
+                            <div className="text-xs text-white/80 font-mono break-all">
+                              {selectedDevice.deviceId}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="p-2 bg-black/20 rounded-lg border border-white/10">
+                          <div className="text-xs text-white/60 mb-1">Object ID</div>
+                          <div className="text-xs text-white/80 font-mono break-all">
+                            {selectedDevice.id}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Group Info */}
+              {selectedGroup && (
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                      Selected Group
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {selectedGroup.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">👥</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                        {selectedGroup.displayName}
+                      </h4>
+                      {selectedGroup.description && (
+                        <p className="text-purple-300 text-sm mb-2">
+                          {selectedGroup.description}
+                        </p>
+                      )}
+                      
+                      {/* Group Stats */}
+                      <div className="flex items-center gap-3 mt-3 mb-3">
+                        {selectedGroup.members && (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                            <span className="text-purple-300 text-xs font-medium">
+                              {selectedGroup.members.length} member{selectedGroup.members.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {selectedGroup.groupTypes && selectedGroup.groupTypes.length > 0 && (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30">
+                            <span className="text-pink-300 text-xs font-medium">
+                              {selectedGroup.groupTypes[0]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Group ID */}
+                      <div className="p-2 bg-black/20 rounded-lg border border-white/10">
+                        <div className="text-xs text-white/60 mb-1">Group ID</div>
+                        <div className="text-xs text-white/80 font-mono break-all">
+                          {selectedGroup.id}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
