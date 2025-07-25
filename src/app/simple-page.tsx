@@ -987,7 +987,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[720px] overflow-y-auto flex flex-col bg-black/30 backdrop-blur-md rounded-xl p-4 relative z-10">
+            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[720px] overflow-y-auto flex flex-col rounded-xl p-4 relative z-10 sidebar-panel">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">

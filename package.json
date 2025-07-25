@@ -23,7 +23,6 @@
   "dependencies": {
     "@azure/msal-browser": "^3.28.1",
     "@microsoft/microsoft-graph-client": "^3.0.7",
-    "@tailwindcss/postcss": "^4.1.11",
     "@types/d3": "^7.4.3",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
@@ -36,7 +35,10 @@
     "postcss": "^8.5.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwindcss": "^4.1.11",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "critters": "^0.0.23"
   }
 }

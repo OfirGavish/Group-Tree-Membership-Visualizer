@@ -18,47 +18,14 @@ html, body {
   color: var(--foreground);
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
-  /* Ensure basic background as fallback */
+  /* Keep minimal fallback background */
   background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #000000 100%);
-}
-
-/* Custom animations for floating elements */
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-20px) rotate(1deg); }
-  66% { transform: translateY(10px) rotate(-1deg); }
-}
-
-@keyframes float-delayed {
-  0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
-  50% { transform: translateY(-30px) rotate(2deg) scale(1.05); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-float-delayed {
-  animation: float-delayed 8s ease-in-out infinite;
-  animation-delay: 2s;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
-
-/* Remove custom spinner animation to use Tailwind's built-in */
-
-/* Ensure animate-spin works properly */
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 /* Custom styles for tree visualization */
@@ -82,67 +49,11 @@ html, body {
   stroke-width: 2px;
 }
 
-/* Ensure sidebar background is properly applied - only background properties */
-.col-span-1.space-y-1 {
-  background-color: rgba(0, 0, 0, 0.3) !important;
-  backdrop-filter: blur(16px) !important;
-  /* Limit sidebar width to prevent buttons from being too long */
-  max-width: 320px !important;
-}
-
-/* Explicit fallbacks for critical Tailwind classes */
-.bg-gradient-to-br {
-  background: linear-gradient(to bottom right, #1e1b4b, #7c3aed, #000000) !important;
-}
-
-.text-white {
-  color: white !important;
-}
-
-.min-h-screen {
-  min-height: 100vh !important;
-}
-
-.grid {
-  display: grid !important;
-}
-
-.grid-cols-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-
-.col-span-3 {
-  grid-column: span 3 / span 3 !important;
-}
-
-.col-span-1 {
-  grid-column: span 1 / span 1 !important;
-}
-
-.space-y-1 > * + * {
-  margin-top: 0.25rem !important;
-}
-
-.space-y-4 > * + * {
-  margin-top: 1rem !important;
-}
-
-.p-6 {
-  padding: 1.5rem !important;
-}
-
-.p-4 {
-  padding: 1rem !important;
-}
-
-.flex {
-  display: flex !important;
-}
-
-.items-center {
-  align-items: center !important;
-}
-
-.justify-center {
-  justify-content: center !important;
+/* Sidebar specific styling - moved to components layer */
+@layer components {
+  .sidebar-panel {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(16px);
+    max-width: 320px;
+  }
 }
