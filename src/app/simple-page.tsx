@@ -553,16 +553,23 @@ export default function SimpleHomePage() {
               }
             }
             
+            console.log('Extracting group IDs from path:', nodeId, '=>', groupIds)
             return groupIds
           }
           
           // Get the current path's group IDs to avoid showing duplicates
           const currentPathGroupIds = extractGroupIdsFromPath(node.id)
+          console.log('Current path group IDs:', currentPathGroupIds)
+          console.log('MemberOf groups:', memberOf.map(g => ({ id: g.id, name: g.displayName })))
           
           // Create new parent nodes for groups this group belongs to with path-specific IDs
           // Filter out parents that are already in the current navigation path
           const parentNodes: TreeNode[] = memberOf
-            .filter(parentGroup => !currentPathGroupIds.includes(parentGroup.id))
+            .filter(parentGroup => {
+              const shouldInclude = !currentPathGroupIds.includes(parentGroup.id)
+              console.log(`Parent group ${parentGroup.displayName} (${parentGroup.id}): ${shouldInclude ? 'INCLUDE' : 'EXCLUDE'}`)
+              return shouldInclude
+            })
             .map(parentGroup => ({
               id: `${node.id}-parent-${parentGroup.id}`, // Create unique ID based on path
               name: `${parentGroup.displayName} (parent)`,
