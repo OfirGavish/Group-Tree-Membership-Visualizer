@@ -157,16 +157,25 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
         </div>
         
         {/* Filter Controls - Moved to the right of search */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer group whitespace-nowrap">
-            <input
-              type="checkbox"
-              checked={showEmptyOnly}
-              onChange={(e) => setShowEmptyOnly(e.target.checked)}
-              className="w-4 h-4 text-purple-600 bg-purple-500/20 border-purple-300/30 rounded focus:ring-purple-400/50 focus:ring-2 backdrop-blur-sm transition-all duration-300"
-            />
-            <span className="group-hover:text-purple-200 transition-colors duration-300">Empty only</span>
-          </label>
+        <div className="flex items-start gap-2 flex-shrink-0">
+          <div className="flex flex-col gap-1">
+            <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer group whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={showEmptyOnly}
+                onChange={(e) => setShowEmptyOnly(e.target.checked)}
+                className="w-4 h-4 text-purple-600 bg-purple-500/20 border-purple-300/30 rounded focus:ring-purple-400/50 focus:ring-2 backdrop-blur-sm transition-all duration-300"
+              />
+              <span className="group-hover:text-purple-200 transition-colors duration-300">Empty only</span>
+            </label>
+            
+            {/* Summary moved here */}
+            <div className="text-xs text-purple-200/60 flex items-center gap-2 ml-6">
+              <span className="w-1 h-1 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60"></span>
+              Showing {filteredGroups.length} of {groups.length} groups
+              {showEmptyOnly && ` (empty only)`}
+            </div>
+          </div>
           
           {emptyGroupsCount > 0 && showEmptyOnly && (
             <span className="text-xs text-red-200 bg-gradient-to-r from-red-500/25 to-pink-500/20 backdrop-blur-sm px-2 py-1 rounded-full border border-red-400/30 shadow-lg whitespace-nowrap">
@@ -174,13 +183,6 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
             </span>
           )}
         </div>
-      </div>
-
-      {/* Summary */}
-      <div className="text-sm text-purple-200/60 flex items-center justify-center gap-2">
-        <span className="w-1.5 h-1.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-60"></span>
-        Showing {filteredGroups.length} of {groups.length} groups
-        {showEmptyOnly && ` (empty only)`}
       </div>
     </div>
   )

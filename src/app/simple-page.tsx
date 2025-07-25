@@ -897,11 +897,11 @@ export default function SimpleHomePage() {
         <div className="mb-2">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-6">
-              <h2 className="text-lg font-medium text-white">
+              <h2 className="text-lg font-medium text-white whitespace-nowrap flex-shrink-0" style={{ width: '150px' }}>
                 Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
               </h2>
               
-              {/* Search Box inline with title */}
+              {/* Search Box inline with title - fixed position */}
               <div className="w-full" style={{ maxWidth: searchType === 'group' ? '400px' : '320px' }}>
                 {searchType === 'user' ? (
                   <UserSearch users={users} onUserSelect={handleUserSelect} />
