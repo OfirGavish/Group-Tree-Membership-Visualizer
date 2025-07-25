@@ -878,7 +878,7 @@ export default function SimpleHomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
         {error && (
           <div className="mb-6 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
             <div className="flex">
@@ -894,8 +894,8 @@ export default function SimpleHomePage() {
         )}
 
         {/* Search Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-medium text-white">
               Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
             </h2>
@@ -959,7 +959,7 @@ export default function SimpleHomePage() {
               </button>
             </div>
           </div>
-          <div className="flex justify-center p-6">
+          <div className="flex justify-center p-3">
             <div className="w-full max-w-xs" style={{ maxWidth: '320px' }}>
               {searchType === 'user' ? (
                 <UserSearch users={users} onUserSelect={handleUserSelect} />
@@ -980,9 +980,9 @@ export default function SimpleHomePage() {
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-5 gap-6 max-w-full overflow-hidden min-h-0">
+          <div className="grid grid-cols-6 gap-4 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-4 min-w-0 h-[850px] relative">
+            <div className="col-span-4 min-w-0 h-[750px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -992,7 +992,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[850px] overflow-y-auto flex flex-col rounded-xl p-4 relative z-10 sidebar-panel">
+            <div className="col-span-2 space-y-1 max-w-full min-w-0 h-[750px] overflow-y-auto flex flex-col rounded-xl p-4 relative z-10 sidebar-panel">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
