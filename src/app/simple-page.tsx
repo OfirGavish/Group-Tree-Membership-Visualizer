@@ -544,14 +544,28 @@ export default function SimpleHomePage() {
           // Helper function to extract group IDs from the current path
           const extractGroupIdsFromPath = (nodeId: string): string[] => {
             // Parse the path-specific ID to extract all group IDs in the current path
-            // Group IDs are full GUIDs in format: group-{guid}
-            // We need to match the pattern and extract the full GUID
-            const groupPattern = /group-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/g
-            const groupIds: string[] = []
-            let match
+            // Handle different path formats:
+            // 1. User search format: group-{guid}
+            // 2. Group search format: {guid}-member-{guid}, {guid}-parent-{guid}
             
+            const groupIds: string[] = []
+            
+            // Pattern 1: group-{guid} format (from user search)
+            const groupPattern = /group-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/g
+            let match
             while ((match = groupPattern.exec(nodeId)) !== null) {
-              groupIds.push(match[1]) // Extract the full GUID
+              groupIds.push(match[1])
+            }
+            
+            // Pattern 2: {guid}-member-{guid} and {guid}-parent-{guid} format (from group search)
+            // Split by common separators and extract valid GUIDs
+            const guidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
+            const parts = nodeId.split(/-(member|parent|group)-/)
+            
+            for (const part of parts) {
+              if (guidPattern.test(part) && !groupIds.includes(part)) {
+                groupIds.push(part)
+              }
             }
             
             console.log('Extracting group IDs from path:', nodeId, '=>', groupIds)
