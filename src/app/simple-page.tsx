@@ -544,13 +544,14 @@ export default function SimpleHomePage() {
           // Helper function to extract group IDs from the current path
           const extractGroupIdsFromPath = (nodeId: string): string[] => {
             // Parse the path-specific ID to extract all group IDs in the current path
-            const parts = nodeId.split('-')
+            // Group IDs are full GUIDs in format: group-{guid}
+            // We need to match the pattern and extract the full GUID
+            const groupPattern = /group-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/g
             const groupIds: string[] = []
+            let match
             
-            for (let i = 0; i < parts.length; i++) {
-              if (parts[i] === 'group' && i + 1 < parts.length) {
-                groupIds.push(parts[i + 1])
-              }
+            while ((match = groupPattern.exec(nodeId)) !== null) {
+              groupIds.push(match[1]) // Extract the full GUID
             }
             
             console.log('Extracting group IDs from path:', nodeId, '=>', groupIds)
