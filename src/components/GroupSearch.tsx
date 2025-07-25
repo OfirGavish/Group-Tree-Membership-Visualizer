@@ -29,9 +29,9 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
   return (
     <div className="space-y-2">
       {/* Search Input and Filter Controls */}
-      <div className="flex items-center gap-3 w-full max-w-lg mx-auto">
-        {/* Search Input */}
-        <div className="relative flex-1" style={{ maxWidth: '300px' }}>
+      <div className="flex items-center gap-3 w-full">
+        {/* Search Input - Fixed width */}
+        <div className="relative" style={{ width: '280px' }}>
           <div className="relative group">
             <input
               type="text"
