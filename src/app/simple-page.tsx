@@ -544,25 +544,47 @@ export default function SimpleHomePage() {
           // Helper function to extract group IDs from the current path
           const extractGroupIdsFromPath = (nodeId: string): string[] => {
             // Parse the path-specific ID to extract all group IDs in the current path
-            const parts = nodeId.split('-')
+            // Handle different path formats:
+            // 1. User search format: group-{guid}
+            // 2. Group search format: {guid}-member-{guid}, {guid}-parent-{guid}
+            
             const groupIds: string[] = []
             
-            for (let i = 0; i < parts.length; i++) {
-              if (parts[i] === 'group' && i + 1 < parts.length) {
-                groupIds.push(parts[i + 1])
+            // Pattern 1: group-{guid} format (from user search)
+            const groupPattern = /group-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/g
+            let match
+            while ((match = groupPattern.exec(nodeId)) !== null) {
+              groupIds.push(match[1])
+            }
+            
+            // Pattern 2: {guid}-member-{guid} and {guid}-parent-{guid} format (from group search)
+            // Split by common separators and extract valid GUIDs
+            const guidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
+            const parts = nodeId.split(/-(member|parent|group)-/)
+            
+            for (const part of parts) {
+              if (guidPattern.test(part) && !groupIds.includes(part)) {
+                groupIds.push(part)
               }
             }
             
+            console.log('Extracting group IDs from path:', nodeId, '=>', groupIds)
             return groupIds
           }
           
           // Get the current path's group IDs to avoid showing duplicates
           const currentPathGroupIds = extractGroupIdsFromPath(node.id)
+          console.log('Current path group IDs:', currentPathGroupIds)
+          console.log('MemberOf groups:', memberOf.map(g => ({ id: g.id, name: g.displayName })))
           
           // Create new parent nodes for groups this group belongs to with path-specific IDs
           // Filter out parents that are already in the current navigation path
           const parentNodes: TreeNode[] = memberOf
-            .filter(parentGroup => !currentPathGroupIds.includes(parentGroup.id))
+            .filter(parentGroup => {
+              const shouldInclude = !currentPathGroupIds.includes(parentGroup.id)
+              console.log(`Parent group ${parentGroup.displayName} (${parentGroup.id}): ${shouldInclude ? 'INCLUDE' : 'EXCLUDE'}`)
+              return shouldInclude
+            })
             .map(parentGroup => ({
               id: `${node.id}-parent-${parentGroup.id}`, // Create unique ID based on path
               name: `${parentGroup.displayName} (parent)`,

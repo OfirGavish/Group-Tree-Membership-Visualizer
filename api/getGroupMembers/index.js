@@ -18,9 +18,9 @@ module.exports = async function (context, req) {
         }
 
         // Get group members from Microsoft Graph using delegated permissions
-        // Note: We don't include device-specific fields in $select because they don't exist on users/groups
-        // Microsoft Graph will return all available fields for each object type
-        const graphUrl = `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=@odata.type,id,displayName,userPrincipalName,mail`;
+        // Note: No $select clause - let Microsoft Graph return all available fields for each object type
+        // This ensures @odata.type is included and no field conflicts for different object types
+        const graphUrl = `https://graph.microsoft.com/v1.0/groups/${groupId}/members`;
         const membersData = await callGraphAPI(graphUrl, req, context);
 
         const members = membersData.value.map(member => ({
