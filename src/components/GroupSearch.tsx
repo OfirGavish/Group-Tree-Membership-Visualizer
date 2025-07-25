@@ -29,8 +29,8 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
   return (
     <div className="space-y-2">
       {/* Search Input and Filter Controls */}
-      <div className="flex items-center gap-3 w-full">
-        {/* Search Input - Fixed width */}
+      <div className="flex items-center justify-between w-full">
+        {/* Search Input - Fixed width and position to match other search boxes */}
         <div className="relative" style={{ width: '280px' }}>
           <div className="relative group">
             <input
@@ -156,8 +156,8 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
           )}
         </div>
         
-        {/* Filter Controls - Moved to the right of search */}
-        <div className="flex items-start gap-2 flex-shrink-0">
+        {/* Filter Controls - Moved far to the right with more space */}
+        <div className="flex items-start gap-2 flex-shrink-0 ml-8">
           <div className="flex flex-col gap-1">
             <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer group whitespace-nowrap">
               <input
