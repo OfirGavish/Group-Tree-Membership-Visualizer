@@ -16,13 +16,10 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
           </h3>
         </div>
         
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           <div className="relative flex-shrink-0">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-              {group.displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-md">
-              <span className="text-xs">👥</span>
+              👥
             </div>
           </div>
           
