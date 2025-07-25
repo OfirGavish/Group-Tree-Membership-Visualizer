@@ -728,12 +728,12 @@ export default function SimpleHomePage() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center relative">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
-            <div className="mx-auto w-20 h-20 flex items-center justify-center mb-4">
+            <div className="mx-auto w-24 h-24 flex items-center justify-center mb-4">
               <Image 
                 src="/logo.png" 
                 alt="Logo" 
-                width={64}
-                height={64}
+                width={80}
+                height={80}
                 className="object-contain"
               />
             </div>
