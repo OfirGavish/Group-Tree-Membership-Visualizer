@@ -40,11 +40,11 @@ export default function GroupSearch({ onGroupSelect, groups }: GroupSearchProps)
             }}
             onFocus={() => setIsOpen(true)}
             placeholder="Search for a group..."
-            className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-gradient-to-r from-purple-500/20 via-pink-500/15 to-purple-500/20 backdrop-blur-md border border-purple-300/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 text-white placeholder-purple-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-purple-500/25 hover:via-pink-500/20 hover:to-purple-500/25"
+            className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 text-white placeholder-white/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/15"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-5">
             <svg
-              className="w-6 h-6 text-purple-200/80 group-hover:text-purple-100 transition-colors duration-300"
+              className="w-6 h-6 text-white/60 group-hover:text-white/80 transition-colors duration-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

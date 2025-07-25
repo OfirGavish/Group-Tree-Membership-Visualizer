@@ -115,7 +115,7 @@ export default function DeviceSearch({ onDeviceSelect, devices }: DeviceSearchPr
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search for devices..."
-          className="w-72 px-4 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition-all duration-200"
+          className="w-72 px-4 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-transparent transition-all duration-200 hover:bg-white/15"
           style={{ maxWidth: '300px' }}
         />
         

@@ -31,11 +31,11 @@ export default function UserSearch({ onUserSelect, users }: UserSearchProps) {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Search for a user..."
-          className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 backdrop-blur-md border border-blue-300/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 text-white placeholder-blue-200/70 shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-500/25 hover:via-cyan-500/20 hover:to-blue-500/25"
+          className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 text-white placeholder-white/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/15"
         />
         <div className="absolute inset-y-0 right-0 flex items-center pr-5">
           <svg
-            className="w-6 h-6 text-blue-200/80 group-hover:text-blue-100 transition-colors duration-300"
+            className="w-6 h-6 text-white/60 group-hover:text-white/80 transition-colors duration-300"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

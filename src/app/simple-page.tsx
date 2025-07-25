@@ -735,9 +735,10 @@ export default function SimpleHomePage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black flex items-center justify-center relative">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
+        <div className="max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
-            <div className="mx-auto w-80 h-80 flex items-center justify-center mb-4">
+            {/* Logo - outside white background */}
+            <div className="mx-auto w-80 h-80 flex items-center justify-center mb-6">
               <Image 
                 src="/logo.png" 
                 alt="Logo" 
@@ -746,59 +747,63 @@ export default function SimpleHomePage() {
                 className="object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Group Tree Membership Visualizer</h1>
-            <p className="text-gray-600 mb-6">
-              Explore Entra ID group memberships and hierarchies with interactive visualizations
-            </p>
             
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-            
-            <div className="flex justify-center">
-              <button
-                onClick={async () => {
-                  try {
-                    setAuthLoading(true)
-                    setError(null)
-                    const account = await authService.signIn()
-                    console.log('Sign in successful, account:', account)
-                    
-                    // Force a fresh auth check
-                    const user = await authService.getCurrentUser()
-                    if (user) {
-                      console.log('User authenticated:', user)
-                      setIsAuthenticated(true)
-                      setCurrentUser(user)
-                      // Load data after successful authentication
-                      await loadUsers()
-                      await loadGroups()
-                      await loadDevices()
-                    } else {
-                      console.error('No user found after sign in')
-                      setError('Authentication succeeded but user info not available. Please try refreshing.')
-                    }
-                  } catch (error) {
-                    console.error('Sign in failed:', error)
-                    const errorMessage = error instanceof Error ? error.message : 'Please try again.'
-                    setError(`Sign in failed: ${errorMessage}`)
-                  } finally {
-                    setAuthLoading(false)
-                  }
-                }}
-                disabled={authLoading}
-                className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
-              >
-                {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
-              </button>
-            </div>
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                This application was made using Next.js and React<br/>
-                by <span className="font-medium text-gray-600">Ofir Gavish</span> with ❤️ to the community
+            {/* Content with semi-transparent white background */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-xl p-8">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Group Tree Membership Visualizer</h1>
+              <p className="text-gray-600 mb-6">
+                Explore Entra ID group memberships and hierarchies with interactive visualizations
               </p>
+              
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-center">
+                <button
+                  onClick={async () => {
+                    try {
+                      setAuthLoading(true)
+                      setError(null)
+                      const account = await authService.signIn()
+                      console.log('Sign in successful, account:', account)
+                      
+                      // Force a fresh auth check
+                      const user = await authService.getCurrentUser()
+                      if (user) {
+                        console.log('User authenticated:', user)
+                        setIsAuthenticated(true)
+                        setCurrentUser(user)
+                        // Load data after successful authentication
+                        await loadUsers()
+                        await loadGroups()
+                        await loadDevices()
+                      } else {
+                        console.error('No user found after sign in')
+                        setError('Authentication succeeded but user info not available. Please try refreshing.')
+                      }
+                    } catch (error) {
+                      console.error('Sign in failed:', error)
+                      const errorMessage = error instanceof Error ? error.message : 'Please try again.'
+                      setError(`Sign in failed: ${errorMessage}`)
+                    } finally {
+                      setAuthLoading(false)
+                    }
+                  }}
+                  disabled={authLoading}
+                  className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
+                >
+                  {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
+                </button>
+              </div>
+              <div className="mt-6 text-center">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  This application was made using Next.js and React<br/>
+                  by <span className="font-medium text-gray-600">Ofir Gavish</span> with ❤️ to the community
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -975,9 +980,9 @@ export default function SimpleHomePage() {
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-4 gap-8 max-w-full overflow-hidden min-h-0">
+          <div className="grid grid-cols-5 gap-6 max-w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-3 min-w-0 h-[720px] relative">
+            <div className="col-span-4 min-w-0 h-[850px] relative">
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
@@ -987,7 +992,7 @@ export default function SimpleHomePage() {
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[720px] overflow-y-auto flex flex-col rounded-xl p-4 relative z-10 sidebar-panel">
+            <div className="col-span-1 space-y-1 max-w-full min-w-0 h-[850px] overflow-y-auto flex flex-col rounded-xl p-4 relative z-10 sidebar-panel">
               {/* Selected User Info */}
               {selectedUser && (
                 <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
