@@ -161,7 +161,7 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             <span className="text-3xl">👥</span>
           </div>
           <h4 className="text-lg font-semibold text-white mb-2">No Additional Details</h4>
-          <p className="text-sm text-white/70">This group doesn't have any members or parent groups to display.</p>
+          <p className="text-sm text-white/70">This group doesn&apos;t have any members or parent groups to display.</p>
         </div>
       )}
     </div>

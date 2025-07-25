@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { authService } from '@/lib/msal-auth-service'
 import { ApiGraphService } from '@/lib/api-graph-service'
 import { CacheService } from '@/lib/cache-service'
@@ -728,10 +729,12 @@ export default function SimpleHomePage() {
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
             <div className="mx-auto w-12 h-12 flex items-center justify-center mb-4">
-              <img 
+              <Image 
                 src="/logo.png" 
                 alt="Logo" 
-                className="w-10 h-10 object-contain"
+                width={40}
+                height={40}
+                className="object-contain"
               />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Group Tree Membership Visualizer</h1>
