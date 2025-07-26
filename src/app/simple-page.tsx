@@ -748,7 +748,7 @@ export default function SimpleHomePage() {
     }
   }
 
-  const handleDragDropConfirm = async (action: 'move' | 'add') => {
+  const handleDragDropConfirm = async (action: 'move' | 'add', additionalData?: { groupsToRemoveFrom?: string[] }) => {
     if (!draggedNode || !dropTargetNode) return
 
     try {
@@ -780,80 +780,37 @@ export default function SimpleHomePage() {
           return
         }
         
-        // For move operation, we need to identify the source group from the tree context
-        console.log('🔄 Starting move operation - identifying source group from tree context')
+        // For move operation, use the selected groups to remove from
+        console.log('🔄 Starting move operation with selected groups:', additionalData?.groupsToRemoveFrom || [])
         
-        let sourceGroupId: string | null = null
+        const groupsToRemoveFrom = additionalData?.groupsToRemoveFrom || []
         
         try {
-          // Parse the dragged node's ID to find the source group
-          // The ID format is typically: group-{groupId}-parent-{parentId}-user-{userId}
-          // Example: "group-acb0350c-e986-4aa0-92c0-a7ad19bd00ea-parent-379ab10a-3267-4601-b56f-2d1cb3b45f67-user-f5c66fdd-13a3-43c0-b9ba-cbb51adf8abe"
-          
-          console.log('🔍 Analyzing dragged node ID:', draggedNode.id)
-          
-          // GUID pattern for matching complete GUIDs
-          const guidPattern = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g
-          
-          // Extract all GUIDs from the node ID
-          const guids = draggedNode.id.match(guidPattern) || []
-          console.log('🔍 Found GUIDs in node ID:', guids)
-          
-          // Try to find the source group ID based on the node structure
-          if (draggedNode.id.includes('-user-') || draggedNode.id.includes('-device-')) {
-            // For nodes like: group-{groupId}-user-{userId} or group-{groupId}-parent-{parentId}-user-{userId}
-            
-            if (draggedNode.id.startsWith('group-') && guids.length >= 2) {
-              // The first GUID after "group-" is typically the source group
-              sourceGroupId = guids[0] || null
-              console.log('🎯 Found source group from "group-" prefix:', sourceGroupId)
-            } else if (guids.length >= 2) {
-              // If multiple GUIDs, the last one is usually the user/device, 
-              // and we need to find the group they belong to contextually
-              
-              // For complex paths, try to find the immediate parent group
-              // Look for pattern: {groupId}-user-{userId} or {groupId}-device-{deviceId}
-              const userDeviceMatch = draggedNode.id.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})-(user|device)-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/)
-              
-              if (userDeviceMatch) {
-                sourceGroupId = userDeviceMatch[1]
-                console.log('🎯 Found source group from user/device pattern:', sourceGroupId)
-              } else {
-                // Fallback: use the first GUID as it's likely the source group
-                sourceGroupId = guids[0] || null
-                console.log('🎯 Using first GUID as source group (fallback):', sourceGroupId)
-              }
+          // Remove from selected groups
+          for (const groupId of groupsToRemoveFrom) {
+            console.log(`🗑️ Removing ${draggedNode.name} from group ${groupId}`)
+            try {
+              await graphService.removeGroupMember(groupId, memberId)
+              console.log('✅ Successfully completed removal from group:', groupId)
+            } catch (removeError) {
+              console.error('❌ Failed to remove from group:', groupId, removeError)
+              // Continue with other removals even if one fails
             }
           }
           
-          console.log('🎯 Identified source group ID:', sourceGroupId)
-          
-          if (!sourceGroupId) {
-            console.warn('⚠️ Could not identify source group from tree context. Node ID:', draggedNode.id)
-            setError(`Cannot determine source group for move operation. Try using "Add to Group" instead.`)
-            return
-          }
-          
-          // Verify that the user is actually a member of the source group
-          const isSourceMember = await graphService.isGroupMember(sourceGroupId, memberId)
-          if (!isSourceMember) {
-            console.warn('⚠️ User is not a member of the identified source group:', sourceGroupId)
-            setError(`${draggedNode.name} is not a member of the source group. Using "Add to Group" instead.`)
-            // Fall back to add operation
-            await graphService.addGroupMember(targetGroupId, memberId)
-            setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}`)
-            return
-          }
-          
-          // Remove from source group only
-          console.log(`🗑️ Removing ${draggedNode.name} from source group ${sourceGroupId}`)
-          await graphService.removeGroupMember(sourceGroupId, memberId)
-          
           // Add to target group
           console.log(`➕ Adding ${draggedNode.name} to target group ${targetGroupId}`)
-          await graphService.addGroupMember(targetGroupId, memberId)
+          try {
+            await graphService.addGroupMember(targetGroupId, memberId)
+            console.log('✅ Successfully completed addition to target group')
+          } catch (addError) {
+            console.error('❌ Failed to add to target group:', addError)
+            setError(`Failed to add ${draggedNode.name} to target group: ${addError instanceof Error ? addError.message : 'Unknown error'}`)
+            return
+          }
           
-          setError(`Successfully moved ${draggedNode.name} from source group to ${dropTargetNode.name}.`)
+          const removedCount = groupsToRemoveFrom.length
+          setError(`Successfully moved ${draggedNode.name} to ${dropTargetNode.name}. Removed from ${removedCount} group${removedCount !== 1 ? 's' : ''}.`)
           
         } catch (moveError) {
           console.error('❌ Error during move operation:', moveError)
@@ -1394,8 +1351,8 @@ export default function SimpleHomePage() {
           isOpen={showDragDropModal}
           draggedNode={draggedNode}
           targetNode={dropTargetNode}
-          onConfirm={(action) => {
-            handleDragDropConfirm(action)
+          onConfirm={(action, additionalData) => {
+            handleDragDropConfirm(action, additionalData)
           }}
           onClose={handleDragDropCancel}
         />
