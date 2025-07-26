@@ -341,6 +341,8 @@ export class ApiGraphService {
     try {
       const headers = await this.getAuthHeaders();
 
+      console.log('🔗 Making addGroupMember API call:', { groupId, memberId });
+
       const response = await fetch('/api/addGroupMember', {
         method: 'POST',
         headers: {
@@ -353,9 +355,40 @@ export class ApiGraphService {
         })
       })
 
+      console.log('🔗 API Response status:', response.status, response.statusText);
+      console.log('🔗 API Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Read the response text first
+      const responseText = await response.text();
+      console.log('🔗 Raw response text:', responseText);
+      console.log('🔗 Response text length:', responseText.length);
+
       if (!response.ok) {
-        const errorData = await response.json()
+        console.error('🔗 API Response not OK');
+        
+        // Try to parse error response as JSON if possible
+        let errorData;
+        try {
+          errorData = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          console.error('🔗 Failed to parse error response as JSON:', parseError);
+          throw new Error(`API call failed: ${response.status} ${response.statusText}. Response: ${responseText || 'Empty response'}`)
+        }
+        
         throw new Error(errorData.error || `Failed to add member to group: ${response.status}`)
+      }
+
+      // Handle successful response
+      if (responseText) {
+        try {
+          const result = JSON.parse(responseText);
+          console.log('✅ Successfully added member to group:', result);
+        } catch (parseError) {
+          console.warn('⚠️ Success response is not valid JSON, but operation succeeded:', parseError);
+          console.log('📄 Raw response:', responseText);
+        }
+      } else {
+        console.log('✅ API call succeeded with empty response (this is normal for some Graph operations)');
       }
 
       // Clear related cache entries after successful operation
@@ -364,9 +397,8 @@ export class ApiGraphService {
       // Note: Devices would also be impacted, but we'll use userGroups cache key for now
       CacheService.remove(CacheService.keys.groupMemberOf(groupId))
 
-      return await response.json()
     } catch (error) {
-      console.error('Error adding group member:', error)
+      console.error('❌ Error adding group member:', error)
       throw error
     }
   }

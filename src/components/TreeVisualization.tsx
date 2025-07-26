@@ -302,25 +302,32 @@ export default function TreeVisualization({
               const labelGroup = ghost.append('g')
                 .attr('transform', 'translate(25, 0)')
               
+              // Calculate label dimensions
+              const labelText = d.data.name
+              const labelWidth = labelText.length * 7 + 16 // More accurate width calculation with padding
+              const labelHeight = 20
+              
               // Background for label
               labelGroup.append('rect')
-                .attr('x', -5)
-                .attr('y', -10)
-                .attr('width', d.data.name.length * 6 + 10)
-                .attr('height', 20)
+                .attr('x', -labelWidth / 2)
+                .attr('y', -labelHeight / 2)
+                .attr('width', labelWidth)
+                .attr('height', labelHeight)
                 .attr('rx', 10)
                 .style('fill', 'rgba(0,0,0,0.8)')
                 .style('stroke', '#fbbf24')
                 .style('stroke-width', 1)
               
-              // Label text
+              // Label text - centered within the rectangle
               labelGroup.append('text')
-                .attr('dy', '0.35em')
+                .attr('x', 0) // Center horizontally
+                .attr('y', 0) // Center vertically
+                .attr('dy', '0.35em') // Fine-tune vertical centering
                 .style('font-size', '12px')
                 .style('font-weight', 'bold')
                 .style('fill', '#ffffff')
                 .style('text-anchor', 'middle')
-                .text(d.data.name)
+                .text(labelText)
             }
             
             // Update ghost position during every drag move
@@ -363,25 +370,32 @@ export default function TreeVisualization({
               const labelGroup = newGhost.append('g')
                 .attr('transform', 'translate(25, 0)')
               
+              // Calculate label dimensions
+              const labelText = d.data.name
+              const labelWidth = labelText.length * 7 + 16 // More accurate width calculation with padding
+              const labelHeight = 20
+              
               // Background for label
               labelGroup.append('rect')
-                .attr('x', -5)
-                .attr('y', -10)
-                .attr('width', d.data.name.length * 6 + 10)
-                .attr('height', 20)
+                .attr('x', -labelWidth / 2)
+                .attr('y', -labelHeight / 2)
+                .attr('width', labelWidth)
+                .attr('height', labelHeight)
                 .attr('rx', 10)
                 .style('fill', 'rgba(0,0,0,0.8)')
                 .style('stroke', '#fbbf24')
                 .style('stroke-width', 1)
               
-              // Label text
+              // Label text - centered within the rectangle
               labelGroup.append('text')
-                .attr('dy', '0.35em')
+                .attr('x', 0) // Center horizontally
+                .attr('y', 0) // Center vertically
+                .attr('dy', '0.35em') // Fine-tune vertical centering
                 .style('font-size', '12px')
                 .style('font-weight', 'bold')
                 .style('fill', '#ffffff')
                 .style('text-anchor', 'middle')
-                .text(d.data.name)
+                .text(labelText)
               
               // Position the new ghost
               const [mouseX, mouseY] = d3.pointer(event.sourceEvent, svg.node())

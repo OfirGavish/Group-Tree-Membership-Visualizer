@@ -113,7 +113,25 @@ async function callGraphAPI(url, req, context, options = {}) {
         throw new Error(`Graph API call failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    return response.json();
+    // Check if response has content before trying to parse JSON
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
+    
+    context.log(`Graph API response: ${response.status}, Content-Length: ${contentLength}, Content-Type: ${contentType}`);
+    
+    // If no content or content-length is 0, return empty object
+    if (contentLength === '0' || response.status === 204) {
+        context.log('Graph API returned no content (success)');
+        return {};
+    }
+    
+    // If there's content, try to parse as JSON
+    try {
+        return await response.json();
+    } catch (error) {
+        context.log('Warning: Failed to parse response as JSON, but API call succeeded');
+        return {};
+    }
 }
 
 module.exports = {
