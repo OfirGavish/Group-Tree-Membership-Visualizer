@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "siteName": {
+      "type": "string",
+      "defaultValue": "[concat('group-tree-test-', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "Name of the Static Web App for testing"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US 2",
+      "allowedValues": [
+        "East US 2",
+        "West US 2",
+        "Central US",
+        "West Europe"
+      ],
+      "metadata": {
+        "description": "Location for the Static Web App"
+      }
+    }
+  },
+  "variables": {
+    "staticWebAppName": "[parameters('siteName')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "buildProperties": {
+          "skipGithubActionWorkflowGeneration": true
+        }
+      },
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))).defaultHostname)]",
+      "metadata": {
+        "description": "URL of the Static Web App"
+      }
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[variables('staticWebAppName')]",
+      "metadata": {
+        "description": "Name of the Static Web App"
+      }
+    },
+    "deploymentToken": {
+      "type": "string",
+      "value": "[listSecrets(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName')), '2022-03-01').properties.apiKey]",
+      "metadata": {
+        "description": "Deployment token for the Static Web App"
+      }
+    }
+  }
+}

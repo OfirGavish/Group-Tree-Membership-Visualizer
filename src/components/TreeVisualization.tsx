@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { TreeNode, TreeVisualizationProps } from '@/types'
+import ContextMenu from './ContextMenu'
+import EnhancedDetails from './EnhancedDetails'
 
 export default function TreeVisualization({ 
   data, 
@@ -14,6 +16,16 @@ export default function TreeVisualization({
   onDrop
 }: TreeVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    isVisible: boolean
+    position: { x: number; y: number }
+    node: TreeNode | null
+  }>({ isVisible: false, position: { x: 0, y: 0 }, node: null })
+  
+  const [enhancedDetails, setEnhancedDetails] = useState<{
+    isVisible: boolean
+    node: TreeNode | null
+  }>({ isVisible: false, node: null })
 
   useEffect(() => {
     if (!svgRef.current || !data.nodes.length) return
@@ -157,6 +169,25 @@ export default function TreeVisualization({
             onNodeSelect(d.data)
           }
         }, 10)
+      })
+      .on('contextmenu', function(event, d) {
+        event.preventDefault()
+        event.stopPropagation()
+        
+        console.log('🖱️ Right-click on node:', d.data.name, d.data.type)
+        
+        // Get the mouse position relative to the page
+        const rect = svgRef.current?.getBoundingClientRect()
+        if (rect) {
+          setContextMenu({
+            isVisible: true,
+            position: {
+              x: event.clientX,
+              y: event.clientY
+            },
+            node: d.data
+          })
+        }
       })
       .on('mouseover', function(event, d) {
         // Enhanced hover effect for groups when drag-drop is enabled
@@ -906,17 +937,90 @@ export default function TreeVisualization({
     }
   }, [data, selectedNode, onNodeSelect, expandedNodes, onDragStart, onDragEnd, onDrop])
 
+  // Context menu handlers
+  const handleContextMenuAction = (action: string, node: TreeNode) => {
+    console.log('Context menu action:', action, 'for node:', node.name)
+    
+    switch (action) {
+      case 'expand':
+        if (node.children?.length || node.type === 'group' || node.type === 'user') {
+          // Trigger expansion by selecting the node - this will be handled by the parent component
+          onNodeSelect(node)
+        }
+        break
+      case 'collapse':
+        // Trigger collapse by selecting the node - this will be handled by the parent component
+        onNodeSelect(node)
+        break
+      case 'show-details':
+        setEnhancedDetails({ isVisible: true, node })
+        break
+      case 'copy-id':
+        navigator.clipboard.writeText(node.data.id)
+        break
+      case 'copy-name':
+        navigator.clipboard.writeText(node.name)
+        break
+    }
+    
+    setContextMenu({ isVisible: false, position: { x: 0, y: 0 }, node: null })
+  }
+
+  const handleContextMenuClose = () => {
+    setContextMenu({ isVisible: false, position: { x: 0, y: 0 }, node: null })
+  }
+
+  const handleEnhancedDetailsClose = () => {
+    setEnhancedDetails({ isVisible: false, node: null })
+  }
+
+  // Add click handler to close context menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => {
+      if (contextMenu.isVisible) {
+        setContextMenu({ isVisible: false, position: { x: 0, y: 0 }, node: null })
+      }
+    }
+
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [contextMenu.isVisible])
+
   return (
     <div className="p-6">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-white">Group Membership Tree</h3>
         <p className="text-sm text-white/70">
-          Click on nodes to explore • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom • Drag users/devices to groups to manage memberships
+          Click on nodes to explore • Right-click for options • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom • Drag users/devices to groups to manage memberships
         </p>
       </div>
       <div className="overflow-hidden rounded-lg">
         <svg ref={svgRef} className="w-full h-auto" />
       </div>
+      
+      {/* Context Menu */}
+      {contextMenu.node && (
+        <ContextMenu
+          x={contextMenu.position.x}
+          y={contextMenu.position.y}
+          targetNode={contextMenu.node}
+          isVisible={contextMenu.isVisible}
+          onClose={handleContextMenuClose}
+          onExpand={(nodeId) => handleContextMenuAction('expand', contextMenu.node!)}
+          onCollapse={(nodeId) => handleContextMenuAction('collapse', contextMenu.node!)}
+          onShowDetails={(node) => handleContextMenuAction('show-details', node)}
+          expandedNodes={expandedNodes}
+        />
+      )}
+      
+      {/* Enhanced Details Modal */}
+      {enhancedDetails.node && (
+        <EnhancedDetails
+          node={enhancedDetails.node}
+          isVisible={enhancedDetails.isVisible}
+          onClose={handleEnhancedDetailsClose}
+        />
+      )}
     </div>
   )
 }

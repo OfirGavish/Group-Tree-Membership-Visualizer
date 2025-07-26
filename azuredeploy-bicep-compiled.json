@@ -1,0 +1,144 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.1.42791",
+      "templateHash": "17857001579843046815"
+    }
+  },
+  "parameters": {
+    "staticWebAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Static Web App"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US 2",
+      "allowedValues": [
+        "East US 2",
+        "West US 2",
+        "Central US",
+        "West Europe"
+      ],
+      "metadata": {
+        "description": "Location for the Static Web App"
+      }
+    },
+    "downloadUrl": {
+      "type": "string",
+      "defaultValue": "https://storage.mscloudninja.com/releases/group-tree-visualizer-latest.zip",
+      "metadata": {
+        "description": "Download URL for the pre-built application package"
+      }
+    }
+  },
+  "variables": {
+    "identityName": "[format('{0}-identity', parameters('staticWebAppName'))]",
+    "deploymentScriptName": "[format('deploy-{0}', parameters('staticWebAppName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "buildProperties": {
+          "skipGithubActionWorkflowGeneration": true
+        }
+      },
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "[variables('identityName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), 'Contributor')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), '2018-11-30').principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('deploymentScriptName')]",
+      "location": "[parameters('location')]",
+      "kind": "AzureCLI",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')))]": {}
+        }
+      },
+      "properties": {
+        "azCliVersion": "2.53.0",
+        "timeout": "PT45M",
+        "retentionInterval": "PT24H",
+        "cleanupPreference": "OnExpiration",
+        "environmentVariables": [
+          {
+            "name": "STATIC_WEB_APP_NAME",
+            "value": "[parameters('staticWebAppName')]"
+          },
+          {
+            "name": "RESOURCE_GROUP_NAME",
+            "value": "[resourceGroup().name]"
+          },
+          {
+            "name": "DOWNLOAD_URL",
+            "value": "[parameters('downloadUrl')]"
+          },
+          {
+            "name": "SUBSCRIPTION_ID",
+            "value": "[subscription().subscriptionId]"
+          }
+        ],
+        "scriptContent": "#!/bin/bash\r\n\r\necho \"🌳 Starting Bicep-powered deployment for $STATIC_WEB_APP_NAME\"\r\necho \"📦 Download URL: $DOWNLOAD_URL\"\r\necho \"🏠 Resource Group: $RESOURCE_GROUP_NAME\"\r\necho \"📅 Date: $(date)\"\r\necho \"🔧 Azure CLI Version: $(az version --query '\\\"azure-cli\\\"' -o tsv)\"\r\n\r\n# Enhanced logging function\r\nlog() {\r\n    echo \"[$(date +'%H:%M:%S')] $1\"\r\n}\r\n\r\n# Check environment and authentication\r\nlog \"🔍 Environment check...\"\r\nlog \"📍 Working directory: $(pwd)\"\r\nlog \"👤 Current user context: $(az account show --query 'user.name' -o tsv 2>/dev/null || echo 'Managed Identity')\"\r\nlog \"🏢 Tenant: $(az account show --query 'tenantId' -o tsv 2>/dev/null || echo 'unknown')\"\r\nlog \"📊 Subscription: $(az account show --query 'name' -o tsv 2>/dev/null || echo 'unknown')\"\r\n\r\n# Don't exit on errors during diagnostics\r\nset +e\r\n\r\nlog \"🔧 Testing Azure CLI functionality...\"\r\naz version >/dev/null 2>&1\r\nif [ $? -eq 0 ]; then\r\n    log \"✅ Azure CLI is working\"\r\nelse\r\n    log \"❌ Azure CLI test failed\"\r\n    exit 1\r\nfi\r\n\r\nlog \"🔍 Testing authentication...\"\r\naz account show >/dev/null 2>&1\r\nif [ $? -eq 0 ]; then\r\n    log \"✅ Authentication successful\"\r\nelse\r\n    log \"❌ Authentication failed\"\r\n    exit 1\r\nfi\r\n\r\nlog \"🔍 Testing Static Web App access...\"\r\naz staticwebapp show --name \"$STATIC_WEB_APP_NAME\" --resource-group \"$RESOURCE_GROUP_NAME\" >/dev/null 2>&1\r\nif [ $? -eq 0 ]; then\r\n    log \"✅ Can access Static Web App\"\r\nelse\r\n    log \"❌ Cannot access Static Web App\"\r\n    log \"🔍 Listing available static web apps...\"\r\n    az staticwebapp list --resource-group \"$RESOURCE_GROUP_NAME\" --query '[].name' -o tsv 2>/dev/null || echo \"Could not list static web apps\"\r\nfi\r\n\r\n# Re-enable strict error handling\r\nset -e\r\n\r\nlog \"📁 Setting up workspace...\"\r\nTEMP_DIR=$(mktemp -d)\r\nlog \"📍 Temp directory: $TEMP_DIR\"\r\n\r\nlog \"📥 Downloading application package...\"\r\n# Test connectivity first\r\nif curl -I \"$DOWNLOAD_URL\" 2>/dev/null | head -1 | grep -q \"200\"; then\r\n    log \"✅ Download URL is accessible\"\r\nelse\r\n    log \"⚠️ Download URL test failed, but continuing...\"\r\nfi\r\n\r\n# Download with retries\r\nDOWNLOAD_SUCCESS=false\r\nfor attempt in 1 2 3; do\r\n    log \"📥 Download attempt $attempt/3...\"\r\n    if curl -L --fail --connect-timeout 30 --max-time 180 \"$DOWNLOAD_URL\" -o \"$TEMP_DIR/release.zip\" 2>&1; then\r\n        log \"✅ Download successful on attempt $attempt\"\r\n        DOWNLOAD_SUCCESS=true\r\n        break\r\n    else\r\n        log \"❌ Download attempt $attempt failed\"\r\n        if [ $attempt -eq 3 ]; then\r\n            log \"❌ Trying GitHub fallback...\"\r\n            GITHUB_URL=\"https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/releases/latest/download/group-tree-visualizer-latest.zip\"\r\n            if curl -L --fail --connect-timeout 30 --max-time 180 \"$GITHUB_URL\" -o \"$TEMP_DIR/release.zip\" 2>&1; then\r\n                log \"✅ GitHub fallback successful\"\r\n                DOWNLOAD_SUCCESS=true\r\n            fi\r\n        fi\r\n    fi\r\ndone\r\n\r\nif [ \"$DOWNLOAD_SUCCESS\" = false ]; then\r\n    log \"❌ All download attempts failed\"\r\n    exit 1\r\nfi\r\n\r\n# Verify download\r\nif [ ! -f \"$TEMP_DIR/release.zip\" ] || [ ! -s \"$TEMP_DIR/release.zip\" ]; then\r\n    log \"❌ Downloaded file is empty or missing\"\r\n    exit 1\r\nfi\r\n\r\nFILE_SIZE=$(ls -lh \"$TEMP_DIR/release.zip\" | awk '{print $5}')\r\nlog \"📦 Package downloaded successfully ($FILE_SIZE)\"\r\n\r\nlog \"📂 Extracting package...\"\r\nif unzip -q \"$TEMP_DIR/release.zip\" -d \"$TEMP_DIR/extracted\" 2>/dev/null; then\r\n    log \"✅ Extraction successful\"\r\nelse\r\n    log \"❌ Extraction failed\"\r\n    log \"📋 File type: $(file \"$TEMP_DIR/release.zip\" 2>/dev/null || echo 'unknown')\"\r\n    exit 1\r\nfi\r\n\r\n# Find static files\r\nlog \"🔍 Locating static files...\"\r\nSTATIC_DIR=\"$TEMP_DIR/extracted\"\r\n\r\nif [ -f \"$TEMP_DIR/extracted/index.html\" ]; then\r\n    log \"📄 Found index.html in root directory\"\r\nelif [ -f \"$TEMP_DIR/extracted/static/index.html\" ]; then\r\n    STATIC_DIR=\"$TEMP_DIR/extracted/static\"\r\n    log \"📄 Found index.html in static subdirectory\"\r\nelif [ -f \"$TEMP_DIR/extracted/group-tree-visualizer-latest/static/index.html\" ]; then\r\n    STATIC_DIR=\"$TEMP_DIR/extracted/group-tree-visualizer-latest/static\"\r\n    log \"📄 Found index.html in nested static directory\"\r\nelse\r\n    log \"❌ No index.html found in package\"\r\n    log \"📋 Package contents:\"\r\n    find \"$TEMP_DIR/extracted\" -name \"*.html\" | head -10 || echo \"No HTML files found\"\r\n    find \"$TEMP_DIR/extracted\" -type f | head -20 || echo \"No files found\"\r\n    exit 1\r\nfi\r\n\r\nFILE_COUNT=$(find \"$STATIC_DIR\" -type f | wc -l)\r\nlog \"📊 Found $FILE_COUNT files to deploy\"\r\n\r\nlog \"🔑 Retrieving deployment token...\"\r\nset +e\r\nDEPLOYMENT_TOKEN=$(az staticwebapp secrets list --name \"$STATIC_WEB_APP_NAME\" --resource-group \"$RESOURCE_GROUP_NAME\" --query \"properties.apiKey\" -o tsv 2>/dev/null)\r\nTOKEN_RESULT=$?\r\nset -e\r\n\r\nif [ $TOKEN_RESULT -ne 0 ] || [ -z \"$DEPLOYMENT_TOKEN\" ] || [ \"$DEPLOYMENT_TOKEN\" = \"null\" ]; then\r\n    log \"❌ Failed to retrieve deployment token (exit code: $TOKEN_RESULT)\"\r\n    \r\n    # Try alternative method\r\n    log \"🔄 Trying alternative token retrieval...\"\r\n    set +e\r\n    DEPLOYMENT_TOKEN=$(az rest --method post --uri \"/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_NAME/providers/Microsoft.Web/staticSites/$STATIC_WEB_APP_NAME/listSecrets?api-version=2022-03-01\" --query \"properties.apiKey\" -o tsv 2>/dev/null)\r\n    ALT_RESULT=$?\r\n    set -e\r\n    \r\n    if [ $ALT_RESULT -ne 0 ] || [ -z \"$DEPLOYMENT_TOKEN\" ] || [ \"$DEPLOYMENT_TOKEN\" = \"null\" ]; then\r\n        log \"❌ Alternative token retrieval also failed (exit code: $ALT_RESULT)\"\r\n        exit 1\r\n    else\r\n        log \"✅ Alternative token retrieval successful\"\r\n    fi\r\nelse\r\n    log \"✅ Token retrieved successfully\"\r\nfi\r\n\r\nTOKEN_LENGTH=${#DEPLOYMENT_TOKEN}\r\nlog \"📊 Token length: $TOKEN_LENGTH characters\"\r\n\r\nlog \"🚀 Deploying to Static Web App...\"\r\nlog \"📁 Source directory: $STATIC_DIR\"\r\nlog \"📊 Files to deploy: $FILE_COUNT\"\r\n\r\nset +e\r\nDEPLOY_OUTPUT=$(az staticwebapp deploy \\\r\n    --name \"$STATIC_WEB_APP_NAME\" \\\r\n    --resource-group \"$RESOURCE_GROUP_NAME\" \\\r\n    --source \"$STATIC_DIR\" \\\r\n    --deployment-token \"$DEPLOYMENT_TOKEN\" \\\r\n    --verbose 2>&1)\r\nDEPLOY_RESULT=$?\r\nset -e\r\n\r\nif [ $DEPLOY_RESULT -eq 0 ]; then\r\n    log \"✅ Deployment completed successfully!\"\r\n    log \"🌐 Application URL: https://$STATIC_WEB_APP_NAME.azurestaticapps.net\"\r\n    log \"📊 Deployment summary: $FILE_COUNT files deployed\"\r\nelse\r\n    log \"❌ Deployment failed with exit code: $DEPLOY_RESULT\"\r\n    log \"📋 Deployment output:\"\r\n    echo \"$DEPLOY_OUTPUT\"\r\n    \r\n    # Additional diagnostics\r\n    log \"🔍 Diagnostics:\"\r\n    log \"  Token length: $TOKEN_LENGTH\"\r\n    log \"  Source files: $(ls -la \"$STATIC_DIR\" | head -5 || echo 'Could not list files')\"\r\n    log \"  SWA status: $(az staticwebapp show --name \"$STATIC_WEB_APP_NAME\" --resource-group \"$RESOURCE_GROUP_NAME\" --query 'properties.defaultHostname' -o tsv 2>/dev/null || echo 'Could not get status')\"\r\n    \r\n    exit 1\r\nfi\r\n\r\nlog \"🧹 Cleaning up temporary files...\"\r\nrm -rf \"$TEMP_DIR\"\r\n\r\nlog \"🎉 Bicep deployment completed successfully!\"\r\nlog \"📊 Final summary:\"\r\nlog \"  📦 Files deployed: $FILE_COUNT\"\r\nlog \"  📦 Package size: $FILE_SIZE\"\r\nlog \"  🌐 App URL: https://$STATIC_WEB_APP_NAME.azurestaticapps.net\"\r\nlog \"  🔧 Next step: Configure MSAL authentication\"\r\n"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",
+        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), 'Contributor'))]",
+        "[resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-03-01').defaultHostname)]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[parameters('staticWebAppName')]"
+    },
+    "tenantId": {
+      "type": "string",
+      "value": "[subscription().tenantId]"
+    },
+    "subscriptionId": {
+      "type": "string",
+      "value": "[subscription().subscriptionId]"
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    }
+  }
+}
