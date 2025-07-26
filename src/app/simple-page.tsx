@@ -787,31 +787,42 @@ export default function SimpleHomePage() {
         
         try {
           // Parse the dragged node's ID to find the source group
-          // The ID format is typically: {source}-{type}-{memberId} or group-{groupId}
-          // Examples: "group-abc123-user-def456" or "user-123-group-456" 
+          // The ID format is typically: group-{groupId}-parent-{parentId}-user-{userId}
+          // Example: "group-acb0350c-e986-4aa0-92c0-a7ad19bd00ea-parent-379ab10a-3267-4601-b56f-2d1cb3b45f67-user-f5c66fdd-13a3-43c0-b9ba-cbb51adf8abe"
           
-          const nodeIdParts = draggedNode.id.split('-')
-          console.log('🔍 Analyzing dragged node ID:', draggedNode.id, 'Parts:', nodeIdParts)
+          console.log('🔍 Analyzing dragged node ID:', draggedNode.id)
           
-          // Look for group IDs in the path - we want the immediate parent group
-          const guidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
+          // GUID pattern for matching complete GUIDs
+          const guidPattern = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g
           
-          // Try to find the immediate parent group ID from the node path
-          // For user nodes under groups: "group-{groupId}-user-{userId}" or "{groupId}-user-{userId}"
-          // For device nodes under groups: "group-{groupId}-device-{deviceId}" or "{groupId}-device-{deviceId}"
+          // Extract all GUIDs from the node ID
+          const guids = draggedNode.id.match(guidPattern) || []
+          console.log('🔍 Found GUIDs in node ID:', guids)
           
+          // Try to find the source group ID based on the node structure
           if (draggedNode.id.includes('-user-') || draggedNode.id.includes('-device-')) {
-            // Find the group ID that comes before the user/device part
-            for (let i = 0; i < nodeIdParts.length - 2; i++) {
-              if ((nodeIdParts[i + 1] === 'user' || nodeIdParts[i + 1] === 'device') && guidPattern.test(nodeIdParts[i])) {
-                sourceGroupId = nodeIdParts[i]
-                break
-              }
-            }
+            // For nodes like: group-{groupId}-user-{userId} or group-{groupId}-parent-{parentId}-user-{userId}
             
-            // Also check for "group-{guid}" pattern at the beginning
-            if (!sourceGroupId && nodeIdParts[0] === 'group' && guidPattern.test(nodeIdParts[1])) {
-              sourceGroupId = nodeIdParts[1]
+            if (draggedNode.id.startsWith('group-') && guids.length >= 2) {
+              // The first GUID after "group-" is typically the source group
+              sourceGroupId = guids[0] || null
+              console.log('🎯 Found source group from "group-" prefix:', sourceGroupId)
+            } else if (guids.length >= 2) {
+              // If multiple GUIDs, the last one is usually the user/device, 
+              // and we need to find the group they belong to contextually
+              
+              // For complex paths, try to find the immediate parent group
+              // Look for pattern: {groupId}-user-{userId} or {groupId}-device-{deviceId}
+              const userDeviceMatch = draggedNode.id.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})-(user|device)-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/)
+              
+              if (userDeviceMatch) {
+                sourceGroupId = userDeviceMatch[1]
+                console.log('🎯 Found source group from user/device pattern:', sourceGroupId)
+              } else {
+                // Fallback: use the first GUID as it's likely the source group
+                sourceGroupId = guids[0] || null
+                console.log('🎯 Using first GUID as source group (fallback):', sourceGroupId)
+              }
             }
           }
           
