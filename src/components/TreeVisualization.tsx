@@ -328,6 +328,66 @@ export default function TreeVisualization({
             if (!ghost.empty()) {
               const [mouseX, mouseY] = d3.pointer(event.sourceEvent, svg.node())
               ghost.attr('transform', `translate(${mouseX + 15}, ${mouseY - 15})`)
+            } else if (d3.select(this).property('__isDragging')) {
+              // If we're dragging but ghost is missing, recreate it
+              console.log('🔄 Recreating missing ghost element')
+              
+              // Remove any existing ghost elements first
+              svg.selectAll('.drag-ghost').remove()
+              
+              // Create a new ghost element
+              const newGhost = svg.append('g')
+                .attr('class', 'drag-ghost')
+                .style('pointer-events', 'none')
+                .style('opacity', 0.9)
+                .style('z-index', 1000)
+              
+              // Add ghost circle
+              newGhost.append('circle')
+                .attr('r', 15)
+                .style('fill', d.data.type === 'user' ? 'url(#userGradient)' : 'url(#deviceGradient)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 3)
+                .style('filter', 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.5))')
+              
+              // Add ghost icon
+              newGhost.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .style('font-size', '14px')
+                .style('fill', 'white')
+                .style('text-shadow', '0 1px 2px rgba(0,0,0,0.8)')
+                .text(d.data.type === 'user' ? '👤' : '💻')
+              
+              // Add ghost label with background
+              const labelGroup = newGhost.append('g')
+                .attr('transform', 'translate(25, 0)')
+              
+              // Background for label
+              labelGroup.append('rect')
+                .attr('x', -5)
+                .attr('y', -10)
+                .attr('width', d.data.name.length * 6 + 10)
+                .attr('height', 20)
+                .attr('rx', 10)
+                .style('fill', 'rgba(0,0,0,0.8)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 1)
+              
+              // Label text
+              labelGroup.append('text')
+                .attr('dy', '0.35em')
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .style('fill', '#ffffff')
+                .style('text-anchor', 'middle')
+                .text(d.data.name)
+              
+              // Position the new ghost
+              const [mouseX, mouseY] = d3.pointer(event.sourceEvent, svg.node())
+              newGhost.attr('transform', `translate(${mouseX + 15}, ${mouseY - 15})`)
+              
+              console.log('👻 Ghost element recreated')
             } else {
               console.log('⚠️ Ghost element not found during drag move')
             }

@@ -767,6 +767,7 @@ export default function SimpleHomePage() {
       // Check if user is already a member of the target group
       const isAlreadyMember = await graphService.isGroupMember(targetGroupId, memberId)
       console.log('Is already member?', isAlreadyMember)
+      console.log('Membership check - Group ID:', targetGroupId, 'Member ID:', memberId)
       
       if (isAlreadyMember && action === 'add') {
         setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}`)
@@ -786,7 +787,12 @@ export default function SimpleHomePage() {
         
         setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}. Note: Move operation adds to new group - please manually remove from old groups if needed.`)
       } else {
-        // Add to group
+        // Add to group - but only if not already a member
+        if (isAlreadyMember) {
+          setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}`)
+          return
+        }
+        
         await graphService.addGroupMember(targetGroupId, memberId)
         setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}`)
       }
