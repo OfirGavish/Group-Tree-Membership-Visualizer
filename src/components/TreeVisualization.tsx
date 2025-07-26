@@ -141,8 +141,22 @@ export default function TreeVisualization({
       .style('cursor', 'pointer')
       .on('click', function(event, d) {
         event.stopPropagation()
-        console.log('Node clicked:', d.data.name, d.data.type)
-        onNodeSelect(d.data)
+        
+        // Check if this was part of a drag operation - wait a bit to be sure
+        const isDragging = d3.select(this).property('__isDragging')
+        if (isDragging) {
+          console.log('🚫 Ignoring click because of drag operation for:', d.data.name)
+          return
+        }
+        
+        // Small delay to ensure drag operations are fully processed
+        setTimeout(() => {
+          const stillDragging = d3.select(this).property('__isDragging')
+          if (!stillDragging) {
+            console.log('🖱️ Node clicked:', d.data.name, d.data.type)
+            onNodeSelect(d.data)
+          }
+        }, 10)
       })
       .on('mouseover', function(event, d) {
         // Enhanced hover effect for groups when drag-drop is enabled
@@ -174,27 +188,29 @@ export default function TreeVisualization({
           // Store the starting position to detect if it's a real drag or just a click
           const startPos = { x: event.x, y: event.y }
           d3.select(this).property('__dragStartPos', startPos)
+          d3.select(this).property('__isDragging', false)
           
           // Only allow dragging users and devices
-          if ((d.data.type === 'user' || d.data.type === 'device') && onDragStart) {
-            // Don't start drag immediately, wait for actual movement
-            d3.select(this).property('__isDragging', false)
-          } else {
+          if (!(d.data.type === 'user' || d.data.type === 'device')) {
             // Prevent dragging for groups but don't stop propagation (allow clicks)
             event.subject.fx = null
             event.subject.fy = null
+            return
           }
         })
         .on('drag', function(event, d) {
           // Only process drag for users and devices
           if ((d.data.type === 'user' || d.data.type === 'device') && onDragStart) {
             const startPos = d3.select(this).property('__dragStartPos')
+            if (!startPos) return
+            
             const dragDistance = Math.sqrt(
               Math.pow(event.x - startPos.x, 2) + Math.pow(event.y - startPos.y, 2)
             )
             
-            // Only start dragging if moved more than 5 pixels
+            // Only start dragging if moved more than 5 pixels and not already dragging
             if (dragDistance > 5 && !d3.select(this).property('__isDragging')) {
+              console.log('🏃 Starting drag for:', d.data.name)
               d3.select(this).property('__isDragging', true)
               onDragStart(d.data)
               
@@ -217,7 +233,18 @@ export default function TreeVisualization({
         .on('end', function(event, d) {
           const isDragging = d3.select(this).property('__isDragging')
           
+          // Prevent multiple end events for the same drag operation
+          if (isDragging && d3.select(this).property('__dragProcessed')) {
+            console.log('⚠️ Drop already processed for this drag operation')
+            return
+          }
+          
           if ((d.data.type === 'user' || d.data.type === 'device') && onDrop && isDragging) {
+            console.log('🎯 Processing drop for:', d.data.name)
+            
+            // Mark this drag as processed to prevent duplicate events
+            d3.select(this).property('__dragProcessed', true)
+            
             // Remove visual feedback from dragged item
             d3.select(this).select('circle')
               .style('stroke', '#ffffff')
@@ -246,6 +273,7 @@ export default function TreeVisualization({
             
             if (dropTargets.length > 0) {
               const targetData = dropTargets[0] as d3.HierarchyPointNode<TreeNode>
+              console.log('🎯 Dropping:', d.data.name, '->', targetData.data.name)
               onDrop(d.data, targetData.data)
             }
             
@@ -257,6 +285,7 @@ export default function TreeVisualization({
           // Clean up drag state
           d3.select(this).property('__isDragging', false)
           d3.select(this).property('__dragStartPos', null)
+          d3.select(this).property('__dragProcessed', false)
         })
       )
 

@@ -718,26 +718,32 @@ export default function SimpleHomePage() {
     }
   }
 
-  // Drag and drop handlers
   const handleDragStart = (node: TreeNode) => {
-    console.log('Drag started:', node.name, node.type)
+    console.log('🚀 Drag started:', node.name, node.type)
     setDraggedNode(node)
   }
 
   const handleDragEnd = () => {
-    console.log('Drag ended')
+    console.log('🛬 Drag ended')
     // Don't clear draggedNode here, we need it for the modal
   }
 
   const handleDrop = (draggedNode: TreeNode, targetNode: TreeNode) => {
-    console.log('Drop detected:', draggedNode.name, 'onto', targetNode.name)
+    console.log('🎯 Drop detected:', draggedNode.name, 'onto', targetNode.name)
+    
+    // Prevent multiple modals by checking if one is already open
+    if (showDragDropModal) {
+      console.log('⚠️ Modal already open, ignoring drop')
+      return
+    }
     
     // Only allow dropping users/devices onto groups
     if ((draggedNode.type === 'user' || draggedNode.type === 'device') && targetNode.type === 'group') {
+      console.log('✅ Valid drop target, showing modal')
       setDropTargetNode(targetNode)
       setShowDragDropModal(true)
     } else {
-      console.log('Invalid drop target')
+      console.log('❌ Invalid drop target')
       setDraggedNode(null)
     }
   }
@@ -795,6 +801,7 @@ export default function SimpleHomePage() {
   }
 
   const handleDragDropCancel = () => {
+    console.log('🚫 Drag drop cancelled')
     setShowDragDropModal(false)
     setDraggedNode(null)
     setDropTargetNode(null)
