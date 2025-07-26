@@ -73,6 +73,9 @@ export interface TreeVisualizationProps {
   onNodeSelect: (node: TreeNode) => void
   selectedNode?: TreeNode
   expandedNodes: Set<string>
+  onDragStart?: (node: TreeNode) => void
+  onDragEnd?: () => void
+  onDrop?: (draggedNode: TreeNode, targetNode: TreeNode) => void
 }
 
 export interface UserSearchProps {

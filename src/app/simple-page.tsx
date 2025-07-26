@@ -8,9 +8,11 @@ import { CacheService } from '@/lib/cache-service'
 import { User, Group, TreeNode, TreeData, GroupMember, Device } from '@/types'
 import UserSearch from '@/components/UserSearch'
 import GroupSearch from '@/components/GroupSearch'
+import GroupFilters from '@/components/GroupFilters'
 import DeviceSearch from '@/components/DeviceSearch'
 import TreeVisualization from '@/components/TreeVisualization'
 import GroupDetails from '@/components/GroupDetails'
+import DragDropModal from '@/components/DragDropModal'
 
 export default function SimpleHomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -30,6 +32,14 @@ export default function SimpleHomePage() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [searchType, setSearchType] = useState<'user' | 'group' | 'device'>('user')
   const [cacheStats, setCacheStats] = useState({ totalItems: 0, totalSize: 0 })
+  
+  // Group filter state
+  const [showEmptyOnly, setShowEmptyOnly] = useState(false)
+  
+  // Drag and drop state
+  const [draggedNode, setDraggedNode] = useState<TreeNode | null>(null)
+  const [showDragDropModal, setShowDragDropModal] = useState(false)
+  const [dropTargetNode, setDropTargetNode] = useState<TreeNode | null>(null)
 
   // Cache management functions
   const updateCacheStats = () => {
@@ -523,7 +533,7 @@ export default function SimpleHomePage() {
                 name: member.displayName,
                 type: 'user' as const,
                 data: { ...user, originalId: user.id }, // Store original ID
-                children: undefined
+                children: [] // Always initialize with empty array for consistency
               }
             } else if (member['@odata.type'].includes('device')) {
               const device: Device = {
@@ -708,10 +718,151 @@ export default function SimpleHomePage() {
     }
   }
 
+  const handleDragStart = (node: TreeNode) => {
+    console.log('🚀 Drag started:', node.name, node.type)
+    setDraggedNode(node)
+  }
+
+  const handleDragEnd = () => {
+    console.log('🛬 Drag ended')
+    // Don't clear draggedNode here, we need it for the modal
+  }
+
+  const handleDrop = (draggedNode: TreeNode, targetNode: TreeNode) => {
+    console.log('🎯 Drop detected:', draggedNode.name, 'onto', targetNode.name)
+    
+    // Prevent multiple modals by checking if one is already open
+    if (showDragDropModal) {
+      console.log('⚠️ Modal already open, ignoring drop')
+      return
+    }
+    
+    // Only allow dropping users/devices onto groups
+    if ((draggedNode.type === 'user' || draggedNode.type === 'device') && targetNode.type === 'group') {
+      console.log('✅ Valid drop target, showing modal')
+      setDropTargetNode(targetNode)
+      setShowDragDropModal(true)
+    } else {
+      console.log('❌ Invalid drop target')
+      setDraggedNode(null)
+    }
+  }
+
+  const handleDragDropConfirm = async (action: 'move' | 'add', additionalData?: { groupsToRemoveFrom?: string[] }) => {
+    if (!draggedNode || !dropTargetNode) return
+
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const graphService = new ApiGraphService()
+      
+      // Get the original IDs for the API calls
+      const memberId = (draggedNode.data as any).originalId || draggedNode.data.id
+      const targetGroupId = (dropTargetNode.data as any).originalId || dropTargetNode.data.id
+      
+      console.log(`${action === 'move' ? 'Moving' : 'Adding'} ${draggedNode.name} ${action === 'move' ? 'to' : 'to'} ${dropTargetNode.name}`)
+      console.log('Member ID:', memberId, 'Target Group ID:', targetGroupId)
+      
+      // Check if user is already a member of the target group
+      const isAlreadyMember = await graphService.isGroupMember(targetGroupId, memberId)
+      console.log('Is already member?', isAlreadyMember)
+      console.log('Membership check - Group ID:', targetGroupId, 'Member ID:', memberId)
+      
+      if (isAlreadyMember && action === 'add') {
+        setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}`)
+        return
+      }
+      
+      if (action === 'move') {
+        if (isAlreadyMember) {
+          setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}. Use "Add to Group" to keep existing memberships.`)
+          return
+        }
+        
+        // For move operation, use the selected groups to remove from
+        console.log('🔄 Starting move operation with selected groups:', additionalData?.groupsToRemoveFrom || [])
+        
+        const groupsToRemoveFrom = additionalData?.groupsToRemoveFrom || []
+        
+        try {
+          // Remove from selected groups
+          for (const groupId of groupsToRemoveFrom) {
+            console.log(`🗑️ Removing ${draggedNode.name} from group ${groupId}`)
+            try {
+              await graphService.removeGroupMember(groupId, memberId)
+              console.log('✅ Successfully completed removal from group:', groupId)
+            } catch (removeError) {
+              console.error('❌ Failed to remove from group:', groupId, removeError)
+              // Continue with other removals even if one fails
+            }
+          }
+          
+          // Add to target group
+          console.log(`➕ Adding ${draggedNode.name} to target group ${targetGroupId}`)
+          try {
+            await graphService.addGroupMember(targetGroupId, memberId)
+            console.log('✅ Successfully completed addition to target group')
+          } catch (addError) {
+            console.error('❌ Failed to add to target group:', addError)
+            setError(`Failed to add ${draggedNode.name} to target group: ${addError instanceof Error ? addError.message : 'Unknown error'}`)
+            return
+          }
+          
+          const removedCount = groupsToRemoveFrom.length
+          setError(`Successfully moved ${draggedNode.name} to ${dropTargetNode.name}. Removed from ${removedCount} group${removedCount !== 1 ? 's' : ''}.`)
+          
+        } catch (moveError) {
+          console.error('❌ Error during move operation:', moveError)
+          setError(`Failed to complete move operation: ${moveError instanceof Error ? moveError.message : 'Unknown error'}`)
+          return
+        }
+      } else {
+        // Add to group - but only if not already a member
+        if (isAlreadyMember) {
+          setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}`)
+          return
+        }
+        
+        await graphService.addGroupMember(targetGroupId, memberId)
+        setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}`)
+      }
+      
+      // Clear the success message after 5 seconds
+      setTimeout(() => setError(null), 5000)
+      
+      // Refresh the tree data to show the changes
+      if (selectedUser) {
+        await handleUserSelect(selectedUser)
+      } else if (selectedDevice) {
+        await handleDeviceSelect(selectedDevice)
+      } else if (selectedGroup) {
+        await handleGroupSelect(selectedGroup)
+      }
+      
+    } catch (error) {
+      console.error('Error in drag drop operation:', error)
+      setError(`Failed to ${action} ${draggedNode.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setLoading(false)
+      setShowDragDropModal(false)
+      setDraggedNode(null)
+      setDropTargetNode(null)
+      updateCacheStats()
+    }
+  }
+
+  const handleDragDropCancel = () => {
+    console.log('🚫 Drag drop cancelled')
+    setShowDragDropModal(false)
+    setDraggedNode(null)
+    setDropTargetNode(null)
+  }
+
   // Show loading screen during initial auth check
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black flex items-center justify-center">
         <div className="text-center">
           <div className="mx-auto w-60 h-60 flex items-center justify-center mb-4">
               <Image 
@@ -734,10 +885,11 @@ export default function SimpleHomePage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center relative">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 relative z-10">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black flex items-center justify-center relative">
+        <div className="max-w-md w-full mx-4 relative z-10">
           <div className="text-center">
-            <div className="mx-auto w-80 h-80 flex items-center justify-center mb-4">
+            {/* Logo - outside white background */}
+            <div className="mx-auto w-80 h-80 flex items-center justify-center mb-6">
               <Image 
                 src="/logo.png" 
                 alt="Logo" 
@@ -746,59 +898,63 @@ export default function SimpleHomePage() {
                 className="object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Group Tree Membership Visualizer</h1>
-            <p className="text-gray-600 mb-6">
-              Explore Entra ID group memberships and hierarchies with interactive visualizations
-            </p>
             
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-            
-            <div className="flex justify-center">
-              <button
-                onClick={async () => {
-                  try {
-                    setAuthLoading(true)
-                    setError(null)
-                    const account = await authService.signIn()
-                    console.log('Sign in successful, account:', account)
-                    
-                    // Force a fresh auth check
-                    const user = await authService.getCurrentUser()
-                    if (user) {
-                      console.log('User authenticated:', user)
-                      setIsAuthenticated(true)
-                      setCurrentUser(user)
-                      // Load data after successful authentication
-                      await loadUsers()
-                      await loadGroups()
-                      await loadDevices()
-                    } else {
-                      console.error('No user found after sign in')
-                      setError('Authentication succeeded but user info not available. Please try refreshing.')
-                    }
-                  } catch (error) {
-                    console.error('Sign in failed:', error)
-                    const errorMessage = error instanceof Error ? error.message : 'Please try again.'
-                    setError(`Sign in failed: ${errorMessage}`)
-                  } finally {
-                    setAuthLoading(false)
-                  }
-                }}
-                disabled={authLoading}
-                className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
-              >
-                {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
-              </button>
-            </div>
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                This application was made using Next.js and React<br/>
-                by <span className="font-medium text-gray-600">Ofir Gavish</span> with ❤️ to the community
+            {/* Content with semi-transparent white background */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-xl p-8">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Group Tree Membership Visualizer</h1>
+              <p className="text-gray-600 mb-6">
+                Explore Entra ID group memberships and hierarchies with interactive visualizations
               </p>
+              
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-center">
+                <button
+                  onClick={async () => {
+                    try {
+                      setAuthLoading(true)
+                      setError(null)
+                      const account = await authService.signIn()
+                      console.log('Sign in successful, account:', account)
+                      
+                      // Force a fresh auth check
+                      const user = await authService.getCurrentUser()
+                      if (user) {
+                        console.log('User authenticated:', user)
+                        setIsAuthenticated(true)
+                        setCurrentUser(user)
+                        // Load data after successful authentication
+                        await loadUsers()
+                        await loadGroups()
+                        await loadDevices()
+                      } else {
+                        console.error('No user found after sign in')
+                        setError('Authentication succeeded but user info not available. Please try refreshing.')
+                      }
+                    } catch (error) {
+                      console.error('Sign in failed:', error)
+                      const errorMessage = error instanceof Error ? error.message : 'Please try again.'
+                      setError(`Sign in failed: ${errorMessage}`)
+                    } finally {
+                      setAuthLoading(false)
+                    }
+                  }}
+                  disabled={authLoading}
+                  className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center disabled:opacity-50"
+                >
+                  {authLoading ? 'Signing in...' : 'Sign in with Microsoft'}
+                </button>
+              </div>
+              <div className="mt-6 text-center">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  This application was made using Next.js and React<br/>
+                  by <span className="font-medium text-gray-600">Ofir Gavish</span> with ❤️ to the community
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -807,7 +963,7 @@ export default function SimpleHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-6 h-6 bg-blue-400/30 rounded-full blur-xl animate-float"></div>
@@ -873,9 +1029,9 @@ export default function SimpleHomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-2 relative z-10">
         {error && (
-          <div className="mb-6 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
+          <div className="mb-4 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg p-4">
             <div className="flex">
               <div className="text-red-100 text-sm">{error}</div>
               <button
@@ -889,11 +1045,41 @@ export default function SimpleHomePage() {
         )}
 
         {/* Search Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-white">
-              Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
-            </h2>
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-6">
+              <h2 className="text-lg font-medium text-white whitespace-nowrap flex-shrink-0" style={{ width: '150px' }}>
+                Select a {searchType === 'user' ? 'User' : searchType === 'group' ? 'Group' : 'Device'}
+              </h2>
+              
+              {/* Search Box inline with title - fixed position and width for all types */}
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0" style={{ maxWidth: '300px' }}>
+                  {searchType === 'user' ? (
+                    <UserSearch users={users} onUserSelect={handleUserSelect} />
+                  ) : searchType === 'group' ? (
+                    <GroupSearch 
+                      groups={groups.filter(group => showEmptyOnly ? group.isEmpty : true)} 
+                      onGroupSelect={handleGroupSelect} 
+                      showEmptyOnly={showEmptyOnly}
+                    />
+                  ) : (
+                    <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
+                  )}
+                </div>
+                
+                {/* Group Filters - Only show when group search is active */}
+                {searchType === 'group' && (
+                  <GroupFilters
+                    groups={groups}
+                    showEmptyOnly={showEmptyOnly}
+                    onShowEmptyOnlyChange={setShowEmptyOnly}
+                    filteredCount={groups.filter(group => showEmptyOnly ? group.isEmpty : true).length}
+                  />
+                )}
+              </div>
+            </div>
+            
             <div className="flex bg-white/5 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
               <button
                 onClick={() => setSearchType('user')}
@@ -954,72 +1140,81 @@ export default function SimpleHomePage() {
               </button>
             </div>
           </div>
-          <div className="flex justify-center p-6">
-            <div className="w-full max-w-xs" style={{ maxWidth: '320px' }}>
-              {searchType === 'user' ? (
-                <UserSearch users={users} onUserSelect={handleUserSelect} />
-              ) : searchType === 'group' ? (
-                <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
-              ) : (
-                <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
-              )}
-              {loading && (
-                <div className="mt-4 text-sm text-white/70 flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                  Loading...
-                </div>
-              )}
+          
+          {/* Loading indicator */}
+          {loading && (
+            <div className="flex justify-center">
+              <div className="text-sm text-white/70 flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                Loading...
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Visualization and Details */}
         {(selectedUser || selectedGroup || selectedDevice) && (
-          <div className="grid grid-cols-3 gap-8 max-w-full overflow-hidden min-h-0">
+          <div className="grid grid-cols-6 gap-4 w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
-            <div className="col-span-2 min-w-0 h-[700px] relative">
+            <div className="col-span-4 min-w-0 h-[750px] relative">
+              {/* Drag & Drop Instructions - Moved to bottom left */}
+              <div className="absolute bottom-4 left-4 z-20 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-md border border-white/20 rounded-xl p-3 shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🎯</span>
+                  <h4 className="text-sm font-semibold text-white">Drag & Drop</h4>
+                </div>
+                <div className="text-xs text-white/80 space-y-1">
+                  <div>1. Click <span className="text-blue-300">+</span> buttons to expand nodes</div>
+                  <div>2. Drag users/devices onto groups</div>
+                  <div>3. Choose to add or move membership</div>
+                </div>
+              </div>
+              
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}
                 selectedNode={selectedNode || undefined}
                 expandedNodes={expandedNodes}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDrop={handleDrop}
               />
             </div>
 
             {/* Modern Details Panel */}
-            <div className="col-span-1 space-y-6 max-w-full min-w-0 h-[700px] overflow-y-auto flex flex-col bg-black/10 rounded-xl p-4 relative z-10">
+            <div className="col-span-2 space-y-1 max-w-full min-w-0 h-[750px] overflow-y-auto flex flex-col rounded-xl p-3 relative z-10 sidebar-panel">
               {/* Selected User Info */}
               {selectedUser && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h3 className="text-base font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                       Selected User
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         👤
                       </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                      <h4 className="font-bold text-white text-base mb-1 truncate">
                         {selectedUser.displayName}
                       </h4>
-                      <p className="text-blue-300 text-sm mb-2 truncate">
+                      <p className="text-blue-300 text-xs mb-2 truncate">
                         {selectedUser.userPrincipalName}
                       </p>
                       {selectedUser.jobTitle && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
+                        <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-400/30">
                           <span className="text-blue-300 text-xs font-medium">{selectedUser.jobTitle}</span>
                         </div>
                       )}
                       
                       {/* User ID */}
-                      <div className="mt-3 p-2 bg-black/20 rounded-lg">
+                      <div className="mt-2 p-2 bg-black/20 rounded-lg">
                         <div className="text-xs text-white/60 mb-1">User ID</div>
                         <div className="text-xs text-white/80 font-mono break-all">
                           {selectedUser.id}
@@ -1032,33 +1227,33 @@ export default function SimpleHomePage() {
 
               {/* Selected Device Info */}
               {selectedDevice && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                    <h3 className="text-base font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
                       Selected Device
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         💻
                       </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                      <h4 className="font-bold text-white text-base mb-1 truncate">
                         {selectedDevice.displayName}
                       </h4>
                       {selectedDevice.operatingSystem && (
-                        <p className="text-green-300 text-sm mb-2">
+                        <p className="text-green-300 text-xs mb-2">
                           {selectedDevice.operatingSystem}
                         </p>
                       )}
                       
                       {/* Device Details */}
-                      <div className="space-y-2 mt-3">
+                      <div className="space-y-2 mt-2">
                         {selectedDevice.deviceId && (
                           <div className="p-2 bg-black/20 rounded-lg">
                             <div className="text-xs text-white/60 mb-1">Device ID</div>
@@ -1082,35 +1277,35 @@ export default function SimpleHomePage() {
 
               {/* Selected Group Info */}
               {selectedGroup && (
-                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
-                  <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:shadow-3xl transition-all duration-300 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    <h3 className="text-base font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                       Selected Group
                     </h3>
                   </div>
                   
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         👥
                       </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-lg mb-1 truncate">
+                      <h4 className="font-bold text-white text-base mb-1 truncate">
                         {selectedGroup.displayName}
                       </h4>
                       {selectedGroup.description && (
-                        <p className="text-purple-300 text-sm mb-2">
+                        <p className="text-purple-300 text-xs mb-2">
                           {selectedGroup.description}
                         </p>
                       )}
                       
                       {/* Group Stats */}
-                      <div className="flex items-center gap-3 mt-3 mb-3">
+                      <div className="flex items-center gap-2 mt-2 mb-2">
                         {selectedGroup.members && (
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30">
+                          <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30">
                             <span className="text-purple-300 text-xs font-medium">
                               {selectedGroup.members.length} member{selectedGroup.members.length !== 1 ? 's' : ''}
                             </span>
@@ -1118,7 +1313,7 @@ export default function SimpleHomePage() {
                         )}
                         
                         {selectedGroup.groupTypes && selectedGroup.groupTypes.length > 0 && (
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30">
+                          <div className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-400/30">
                             <span className="text-pink-300 text-xs font-medium">
                               {selectedGroup.groupTypes[0]}
                             </span>
@@ -1150,6 +1345,17 @@ export default function SimpleHomePage() {
             </div>
           </div>
         )}
+        
+        {/* Drag and Drop Modal */}
+        <DragDropModal
+          isOpen={showDragDropModal}
+          draggedNode={draggedNode}
+          targetNode={dropTargetNode}
+          onConfirm={(action, additionalData) => {
+            handleDragDropConfirm(action, additionalData)
+          }}
+          onClose={handleDragDropCancel}
+        />
       </main>
     </div>
   )

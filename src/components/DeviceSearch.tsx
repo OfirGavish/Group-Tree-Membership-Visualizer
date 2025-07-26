@@ -106,84 +106,98 @@ export default function DeviceSearch({ onDeviceSelect, devices }: DeviceSearchPr
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <div className="relative">
+    <div className="relative w-72 mx-auto" style={{ maxWidth: '300px' }} ref={dropdownRef}>
+      <div className="relative group">
         <input
           ref={inputRef}
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search for devices..."
-          className="w-72 px-4 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition-all duration-200"
-          style={{ maxWidth: '300px' }}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Search for a device..."
+          className="w-full px-6 py-4 pl-6 pr-14 text-base font-medium bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400/50 text-white placeholder-white/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/15"
         />
         
-        {/* Search Icon */}
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">
-          💻
-        </div>
-        
-        {/* Clear Button */}
-        {searchTerm && (
-          <button
-            onClick={clearSearch}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+        <div className="absolute inset-y-0 right-0 flex items-center pr-5">
+          <svg
+            className="w-6 h-6 text-white/60 group-hover:text-white/80 transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            ×
-          </button>
-        )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        {/* Floating gradient border animation */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400/20 via-emerald-400/20 to-green-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       </div>
 
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-2xl z-50 max-h-80 overflow-y-auto">
-          {filteredDevices.map((device, index) => (
-            <div
-              key={device.id}
-              onClick={() => handleDeviceSelect(device)}
-              className={`p-4 cursor-pointer transition-all duration-200 ${
-                index === selectedIndex
-                  ? 'bg-white/20'
-                  : 'hover:bg-white/10'
-              } ${
-                index === 0 ? 'rounded-t-xl' : ''
-              } ${
-                index === filteredDevices.length - 1 ? 'rounded-b-xl' : 'border-b border-white/10'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 min-w-0 flex-1">
-                  <div className="text-xl flex-shrink-0 mt-0.5">
-                    {getDeviceIcon(device.operatingSystem)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-white font-medium truncate">
-                      {device.displayName}
-                    </div>
-                    <div className="text-white/70 text-sm truncate">
-                      {device.deviceId}
-                    </div>
-                    {device.operatingSystem && (
-                      <div className="text-white/50 text-xs mt-1">
-                        {device.operatingSystem} {device.operatingSystemVersion}
+      {isOpen && searchTerm && (
+        <div className="absolute z-10 w-full mt-3 bg-gradient-to-br from-green-500/15 via-emerald-500/10 to-green-500/15 backdrop-blur-xl rounded-2xl shadow-2xl max-h-60 overflow-y-auto overflow-hidden border border-green-300/20">
+          {/* Animated gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 via-transparent to-emerald-600/10 animate-pulse"></div>
+          
+          <div className="relative">
+            {filteredDevices.length > 0 ? (
+              filteredDevices.map((device, index) => (
+                <button
+                  key={device.id}
+                  onClick={() => handleDeviceSelect(device)}
+                  className={`w-full px-5 py-4 text-left hover:bg-gradient-to-r hover:from-green-500/25 hover:to-emerald-500/20 focus:bg-gradient-to-r focus:from-green-500/25 focus:to-emerald-500/20 focus:outline-none border-b border-green-300/15 last:border-b-0 transition-all duration-300 group relative overflow-hidden ${
+                    index === selectedIndex
+                      ? 'bg-gradient-to-r from-green-500/25 to-emerald-500/20'
+                      : ''
+                  }`}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {/* Hover glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/0 via-emerald-400/10 to-green-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  <div className="relative">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 flex items-center">
+                        <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-80 shadow-lg"></div>
                       </div>
-                    )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-white group-hover:text-green-100 transition-colors duration-300 flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></span>
+                          <span className="truncate text-base">{device.displayName}</span>
+                        </div>
+                        <div className="text-sm text-green-200/70 group-hover:text-green-100/80 transition-colors duration-300 truncate">{device.deviceId}</div>
+                        {device.operatingSystem && (
+                          <div className="text-xs text-green-200/60 group-hover:text-green-100/70 transition-colors duration-300">{device.operatingSystem}</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex-shrink-0 ml-2">
-                  {getStatusBadge(device)}
+                </button>
+              ))
+            ) : (
+              <div className="px-5 py-6 text-center">
+                <div className="flex flex-col items-center gap-2 text-green-200/70">
+                  <svg className="w-8 h-8 text-green-300/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
+                  </svg>
+                  <span className="text-sm">No devices found</span>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {filteredDevices.length === 0 && searchTerm && (
-            <div className="p-4 text-white/60 text-center">
-              No devices found matching &quot;{searchTerm}&quot;
-            </div>
-          )}
+            )}
+          </div>
         </div>
+      )}
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-0"
+          onClick={() => setIsOpen(false)}
+        />
       )}
     </div>
   )

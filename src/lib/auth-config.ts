@@ -53,6 +53,7 @@ export const loginRequest: PopupRequest = {
 export const graphScopes = [
   'User.Read.All',
   'Group.Read.All', 
+  'Group.ReadWrite.All',  // Added for drag & drop group membership management
   'Device.Read.All',
   'Directory.Read.All'
 ];

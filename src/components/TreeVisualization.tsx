@@ -4,7 +4,15 @@ import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { TreeNode, TreeVisualizationProps } from '@/types'
 
-export default function TreeVisualization({ data, onNodeSelect, selectedNode, expandedNodes }: TreeVisualizationProps) {
+export default function TreeVisualization({ 
+  data, 
+  onNodeSelect, 
+  selectedNode, 
+  expandedNodes,
+  onDragStart,
+  onDragEnd,
+  onDrop
+}: TreeVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
@@ -122,7 +130,7 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       .style('stroke-width', 3)
       .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
 
-    // Add nodes with enhanced styling
+    // Add nodes with enhanced styling and drag-and-drop functionality
     const node = g
       .selectAll('.node')
       .data(treeData.descendants())
@@ -133,15 +141,39 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       .style('cursor', 'pointer')
       .on('click', function(event, d) {
         event.stopPropagation()
-        console.log('Node clicked:', d.data.name, d.data.type)
-        onNodeSelect(d.data)
+        
+        // Check if this was part of a drag operation - wait a bit to be sure
+        const isDragging = d3.select(this).property('__isDragging')
+        if (isDragging) {
+          console.log('🚫 Ignoring click because of drag operation for:', d.data.name)
+          return
+        }
+        
+        // Small delay to ensure drag operations are fully processed
+        setTimeout(() => {
+          const stillDragging = d3.select(this).property('__isDragging')
+          if (!stillDragging) {
+            console.log('🖱️ Node clicked:', d.data.name, d.data.type)
+            onNodeSelect(d.data)
+          }
+        }, 10)
       })
       .on('mouseover', function(event, d) {
-        d3.select(this).select('circle')
-          .transition()
-          .duration(200)
-          .attr('r', 18)
-          .style('filter', 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))')
+        // Enhanced hover effect for groups when drag-drop is enabled
+        if (d.data.type === 'group' && onDrop) {
+          d3.select(this).select('circle')
+            .transition()
+            .duration(200)
+            .attr('r', 18)
+            .style('filter', 'drop-shadow(0 6px 12px rgba(0,0,0,0.4))')
+            .style('stroke-width', 4)
+        } else {
+          d3.select(this).select('circle')
+            .transition()
+            .duration(200)
+            .attr('r', 18)
+            .style('filter', 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))')
+        }
       })
       .on('mouseout', function(event, d) {
         d3.select(this).select('circle')
@@ -149,7 +181,468 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
           .duration(200)
           .attr('r', 15)
           .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+          .style('stroke-width', 3)
       })
+      .call(d3.drag<SVGGElement, d3.HierarchyPointNode<TreeNode>>()
+        .on('start', function(event, d) {
+          // Store the starting position to detect if it's a real drag or just a click
+          const startPos = { x: event.x, y: event.y }
+          d3.select(this).property('__dragStartPos', startPos)
+          d3.select(this).property('__isDragging', false)
+          
+          // Only allow dragging users and devices
+          if (!(d.data.type === 'user' || d.data.type === 'device')) {
+            // Prevent dragging for groups but don't stop propagation (allow clicks)
+            event.subject.fx = null
+            event.subject.fy = null
+            return
+          }
+        })
+        .on('drag', function(event, d) {
+          // Only process drag for users and devices
+          if ((d.data.type === 'user' || d.data.type === 'device') && onDragStart) {
+            const startPos = d3.select(this).property('__dragStartPos')
+            if (!startPos) return
+            
+            const dragDistance = Math.sqrt(
+              Math.pow(event.x - startPos.x, 2) + Math.pow(event.y - startPos.y, 2)
+            )
+            
+            // Only start dragging if moved more than 5 pixels and not already dragging
+            if (dragDistance > 5 && !d3.select(this).property('__isDragging')) {
+              console.log('🏃 Starting drag for:', d.data.name)
+              d3.select(this).property('__isDragging', true)
+              onDragStart(d.data)
+              
+              // Add visual feedback for the dragged item
+              d3.select(this).select('circle')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 4)
+                .style('opacity', 0.7)
+                .style('filter', 'drop-shadow(0 4px 8px rgba(251, 191, 36, 0.5))')
+              
+              // Dim the original label
+              d3.select(this).selectAll('text')
+                .style('opacity', 0.6)
+              
+              // Highlight potential drop targets (groups)
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .select('circle')
+                .style('stroke', '#10b981')
+                .style('stroke-width', 4)
+                .style('stroke-dasharray', '5,5')
+                .style('filter', 'drop-shadow(0 0 12px rgba(16, 185, 129, 0.6))')
+              
+              // Add visual drop zones (circles showing detection radius)
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .append('circle')
+                .attr('class', 'drop-zone-radius')
+                .attr('r', 80) // Match the detection radius
+                .style('fill', 'rgba(16, 185, 129, 0.1)')
+                .style('stroke', 'rgba(16, 185, 129, 0.3)')
+                .style('stroke-width', 2)
+                .style('stroke-dasharray', '3,3')
+                .style('pointer-events', 'none')
+                .style('opacity', 0)
+                .transition()
+                .duration(200)
+                .style('opacity', 1)
+              
+              // Add drop zone labels
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .append('text')
+                .attr('class', 'drop-zone-hint')
+                .attr('x', 0)
+                .attr('y', -35)
+                .style('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .style('font-weight', 'bold')
+                .style('fill', '#10b981')
+                .style('text-shadow', '0 1px 2px rgba(0,0,0,0.8)')
+                .style('pointer-events', 'none')
+                .text('Drop here!')
+                .style('opacity', 0)
+                .transition()
+                .duration(200)
+                .style('opacity', 1)
+              
+              // Remove any existing ghost elements first
+              svg.selectAll('.drag-ghost').remove()
+              
+              // Create a ghost element that follows the cursor
+              const ghost = svg.append('g')
+                .attr('class', 'drag-ghost')
+                .style('pointer-events', 'none')
+                .style('opacity', 0.9)
+                .style('z-index', 1000)
+              
+              console.log('👻 Ghost element created:', ghost.node())
+              
+              // Add ghost circle
+              ghost.append('circle')
+                .attr('r', 15)
+                .style('fill', d.data.type === 'user' ? 'url(#userGradient)' : 'url(#deviceGradient)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 3)
+                .style('filter', 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.5))')
+              
+              // Add ghost icon
+              ghost.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .style('font-size', '14px')
+                .style('fill', 'white')
+                .style('text-shadow', '0 1px 2px rgba(0,0,0,0.8)')
+                .text(d.data.type === 'user' ? '👤' : '💻')
+              
+              // Add ghost label with background
+              const labelGroup = ghost.append('g')
+                .attr('transform', 'translate(50, 0)') // Move even further to the right to avoid covering icon
+              
+              // Calculate label dimensions
+              const labelText = d.data.name
+              const labelWidth = labelText.length * 7 + 16 // More accurate width calculation with padding
+              const labelHeight = 20
+              
+              // Background for label
+              labelGroup.append('rect')
+                .attr('x', -labelWidth / 2)
+                .attr('y', -labelHeight / 2)
+                .attr('width', labelWidth)
+                .attr('height', labelHeight)
+                .attr('rx', 10)
+                .style('fill', 'rgba(0,0,0,0.8)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 1)
+              
+              // Label text - centered within the rectangle
+              labelGroup.append('text')
+                .attr('x', 0) // Center horizontally
+                .attr('y', 0) // Center vertically
+                .attr('dy', '0.35em') // Fine-tune vertical centering
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .style('fill', '#ffffff')
+                .style('text-anchor', 'middle')
+                .text(labelText)
+            }
+            
+            // Update ghost position during every drag move
+            const ghost = svg.select('.drag-ghost')
+            if (!ghost.empty()) {
+              const [mouseX, mouseY] = d3.pointer(event.sourceEvent, svg.node())
+              ghost.attr('transform', `translate(${mouseX + 15}, ${mouseY - 15})`)
+            } else if (d3.select(this).property('__isDragging')) {
+              // If we're dragging but ghost is missing, recreate it
+              console.log('🔄 Recreating missing ghost element')
+              
+              // Remove any existing ghost elements first
+              svg.selectAll('.drag-ghost').remove()
+              
+              // Create a new ghost element
+              const newGhost = svg.append('g')
+                .attr('class', 'drag-ghost')
+                .style('pointer-events', 'none')
+                .style('opacity', 0.9)
+                .style('z-index', 1000)
+              
+              // Add ghost circle
+              newGhost.append('circle')
+                .attr('r', 15)
+                .style('fill', d.data.type === 'user' ? 'url(#userGradient)' : 'url(#deviceGradient)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 3)
+                .style('filter', 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.5))')
+              
+              // Add ghost icon
+              newGhost.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .style('font-size', '14px')
+                .style('fill', 'white')
+                .style('text-shadow', '0 1px 2px rgba(0,0,0,0.8)')
+                .text(d.data.type === 'user' ? '👤' : '💻')
+              
+              // Add ghost label with background
+              const labelGroup = newGhost.append('g')
+                .attr('transform', 'translate(50, 0)') // Move even further to the right to avoid covering icon
+              
+              // Calculate label dimensions
+              const labelText = d.data.name
+              const labelWidth = labelText.length * 7 + 16 // More accurate width calculation with padding
+              const labelHeight = 20
+              
+              // Background for label
+              labelGroup.append('rect')
+                .attr('x', -labelWidth / 2)
+                .attr('y', -labelHeight / 2)
+                .attr('width', labelWidth)
+                .attr('height', labelHeight)
+                .attr('rx', 10)
+                .style('fill', 'rgba(0,0,0,0.8)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 1)
+              
+              // Label text - centered within the rectangle
+              labelGroup.append('text')
+                .attr('x', 0) // Center horizontally
+                .attr('y', 0) // Center vertically
+                .attr('dy', '0.35em') // Fine-tune vertical centering
+                .style('font-size', '12px')
+                .style('font-weight', 'bold')
+                .style('fill', '#ffffff')
+                .style('text-anchor', 'middle')
+                .text(labelText)
+              
+              // Position the new ghost
+              const [mouseX, mouseY] = d3.pointer(event.sourceEvent, svg.node())
+              newGhost.attr('transform', `translate(${mouseX + 15}, ${mouseY - 15})`)
+              
+              console.log('👻 Ghost element recreated')
+            } else {
+              console.log('⚠️ Ghost element not found during drag move')
+            }
+          }
+        })
+        .on('end', function(event, d) {
+          const isDragging = d3.select(this).property('__isDragging')
+          
+          // Prevent multiple end events for the same drag operation
+          if (isDragging && d3.select(this).property('__dragProcessed')) {
+            console.log('⚠️ Drop already processed for this drag operation')
+            return
+          }
+          
+          if ((d.data.type === 'user' || d.data.type === 'device') && onDrop && isDragging) {
+            console.log('🎯 Processing drop for:', d.data.name)
+            
+            // Mark this drag as processed to prevent duplicate events
+            d3.select(this).property('__dragProcessed', true)
+            
+            // Add a slight delay to ensure all D3 operations are complete
+            setTimeout(() => {
+              // Remove the ghost element
+              svg.select('.drag-ghost').remove()
+              
+              // Remove visual feedback from dragged item
+              d3.select(this).select('circle')
+                .style('stroke', '#ffffff')
+                .style('stroke-width', 3)
+                .style('opacity', 1)
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+              
+              // Restore original label opacity
+              d3.select(this).selectAll('text')
+                .style('opacity', 1)
+              
+              // Remove drop target highlighting and hints
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .select('circle')
+                .style('stroke', '#ffffff')
+                .style('stroke-width', 3)
+                .style('stroke-dasharray', 'none')
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+              
+              // Remove drop zone hints and radius indicators
+              g.selectAll('.drop-zone-hint').remove()
+              g.selectAll('.drop-zone-radius').remove()
+              
+              // Check if dropped on a valid target
+              const [x, y] = d3.pointer(event.sourceEvent, g.node())
+              console.log('🎯 Drop position:', { x, y })
+              console.log('🎯 Mouse event details:', { 
+                clientX: event.sourceEvent.clientX, 
+                clientY: event.sourceEvent.clientY,
+                pageX: event.sourceEvent.pageX,
+                pageY: event.sourceEvent.pageY
+              })
+              
+              // Get all group nodes for detailed distance checking
+              const allGroupNodes = g.selectAll('.tree-node')
+                .filter((node: any) => node.data.type === 'group')
+                .data()
+              
+              console.log('🎯 All groups in tree with positions:')
+              allGroupNodes.forEach((node: any, index) => {
+                const distance = Math.sqrt(
+                  Math.pow(x - (node.y || 0), 2) + Math.pow(y - (node.x || 0), 2)
+                )
+                console.log(`  ${index + 1}. ${node.data.name}: pos(${node.x}, ${node.y}) -> distance=${distance.toFixed(2)}px`)
+              })
+              
+              const dropTargets = g.selectAll('.tree-node')
+                .filter((dropTargetNode: any) => {
+                  if (dropTargetNode.data.type !== 'group') return false
+                  // Note: In D3 tree layout, x and y coordinates are often swapped
+                  // x represents the vertical position, y represents the horizontal position
+                  const distance = Math.sqrt(
+                    Math.pow(x - (dropTargetNode.y || 0), 2) + Math.pow(y - (dropTargetNode.x || 0), 2)
+                  )
+                  return distance < 80 // Increased from 50 to 80 pixels for much easier targeting
+                })
+                .data()
+              
+              console.log('🎯 Found drop targets within 80px:', dropTargets.length)
+              
+              if (dropTargets.length > 0) {
+                const targetData = dropTargets[0] as d3.HierarchyPointNode<TreeNode>
+                console.log('🎯 Dropping:', d.data.name, '->', targetData.data.name)
+                onDrop(d.data, targetData.data)
+              } else {
+                console.log('🎯 No valid drop target found - trying DOM element detection')
+                
+                // Alternative approach: use the actual DOM element under the mouse
+                const elementUnderMouse = document.elementFromPoint(event.sourceEvent.clientX, event.sourceEvent.clientY)
+                console.log('🎯 Element under mouse:', elementUnderMouse)
+                
+                if (elementUnderMouse) {
+                  // Find the closest tree node element
+                  const treeNodeElement = elementUnderMouse.closest('.tree-node')
+                  if (treeNodeElement) {
+                    // Get the D3 data bound to this element
+                    const nodeData = d3.select(treeNodeElement).datum() as d3.HierarchyPointNode<TreeNode>
+                    if (nodeData && nodeData.data.type === 'group') {
+                      console.log('🎯 Found group via DOM detection:', nodeData.data.name)
+                      onDrop(d.data, nodeData.data)
+                    } else {
+                      console.log('🎯 Element under mouse is not a group:', nodeData?.data.type)
+                    }
+                  } else {
+                    console.log('🎯 No tree node found under mouse')
+                  }
+                }
+                
+                // Check if there are any groups in the tree at all
+                const allGroups = g.selectAll('.tree-node')
+                  .filter((node: any) => node.data.type === 'group')
+                  .data()
+                
+                console.log('🎯 All groups in tree:', allGroups.map((n: any) => ({ name: n.data.name, x: n.x, y: n.y })))
+                
+                // If no groups are found, show user guidance
+                if (allGroups.length === 0) {
+                  console.log('💡 No groups visible in tree - user needs to expand nodes first')
+                  
+                  // Show a helpful message to the user
+                  // Create a temporary notification element
+                  const notification = svg.append('g')
+                    .attr('class', 'drop-guidance')
+                    .style('pointer-events', 'none')
+                  
+                  // Background rectangle
+                  notification.append('rect')
+                    .attr('x', 50)
+                    .attr('y', 50)
+                    .attr('width', 400)
+                    .attr('height', 80)
+                    .attr('rx', 10)
+                    .style('fill', 'rgba(59, 130, 246, 0.95)')
+                    .style('stroke', '#3b82f6')
+                    .style('stroke-width', 2)
+                    .style('filter', 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))')
+                  
+                  // Icon
+                  notification.append('text')
+                    .attr('x', 70)
+                    .attr('y', 80)
+                    .style('font-size', '20px')
+                    .style('fill', 'white')
+                    .text('💡')
+                  
+                  // Message text
+                  notification.append('text')
+                    .attr('x', 100)
+                    .attr('y', 75)
+                    .style('font-size', '14px')
+                    .style('font-weight', 'bold')
+                    .style('fill', 'white')
+                    .text('No groups visible to drop on!')
+                  
+                  notification.append('text')
+                    .attr('x', 100)
+                    .attr('y', 95)
+                    .style('font-size', '12px')
+                    .style('fill', 'rgba(255, 255, 255, 0.9)')
+                    .text('Click the + button on nodes to expand and see groups')
+                  
+                  // Auto-remove the notification after 4 seconds
+                  setTimeout(() => {
+                    notification.transition()
+                      .duration(500)
+                      .style('opacity', 0)
+                      .remove()
+                  }, 4000)
+                }
+              }
+              
+              if (onDragEnd) {
+                onDragEnd()
+              }
+            }, 50) // 50ms delay to ensure D3 operations complete
+          } else if (isDragging) {
+            // Clean up visual feedback even if no drop occurred
+            // But keep it visible for a moment if there are no groups to help with guidance
+            const allGroups = g.selectAll('.tree-node')
+              .filter((node: any) => node.data.type === 'group')
+              .data()
+            
+            if (allGroups.length === 0) {
+              // Keep visual feedback for a bit longer to show the guidance message
+              setTimeout(() => {
+                svg.select('.drag-ghost').remove()
+                
+                d3.select(this).select('circle')
+                  .style('stroke', '#ffffff')
+                  .style('stroke-width', 3)
+                  .style('opacity', 1)
+                  .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+                
+                d3.select(this).selectAll('text')
+                  .style('opacity', 1)
+                
+                g.selectAll('.drop-zone-hint').remove()
+              }, 2000) // Keep for 2 seconds to read the guidance
+            } else {
+              // Clean up immediately if there were groups available
+              svg.select('.drag-ghost').remove()
+              
+              d3.select(this).select('circle')
+                .style('stroke', '#ffffff')
+                .style('stroke-width', 3)
+                .style('opacity', 1)
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+              
+              d3.select(this).selectAll('text')
+                .style('opacity', 1)
+              
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .select('circle')
+                .style('stroke', '#ffffff')
+                .style('stroke-width', 3)
+                .style('stroke-dasharray', 'none')
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+              
+              g.selectAll('.drop-zone-hint').remove()
+            }
+            
+            if (onDragEnd) {
+              onDragEnd()
+            }
+          }
+          
+          // Clean up drag state after a delay
+          setTimeout(() => {
+            d3.select(this).property('__isDragging', false)
+            d3.select(this).property('__dragStartPos', null)
+            d3.select(this).property('__dragProcessed', false)
+          }, 100)
+        })
+      )
 
     // Add enhanced circles for nodes
     node
@@ -411,14 +904,14 @@ export default function TreeVisualization({ data, onNodeSelect, selectedNode, ex
       
       svg.call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale))
     }
-  }, [data, selectedNode, onNodeSelect, expandedNodes])
+  }, [data, selectedNode, onNodeSelect, expandedNodes, onDragStart, onDragEnd, onDrop])
 
   return (
     <div className="p-6">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-white">Group Membership Tree</h3>
         <p className="text-sm text-white/70">
-          Click on nodes to explore • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom
+          Click on nodes to explore • Click the <span className="inline-flex items-center justify-center w-4 h-4 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold mx-1 text-white">+</span> buttons to expand users/groups • Use mouse wheel or controls to zoom • Drag users/devices to groups to manage memberships
         </p>
       </div>
       <div className="overflow-hidden rounded-lg">

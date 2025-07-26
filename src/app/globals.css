@@ -15,191 +15,17 @@
 }
 
 html, body {
-  background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #be185d 100%);
   color: var(--foreground);
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Ensure no pseudo-elements create unwanted backgrounds */
-html::before, html::after, body::before, body::after {
-  display: none !important;
-}
-
-/* Custom animations for floating elements */
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-20px) rotate(1deg); }
-  66% { transform: translateY(10px) rotate(-1deg); }
-}
-
-@keyframes float-delayed {
-  0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
-  50% { transform: translateY(-30px) rotate(2deg) scale(1.05); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-float-delayed {
-  animation: float-delayed 8s ease-in-out infinite;
-  animation-delay: 2s;
+  /* Keep minimal fallback background */
+  background: linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #000000 100%);
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
-
-/* Remove custom spinner animation to use Tailwind's built-in */
-
-/* Fix search input styling to match glass morphism design */
-input[type="text"], input[placeholder*="Search"] {
-  background: linear-gradient(to right, 
-    rgba(59, 130, 246, 0.2), 
-    rgba(6, 182, 212, 0.15), 
-    rgba(59, 130, 246, 0.2)) !important;
-  color: white !important;
-  backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(147, 197, 253, 0.3) !important;
-}
-
-/* Purple variant for group search */
-input[placeholder*="group"] {
-  background: linear-gradient(to right, 
-    rgba(147, 51, 234, 0.2), 
-    rgba(236, 72, 153, 0.15), 
-    rgba(147, 51, 234, 0.2)) !important;
-  border: 1px solid rgba(196, 181, 253, 0.3) !important;
-}
-
-input[type="text"]:focus, input[placeholder*="Search"]:focus {
-  background: linear-gradient(to right, 
-    rgba(59, 130, 246, 0.25), 
-    rgba(6, 182, 212, 0.2), 
-    rgba(59, 130, 246, 0.25)) !important;
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5) !important;
-  border-color: rgba(96, 165, 250, 0.5) !important;
-}
-
-input[placeholder*="group"]:focus {
-  background: linear-gradient(to right, 
-    rgba(147, 51, 234, 0.25), 
-    rgba(236, 72, 153, 0.2), 
-    rgba(147, 51, 234, 0.25)) !important;
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.5) !important;
-  border-color: rgba(168, 85, 247, 0.5) !important;
-}
-
-input[type="text"]::placeholder, input[placeholder*="Search"]::placeholder {
-  color: rgba(191, 219, 254, 0.7) !important;
-}
-
-input[placeholder*="group"]::placeholder {
-  color: rgba(196, 181, 253, 0.7) !important;
-}
-
-/* Modern rounded corners for all interactive elements - exclude GroupDetails */
-button:not(.group-member-btn):not(.no-style):not([class*="animate"]), .btn, input, select, textarea {
-  border-radius: 1rem !important;
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-weight: 500;
-}
-
-/* Force search input width constraint */
-input[type="text"], input[placeholder*="Search"], input[placeholder*="search"] {
-  max-width: 24rem !important; /* 384px - equivalent to max-w-sm */
-  width: 100% !important;
-}
-
-/* Enhanced button styling - exclude GroupDetails buttons and animated elements */
-button:not(.group-member-btn):not(.no-style):not([class*="animate"]) {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  backdrop-filter: blur(8px) !important;
-}
-
-button:not(.group-member-btn):not(.no-style):not([class*="animate"]):hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Completely exclude GroupDetails buttons from any global styling */
-.group-member-btn {
-  transform: none !important;
-  backdrop-filter: none !important;
-  border-radius: 0.375rem !important; /* Use Tailwind's rounded-md */
-  box-shadow: none !important;
-  transition: background-color 0.15s ease-in-out !important;
-  border: none !important;
-  font-family: inherit !important;
-}
-
-.group-member-btn:hover {
-  transform: none !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* Fix dropdown text visibility */
-.absolute.z-10 button div {
-  color: white !important;
-}
-
-.absolute.z-10 button .text-sm,
-.absolute.z-10 button .text-xs {
-  color: #bfdbfe !important;
-}
-
-/* For groups dropdown */
-.absolute.z-10 button .text-purple-200\/70,
-.absolute.z-10 button .text-purple-200\/60 {
-  color: #ddd6fe !important;
-}
-
-/* Fix dropdown background for better contrast */
-.absolute.z-10.bg-gradient-to-br {
-  background: linear-gradient(to bottom right, 
-    rgba(59, 130, 246, 0.4), 
-    rgba(6, 182, 212, 0.3), 
-    rgba(59, 130, 246, 0.4)) !important;
-  backdrop-filter: blur(16px) !important;
-}
-
-/* Fix purple dropdown background for groups */
-.absolute.z-10.bg-gradient-to-br[class*="purple"] {
-  background: linear-gradient(to bottom right, 
-    rgba(147, 51, 234, 0.4), 
-    rgba(236, 72, 153, 0.3), 
-    rgba(147, 51, 234, 0.4)) !important;
-  backdrop-filter: blur(16px) !important;
-}
-
-/* More specific targeting for dropdown backgrounds */
-div[class*="from-blue-500"][class*="z-10"] {
-  background: linear-gradient(to bottom right, 
-    rgba(59, 130, 246, 0.5), 
-    rgba(6, 182, 212, 0.3), 
-    rgba(59, 130, 246, 0.5)) !important;
-}
-
-div[class*="from-purple-500"][class*="z-10"] {
-  background: linear-gradient(to bottom right, 
-    rgba(147, 51, 234, 0.5), 
-    rgba(236, 72, 153, 0.3), 
-    rgba(147, 51, 234, 0.5)) !important;
-}
-
-/* Ensure dropdown buttons have dark backgrounds */
-.absolute.z-10 button {
-  background-color: rgba(0, 0, 0, 0.1) !important;
-}
-
-.absolute.z-10 button:hover {
-  background-color: rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Custom styles for tree visualization */
@@ -223,65 +49,11 @@ div[class*="from-purple-500"][class*="z-10"] {
   stroke-width: 2px;
 }
 
-/* GroupDetails specific styles to prevent layout issues */
-.group-member-btn {
-  max-width: 100% !important;
-  width: 100% !important;
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
-
-.group-member-btn svg {
-  width: 12px !important;
-  height: 12px !important;
-  min-width: 12px !important;
-  min-height: 12px !important;
-  max-width: 12px !important;
-  max-height: 12px !important;
-  flex-shrink: 0 !important;
-}
-
-.group-member-btn:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Ensure GroupDetails container stays within bounds */
-.space-y-3 > div {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-/* Force grid constraints on main layout */
-.grid.grid-cols-1.lg\\:grid-cols-3 {
-  width: 100% !important;
-  max-width: 100vw !important;
-  overflow: hidden !important;
-}
-
-.grid.grid-cols-1.lg\\:grid-cols-3 > div {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-/* Specific constraints for the details panel (third column) */
-.grid.grid-cols-1.lg\\:grid-cols-3 > .space-y-6 {
-  max-width: 100% !important;
-  width: 100% !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-
-/* Force all content within GroupDetails to stay contained */
-.space-y-3 {
-  max-width: 100% !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-
-.space-y-3 * {
-  max-width: 100% !important;
-  box-sizing: border-box !important;
+/* Sidebar specific styling - moved to components layer */
+@layer components {
+  .sidebar-panel {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(16px);
+    max-width: 320px;
+  }
 }

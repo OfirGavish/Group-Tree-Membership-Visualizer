@@ -63,12 +63,12 @@ export default function GroupDetails({ group, onMemberSelect }: GroupDetailsProp
             </h4>
           </div>
           
-          <div className="space-y-3 max-h-48 overflow-y-auto">
+          <div className="space-y-1 max-h-48 overflow-y-auto">
             {group.members.slice(0, 5).map((member) => (
               <button
                 key={member.id}
                 onClick={() => onMemberSelect(member)}
-                className="group-member-btn group w-full bg-gradient-to-r from-white/5 via-white/8 to-white/5 hover:from-white/15 hover:via-white/20 hover:to-white/15 rounded-xl p-3 hover:scale-[1.02] transition-all duration-200 text-left shadow-lg hover:shadow-xl"
+                className="group-member-btn group w-full bg-black/60 hover:bg-black/80 rounded-xl p-3 hover:scale-[1.02] transition-all duration-200 text-left shadow-lg hover:shadow-xl border border-white/10 hover:border-white/20"
               >
                 <div className="flex items-center gap-5">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shadow-md flex-shrink-0 ${

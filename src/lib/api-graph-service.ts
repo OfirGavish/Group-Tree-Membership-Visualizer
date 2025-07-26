@@ -333,4 +333,150 @@ export class ApiGraphService {
       throw error
     }
   }
+
+  /**
+   * Add a member to a group
+   */
+  async addGroupMember(groupId: string, memberId: string): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      console.log('🔗 Making addGroupMember API call:', { groupId, memberId });
+
+      const response = await fetch('/api/addGroupMember', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          groupId,
+          memberId
+        })
+      })
+
+      console.log('🔗 API Response status:', response.status, response.statusText);
+      console.log('🔗 API Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Read the response text first
+      const responseText = await response.text();
+      console.log('🔗 Raw response text:', responseText);
+      console.log('🔗 Response text length:', responseText.length);
+
+      if (!response.ok) {
+        console.error('🔗 API Response not OK');
+        
+        // Try to parse error response as JSON if possible
+        let errorData;
+        try {
+          errorData = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          console.error('🔗 Failed to parse error response as JSON:', parseError);
+          throw new Error(`API call failed: ${response.status} ${response.statusText}. Response: ${responseText || 'Empty response'}`)
+        }
+        
+        throw new Error(errorData.error || `Failed to add member to group: ${response.status}`)
+      }
+
+      // Handle successful response
+      if (responseText) {
+        try {
+          const result = JSON.parse(responseText);
+          console.log('✅ Successfully added member to group:', result);
+        } catch (parseError) {
+          console.warn('⚠️ Success response is not valid JSON, but operation succeeded:', parseError);
+          console.log('📄 Raw response:', responseText);
+        }
+      } else {
+        console.log('✅ API call succeeded with empty response (this is normal for some Graph operations)');
+      }
+
+      // Clear related cache entries after successful operation
+      CacheService.remove(CacheService.keys.groupMembers(groupId))
+      CacheService.remove(CacheService.keys.userGroups(memberId))
+      // Note: Devices would also be impacted, but we'll use userGroups cache key for now
+      CacheService.remove(CacheService.keys.groupMemberOf(groupId))
+
+    } catch (error) {
+      console.error('❌ Error adding group member:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Check if a user/device is a member of a specific group
+   */
+  async isGroupMember(groupId: string, memberId: string): Promise<boolean> {
+    try {
+      // Get group members and check if the member is in the list
+      const members = await this.getGroupMembers(groupId)
+      return members.some(member => member.id === memberId)
+    } catch (error) {
+      console.error('Error checking group membership:', error)
+      // If we can't check, assume false to be safe
+      return false
+    }
+  }
+
+  /**
+   * Remove a member from a group
+   */
+  async removeGroupMember(groupId: string, memberId: string): Promise<void> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      console.log('🗑️ Making removeGroupMember API call:', { groupId, memberId });
+
+      const response = await fetch(`/api/removeGroupMember?groupId=${encodeURIComponent(groupId)}&memberId=${encodeURIComponent(memberId)}`, {
+        method: 'DELETE',
+        headers
+      })
+
+      console.log('🗑️ API Response status:', response.status, response.statusText);
+      console.log('🗑️ API Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Read the response text first
+      const responseText = await response.text();
+      console.log('🗑️ Raw response text:', responseText);
+      console.log('🗑️ Response text length:', responseText.length);
+
+      if (!response.ok) {
+        console.error('🗑️ API Response not OK');
+        
+        // Try to parse error response as JSON if possible
+        let errorData;
+        try {
+          errorData = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          console.error('🗑️ Failed to parse error response as JSON:', parseError);
+          throw new Error(`API call failed: ${response.status} ${response.statusText}. Response: ${responseText || 'Empty response'}`)
+        }
+        
+        throw new Error(errorData.error || `Failed to remove member from group: ${response.status}`)
+      }
+
+      // Handle successful response
+      if (responseText) {
+        try {
+          const result = JSON.parse(responseText);
+          console.log('✅ Successfully removed member from group:', result);
+        } catch (parseError) {
+          console.warn('⚠️ Success response is not valid JSON, but operation succeeded:', parseError);
+          console.log('📄 Raw response:', responseText);
+        }
+      } else {
+        console.log('✅ API call succeeded with empty response (this is normal for some Graph operations)');
+      }
+
+      // Clear related cache entries after successful operation
+      CacheService.remove(CacheService.keys.groupMembers(groupId))
+      CacheService.remove(CacheService.keys.userGroups(memberId))
+      // Note: Devices would also be impacted, but we'll use userGroups cache key for now
+      CacheService.remove(CacheService.keys.groupMemberOf(groupId))
+
+    } catch (error) {
+      console.error('❌ Error removing group member:', error)
+      throw error
+    }
+  }
 }
