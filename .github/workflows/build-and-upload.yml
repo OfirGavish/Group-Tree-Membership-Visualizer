@@ -24,6 +24,11 @@ env:
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write          # Required to create releases
+      packages: write          # Required for package uploads
+      actions: read           # Required to read workflow artifacts
+      repository-projects: read # Required for repository access
     
     steps:
     - name: Checkout repository
@@ -232,9 +237,8 @@ jobs:
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
       continue-on-error: true
       run: |
-        # Delete the existing latest release if it exists  
-        gh release delete latest --yes || true
-        git push origin :refs/tags/latest || true
+        # Delete the existing latest release if it exists (GitHub CLI handles tag deletion automatically)
+        gh release delete latest --yes || echo "No existing latest release to delete"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
