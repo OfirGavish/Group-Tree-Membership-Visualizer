@@ -119,11 +119,6 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "PACKAGE_FILE=group-tree-visualizer-$VERSION.zip" >> $GITHUB_ENV
     
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
     - name: Upload to Azure Storage
       run: |
         echo "Uploading packages to Azure Storage..."
