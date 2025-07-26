@@ -62,6 +62,13 @@
       "metadata": {
         "description": "Custom domain for the storage account (optional)."
       }
+    },
+    "forceUpdateTag": {
+      "type": "string",
+      "defaultValue": "[newGuid()]",
+      "metadata": {
+        "description": "Force update tag to ensure deployment script runs every time."
+      }
     }
   },
   "variables": {
@@ -84,6 +91,33 @@
       "location": "[parameters('location')]"
     },
     {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "roleAssignmentDeployment",
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, variables('identityName'), 'Contributor')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))).principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "type": "Microsoft.Web/staticSites",
       "apiVersion": "2022-03-01",
       "name": "[variables('staticWebAppName')]",
@@ -103,7 +137,8 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))]",
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",
+        "roleAssignmentDeployment"
       ],
       "kind": "AzureCLI",
       "identity": {
@@ -113,7 +148,7 @@
         }
       },
       "properties": {
-        "forceUpdateTag": "[newGuid()]",
+        "forceUpdateTag": "[parameters('forceUpdateTag')]",
         "azCliVersion": "2.53.0",
         "timeout": "PT45M",
         "retentionInterval": "P1D",
