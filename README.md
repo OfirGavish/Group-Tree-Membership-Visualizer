@@ -1,12 +1,6 @@
 # 🌳 Group Tree Membership Visualizer
 
-> **A beautiful, interactive Microsoft Entra ID grou4. **Automatic Configuration**: The script handles:
-   - 🔧 **Dynamic Tenant ID**: Automatically detects and configures your Azure tenant
-   - 🔐 **App Registration**: Sets up Single-tenant SPA app registration with delegated permissions only
-   - 🌐 **Redirect URIs**: Configures proper redirect URIs for your Static Web App domain and localhost
-   - ⚙️ **Environment Variables**: Configures NEXT_PUBLIC_AZURE_CLIENT_ID, AZURE_TENANT_ID
-   - 🎯 **MSAL Configuration**: Updates auth-config.ts with your tenant and client ID
-   - 🛡️ **PKCE Security**: Configures Proof Key for Code Exchange for secure SPA authenticationership visualizer with stunning D3.js tree visualization**
+> **A beautiful, interactive Microsoft Entra ID group membership visualizer with stunning D3.js tree visualization**
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-automated-simple.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -53,19 +47,15 @@
 
 ## 🚀 Quick Start
 
-## 🚀 Quick Start
-
-## 🚀 Quick Start
-
 ### Deployment Options Comparison
 
-| Feature | Fully Automated | Standalone | GitHub-Integrated |
-|---------|----------------|------------|-------------------|
-| **GitHub Authorization** | ❌ Not required | ❌ Not required | ✅ Required |
-| **Manual Steps** | 0️⃣ Zero-touch | 1️⃣ One script | 1️⃣ One script |
-| **Public Distribution** | ✅ Perfect | ✅ Perfect | ❌ Not suitable |
-| **Setup Complexity** | � Simplest | � Simple | 🟡 Simple |
-| **Best For** | Everyone | IT Departments | Developers |
+| Feature | Cloud Shell | Fully Automated | Standalone | GitHub-Integrated |
+|---------|-------------|----------------|------------|-------------------|
+| **GitHub Authorization** | ❌ Not required | ❌ Not required | ❌ Not required | ✅ Required |
+| **Manual Steps** | 0️⃣ Zero-touch | 0️⃣ Zero-touch | 1️⃣ One script | 1️⃣ One script |
+| **Public Distribution** | ✅ Perfect | ✅ Perfect | ✅ Perfect | ❌ Not suitable |
+| **Setup Complexity** | 🟢 Simplest | 🟢 Simplest | 🟡 Simple | 🟡 Simple |
+| **Best For** | Everyone | Everyone | IT Departments | Developers |
 
 ### Option 1: Azure Cloud Shell Deployment (Recommended) 🌟
 
@@ -90,7 +80,7 @@
 - 🛠️ **Debuggable**: Full control and ability to troubleshoot interactively
 - 🔒 **No GitHub Required**: Completely eliminates GitHub authorization barrier
 
-### Option 2: Modern Bicep Deployment (For DevOps) 🆕
+### Option 2: Fully Automated Deployment (One-Click) 🆕
 
 **The ultimate one-click solution - no scripts, no manual steps!**
 
@@ -108,7 +98,7 @@
 
 > **✨ Magic**: ARM template automatically downloads pre-built files from Azure Storage and deploys them - zero manual steps!
 
-### Option 2: Standalone Deployment (For Custom Builds)
+### Option 3: Standalone Deployment (For Custom Builds)
 
 **Perfect for organizations wanting control over the deployment process**
 
@@ -134,7 +124,7 @@
 
 > **✅ Advantages**: No GitHub authorization required, works for public distribution, control over deployment timing
 
-### Option 3: GitHub-Integrated Deployment (For Developers)
+### Option 4: GitHub-Integrated Deployment (For Developers)
 
 **Perfect for developers who want continuous deployment from GitHub**
 
@@ -152,59 +142,7 @@
 
 > **⚠️ Note**: Requires GitHub authorization - not suitable for public distribution
 
-1. **Deploy to Azure** - Choose your deployment method:
-
-   **🆕 Standalone Deployment (Recommended for Organizations)**
-   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-standalone.json)
-   
-   **👨‍💻 GitHub-Integrated Deployment (For Developers)**
-   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
-
-2. **Configure Deployment**:
-   - Choose your Azure subscription
-   - Create a new resource group or use existing
-   - Enter a unique Static Web App name
-   - Select a region close to your users
-   - Click "Review + Create"
-
-3. **Post-Deployment Setup**:
-   
-   **For Standalone Deployment:**
-   ```powershell
-   # Step 1: Deploy application files using the deployment token from ARM output
-   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-standalone.ps1" -OutFile "deploy-standalone.ps1"
-   .\deploy-standalone.ps1 -StaticWebAppName "your-app-name" -DeploymentToken "your-deployment-token"
-   
-   # Step 2: Configure MSAL authentication
-   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
-   .\configure-app.ps1 -StaticWebAppName "your-app-name"
-   ```
-   
-   **For GitHub-Integrated Deployment:**
-   ```powershell
-   # Download and run the configuration script with your app name
-   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
-   .\configure-app.ps1 -StaticWebAppName "your-app-name"
-   
-   # The script will automatically:
-   # - Install Microsoft Graph PowerShell SDK (modern replacement for deprecated AzureAD module)
-   # - Get your tenant ID from Azure context
-   # - Create/update App Registration with MSAL configuration
-   # - Configure delegated permissions for Microsoft Graph
-   # - Set up redirect URIs for MSAL authentication
-   # - Configure environment variables in your Static Web App
-   ```
-
-4. **Automatic Configuration**: The script handles:
-   - 🔧 **Dynamic Tenant ID**: Automatically detects and configures your Azure tenant
-   - 🔐 **App Registration**: Sets up MSAL-compatible app registration with delegated permissions
-   - 🌐 **Redirect URIs**: Configures proper redirect URIs for your Static Web App domain
-   - ⚙️ **Environment Variables**: Configures NEXT_PUBLIC_AZURE_CLIENT_ID, AZURE_TENANT_ID
-   - � **MSAL Configuration**: Updates auth-config.ts with your tenant and client ID
-
-5. **Done!** 🎉 Your app is ready at `https://your-app-name.azurestaticapps.net`
-
-### Option 2: Manual Setup
+### Manual Setup (Advanced Users)
 
 <details>
 <summary>Click to expand manual setup instructions</summary>
@@ -310,7 +248,7 @@ graph TB
 - **Policy Assignment**: Understand which policies apply to devices through group visualization
 - **Device Access Reviews**: Review device-based group memberships for security
 
-## � MSAL Authentication Benefits
+## 🔐 MSAL Authentication Benefits
 
 ### Why MSAL Instead of Built-in Authentication?
 
@@ -331,7 +269,7 @@ graph TB
 - **🏠 Local Development**: Full functionality in development environment
 - **🏢 Single-tenant Security**: Restricted to your organization only for enhanced security
 
-## �🛠️ Development
+## 🛠️ Development
 
 ### Local Development Setup
 
