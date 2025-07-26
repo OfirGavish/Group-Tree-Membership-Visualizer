@@ -67,7 +67,30 @@
 | **Setup Complexity** | � Simplest | � Simple | 🟡 Simple |
 | **Best For** | Everyone | IT Departments | Developers |
 
-### Option 1: Fully Automated Deployment (Recommended) 🆕
+### Option 1: Azure Cloud Shell Deployment (Recommended) 🌟
+
+**The most reliable one-click deployment - runs in your Azure environment!**
+
+[![Deploy via Cloud Shell](https://shell.azure.com/images/launchcloudshell.png)](https://shell.azure.com/bash)
+
+**Steps:**
+1. **Click the Cloud Shell button** above
+2. **Run the deployment command:**
+   ```bash
+   curl -s https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-cloudshell.sh | bash
+   ```
+3. **Follow interactive prompts** (app name, region, etc.)
+4. **Wait for completion** (3-5 minutes)
+5. **Configure MSAL authentication** using the provided command
+
+✨ **Cloud Shell Advantages:**
+- 🚀 **Reliable**: Runs with your Azure credentials in proven environment
+- 🔍 **Transparent**: See real-time progress and detailed output
+- ⚡ **Fast**: Usually completes in 3-5 minutes vs. ARM template failures
+- 🛠️ **Debuggable**: Full control and ability to troubleshoot interactively
+- 🔒 **No GitHub Required**: Completely eliminates GitHub authorization barrier
+
+### Option 2: Modern Bicep Deployment (For DevOps) 🆕
 
 **The ultimate one-click solution - no scripts, no manual steps!**
 
