@@ -762,8 +762,23 @@ export default function SimpleHomePage() {
       const targetGroupId = (dropTargetNode.data as any).originalId || dropTargetNode.data.id
       
       console.log(`${action === 'move' ? 'Moving' : 'Adding'} ${draggedNode.name} ${action === 'move' ? 'to' : 'to'} ${dropTargetNode.name}`)
+      console.log('Member ID:', memberId, 'Target Group ID:', targetGroupId)
+      
+      // Check if user is already a member of the target group
+      const isAlreadyMember = await graphService.isGroupMember(targetGroupId, memberId)
+      console.log('Is already member?', isAlreadyMember)
+      
+      if (isAlreadyMember && action === 'add') {
+        setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}`)
+        return
+      }
       
       if (action === 'move') {
+        if (isAlreadyMember) {
+          setError(`${draggedNode.name} is already a member of ${dropTargetNode.name}. Use "Add to Group" to keep existing memberships.`)
+          return
+        }
+        
         // For move operation, we need to find the current group(s) and remove from them
         // This is complex as we'd need to track the current context
         // For now, let's just add to the new group (user can manually remove from old groups if needed)
@@ -1105,8 +1120,8 @@ export default function SimpleHomePage() {
           <div className="grid grid-cols-6 gap-4 w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
             <div className="col-span-4 min-w-0 h-[750px] relative">
-              {/* Drag & Drop Instructions */}
-              <div className="absolute top-4 left-4 z-20 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-md border border-white/20 rounded-xl p-3 shadow-lg">
+              {/* Drag & Drop Instructions - Moved to bottom left */}
+              <div className="absolute bottom-4 left-4 z-20 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-md border border-white/20 rounded-xl p-3 shadow-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">🎯</span>
                   <h4 className="text-sm font-semibold text-white">Drag & Drop</h4>

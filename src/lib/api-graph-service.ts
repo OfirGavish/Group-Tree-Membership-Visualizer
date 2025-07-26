@@ -372,6 +372,21 @@ export class ApiGraphService {
   }
 
   /**
+   * Check if a user/device is a member of a specific group
+   */
+  async isGroupMember(groupId: string, memberId: string): Promise<boolean> {
+    try {
+      // Get group members and check if the member is in the list
+      const members = await this.getGroupMembers(groupId)
+      return members.some(member => member.id === memberId)
+    } catch (error) {
+      console.error('Error checking group membership:', error)
+      // If we can't check, assume false to be safe
+      return false
+    }
+  }
+
+  /**
    * Remove a member from a group
    */
   async removeGroupMember(groupId: string, memberId: string): Promise<void> {

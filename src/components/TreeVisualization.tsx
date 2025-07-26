@@ -269,44 +269,67 @@ export default function TreeVisualization({
                 .duration(200)
                 .style('opacity', 1)
               
+              // Remove any existing ghost elements first
+              svg.selectAll('.drag-ghost').remove()
+              
               // Create a ghost element that follows the cursor
               const ghost = svg.append('g')
                 .attr('class', 'drag-ghost')
                 .style('pointer-events', 'none')
-                .style('opacity', 0.8)
+                .style('opacity', 0.9)
+                .style('z-index', 1000)
+              
+              console.log('👻 Ghost element created:', ghost.node())
               
               // Add ghost circle
               ghost.append('circle')
-                .attr('r', 12)
+                .attr('r', 15)
                 .style('fill', d.data.type === 'user' ? 'url(#userGradient)' : 'url(#deviceGradient)')
                 .style('stroke', '#fbbf24')
                 .style('stroke-width', 3)
-                .style('filter', 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))')
+                .style('filter', 'drop-shadow(0 4px 12px rgba(251, 191, 36, 0.5))')
               
               // Add ghost icon
               ghost.append('text')
                 .attr('text-anchor', 'middle')
                 .attr('dy', '0.35em')
-                .style('font-size', '12px')
+                .style('font-size', '14px')
                 .style('fill', 'white')
+                .style('text-shadow', '0 1px 2px rgba(0,0,0,0.8)')
                 .text(d.data.type === 'user' ? '👤' : '💻')
               
-              // Add ghost label
-              ghost.append('text')
-                .attr('x', 20)
+              // Add ghost label with background
+              const labelGroup = ghost.append('g')
+                .attr('transform', 'translate(25, 0)')
+              
+              // Background for label
+              labelGroup.append('rect')
+                .attr('x', -5)
+                .attr('y', -10)
+                .attr('width', d.data.name.length * 6 + 10)
+                .attr('height', 20)
+                .attr('rx', 10)
+                .style('fill', 'rgba(0,0,0,0.8)')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 1)
+              
+              // Label text
+              labelGroup.append('text')
                 .attr('dy', '0.35em')
                 .style('font-size', '12px')
                 .style('font-weight', 'bold')
                 .style('fill', '#ffffff')
-                .style('text-shadow', '0 1px 2px rgba(0,0,0,0.8)')
+                .style('text-anchor', 'middle')
                 .text(d.data.name)
             }
             
-            // Update ghost position during drag
+            // Update ghost position during every drag move
             const ghost = svg.select('.drag-ghost')
             if (!ghost.empty()) {
               const [mouseX, mouseY] = d3.pointer(event.sourceEvent, svg.node())
-              ghost.attr('transform', `translate(${mouseX + 10}, ${mouseY - 10})`)
+              ghost.attr('transform', `translate(${mouseX + 15}, ${mouseY - 15})`)
+            } else {
+              console.log('⚠️ Ghost element not found during drag move')
             }
           }
         })
