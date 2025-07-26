@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "staticWebAppName": {
+      "value": "group-tree-visualizer"
+    },
+    "location": {
+      "value": "East US 2"
+    },
+    "pricingTier": {
+      "value": "Free"
+    },
+    "enableStagingEnvironments": {
+      "value": false
+    },
+    "tags": {
+      "value": {
+        "Environment": "Production",
+        "Application": "Group Tree Membership Visualizer",
+        "Owner": "IT Department",
+        "CostCenter": "IT",
+        "Purpose": "Organizational Visualization",
+        "DeploymentMethod": "Standalone"
+      }
+    }
+  }
+}

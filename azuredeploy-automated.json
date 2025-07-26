@@ -1,0 +1,222 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.15.0.0",
+      "templateHash": "15345678901234567890"
+    },
+    "description": "Fully automated deployment of Group Tree Membership Visualizer - Downloads pre-built files from storage and deploys automatically.",
+    "author": "Ofir Gavish",
+    "version": "1.2.0",
+    "lastUpdated": "2025-01-26",
+    "documentation": "https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/README.md"
+  },
+  "parameters": {
+    "staticWebAppName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 40,
+      "metadata": {
+        "description": "Name of the Static Web App. Must be globally unique. Will be used for the URL: https://{name}.azurestaticapps.net"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US 2",
+      "allowedValues": [
+        "East US 2",
+        "Central US", 
+        "West US 2",
+        "West Europe",
+        "East Asia",
+        "Southeast Asia"
+      ],
+      "metadata": {
+        "description": "Azure region for the Static Web App. Choose the region closest to your users for best performance."
+      }
+    },
+    "pricingTier": {
+      "type": "string",
+      "defaultValue": "Free",
+      "allowedValues": [
+        "Free",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Pricing tier. Free tier supports up to 100 requests/day. Standard tier recommended for production use."
+      }
+    },
+    "releaseVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Version of the application to deploy. Use 'latest' for the most recent version or specify a version like 'v1.1.0'."
+      }
+    },
+    "sourceStorageAccount": {
+      "type": "string",
+      "defaultValue": "grouptreevisualizer",
+      "metadata": {
+        "description": "Storage account name where pre-built files are stored. Default points to official releases."
+      }
+    },
+    "sourceContainer": {
+      "type": "string",
+      "defaultValue": "releases",
+      "metadata": {
+        "description": "Container name in the storage account where release files are stored."
+      }
+    },
+    "enableStagingEnvironments": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable staging environments. Only available with Standard tier."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "Production",
+        "Application": "Group Tree Membership Visualizer",
+        "Owner": "IT Department",
+        "CostCenter": "IT",
+        "Purpose": "Organizational Visualization",
+        "DeploymentMethod": "Automated"
+      },
+      "metadata": {
+        "description": "Resource tags for organization and cost management."
+      }
+    }
+  },
+  "variables": {
+    "staticWebAppName": "[if(empty(parameters('staticWebAppName')), concat('group-tree-visualizer-', uniqueString(resourceGroup().id)), parameters('staticWebAppName'))]",
+    "deploymentScriptName": "[concat('deploy-', variables('staticWebAppName'))]",
+    "sourceStorageUrl": "[concat('https://', parameters('sourceStorageAccount'), '.blob.core.windows.net/', parameters('sourceContainer'))]",
+    "releaseFileName": "[if(equals(parameters('releaseVersion'), 'latest'), 'group-tree-visualizer-latest.zip', concat('group-tree-visualizer-', parameters('releaseVersion'), '.zip'))]",
+    "downloadUrl": "[concat(variables('sourceStorageUrl'), '/', variables('releaseFileName'))]",
+    "tenantId": "[subscription().tenantId]",
+    "subscriptionId": "[subscription().subscriptionId]",
+    "identityName": "[concat('id-', variables('staticWebAppName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "[variables('identityName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "Environment": "[parameters('tags').Environment]",
+        "Application": "[parameters('tags').Application]",
+        "Owner": "[parameters('tags').Owner]",
+        "CostCenter": "[parameters('tags').CostCenter]",
+        "Purpose": "[parameters('tags').Purpose]",
+        "DeploymentMethod": "[parameters('tags').DeploymentMethod]",
+        "AutoDeployed": "true"
+      },
+      "sku": {
+        "name": "[parameters('pricingTier')]",
+        "tier": "[parameters('pricingTier')]"
+      },
+      "properties": {
+        "provider": "None",
+        "stagingEnvironmentPolicy": "[if(parameters('enableStagingEnvironments'), 'Enabled', 'Disabled')]"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('deploymentScriptName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ],
+      "kind": "AzurePowerShell",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]": {}
+        }
+      },
+      "properties": {
+        "azPowerShellVersion": "8.3",
+        "timeout": "PT30M",
+        "retentionInterval": "P1D",
+        "cleanupPreference": "OnSuccess",
+        "arguments": "[concat('-StaticWebAppName \"', variables('staticWebAppName'), '\" -ResourceGroupName \"', resourceGroup().name, '\" -DownloadUrl \"', variables('downloadUrl'), '\" -SubscriptionId \"', subscription().subscriptionId, '\"')]",
+        "scriptContent": "param(\n    [string]$StaticWebAppName,\n    [string]$ResourceGroupName,\n    [string]$DownloadUrl,\n    [string]$SubscriptionId\n)\n\n# Enable verbose output\n$VerbosePreference = 'Continue'\nWrite-Output \"Starting automated deployment for $StaticWebAppName\"\n\ntry {\n    # Set subscription context\n    Set-AzContext -SubscriptionId $SubscriptionId | Out-Null\n    Write-Output \"✅ Subscription context set\"\n    \n    # Create temporary directory\n    $tempDir = New-TemporaryFile | ForEach-Object { Remove-Item $_; New-Item -ItemType Directory -Path $_ }\n    Write-Output \"📁 Created temp directory: $($tempDir.FullName)\"\n    \n    # Download the release package\n    Write-Output \"⬇️  Downloading release package from: $DownloadUrl\"\n    $zipPath = Join-Path $tempDir.FullName \"release.zip\"\n    \n    try {\n        Invoke-WebRequest -Uri $DownloadUrl -OutFile $zipPath -UseBasicParsing -TimeoutSec 300\n        Write-Output \"✅ Package downloaded successfully\"\n    }\n    catch {\n        Write-Error \"❌ Failed to download package: $($_.Exception.Message)\"\n        throw\n    }\n    \n    # Extract the package\n    Write-Output \"📦 Extracting package...\"\n    $extractDir = Join-Path $tempDir.FullName \"extracted\"\n    Expand-Archive -Path $zipPath -DestinationPath $extractDir -Force\n    \n    # Find the static files directory\n    $staticDir = Get-ChildItem -Path $extractDir -Recurse -Directory | Where-Object { $_.Name -eq 'static' } | Select-Object -First 1\n    \n    if (-not $staticDir) {\n        Write-Error \"❌ Static files directory not found in package\"\n        throw \"Static files directory not found\"\n    }\n    \n    Write-Output \"📂 Found static files at: $($staticDir.FullName)\"\n    \n    # Get deployment token\n    Write-Output \"🔑 Getting deployment token...\"\n    $staticWebApp = Get-AzStaticWebApp -ResourceGroupName $ResourceGroupName -Name $StaticWebAppName\n    \n    if (-not $staticWebApp) {\n        Write-Error \"❌ Static Web App not found: $StaticWebAppName\"\n        throw \"Static Web App not found\"\n    }\n    \n    $secrets = Invoke-AzRestMethod -Uri \"https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.Web/staticSites/$StaticWebAppName/listSecrets?api-version=2022-03-01\" -Method POST\n    $deploymentToken = ($secrets.Content | ConvertFrom-Json).properties.apiKey\n    \n    if (-not $deploymentToken) {\n        Write-Error \"❌ Failed to get deployment token\"\n        throw \"Failed to get deployment token\"\n    }\n    \n    Write-Output \"✅ Deployment token obtained\"\n    \n    # Create deployment package ZIP\n    Write-Output \"📦 Creating deployment package...\"\n    $deploymentZip = Join-Path $tempDir.FullName \"deployment.zip\"\n    \n    # Compress the static files\n    $staticFiles = Get-ChildItem -Path $staticDir.FullName -Recurse\n    Compress-Archive -Path \"$($staticDir.FullName)\\*\" -DestinationPath $deploymentZip -Force\n    \n    Write-Output \"✅ Deployment package created: $deploymentZip\"\n    \n    # Deploy using REST API\n    Write-Output \"🚀 Deploying to Static Web App...\"\n    \n    $deployUri = \"https://$StaticWebAppName.scm.azurestaticapps.net/api/zipdeploy\"\n    $headers = @{\n        'Authorization' = \"Bearer $deploymentToken\"\n        'Content-Type' = 'application/zip'\n    }\n    \n    # Read zip file as bytes\n    $zipBytes = [System.IO.File]::ReadAllBytes($deploymentZip)\n    \n    # Deploy the package\n    try {\n        $response = Invoke-RestMethod -Uri $deployUri -Method Post -Headers $headers -Body $zipBytes -TimeoutSec 600\n        Write-Output \"✅ Deployment completed successfully\"\n        Write-Output \"Response: $response\"\n    }\n    catch {\n        Write-Error \"❌ Deployment failed: $($_.Exception.Message)\"\n        if ($_.Exception.Response) {\n            $errorResponse = $_.Exception.Response.GetResponseStream()\n            $reader = New-Object System.IO.StreamReader($errorResponse)\n            $errorContent = $reader.ReadToEnd()\n            Write-Error \"Error details: $errorContent\"\n        }\n        throw\n    }\n    \n    # Verify deployment\n    Write-Output \"🔍 Verifying deployment...\"\n    Start-Sleep -Seconds 30  # Wait for deployment to propagate\n    \n    $appUrl = \"https://$StaticWebAppName.azurestaticapps.net\"\n    try {\n        $healthCheck = Invoke-WebRequest -Uri $appUrl -UseBasicParsing -TimeoutSec 30\n        if ($healthCheck.StatusCode -eq 200) {\n            Write-Output \"✅ Application is responding at: $appUrl\"\n        }\n    }\n    catch {\n        Write-Warning \"⚠️  Application may still be starting up. Check $appUrl in a few minutes.\"\n    }\n    \n    Write-Output \"🎉 Automated deployment completed successfully!\"\n    Write-Output \"📱 Application URL: $appUrl\"\n    Write-Output \"🔧 Next step: Run MSAL configuration script\"\n    \n}\ncatch {\n    Write-Error \"❌ Deployment failed: $($_.Exception.Message)\"\n    throw\n}\nfinally {\n    # Cleanup\n    if ($tempDir -and (Test-Path $tempDir.FullName)) {\n        Remove-Item $tempDir.FullName -Recurse -Force -ErrorAction SilentlyContinue\n        Write-Output \"🧹 Cleaned up temporary files\"\n    }\n}"
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))).defaultHostname)]",
+      "metadata": {
+        "description": "URL of the deployed application"
+      }
+    },
+    "staticWebAppName": {
+      "type": "string", 
+      "value": "[variables('staticWebAppName')]",
+      "metadata": {
+        "description": "Name of the Static Web App resource"
+      }
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Name of the resource group"
+      }
+    },
+    "tenantId": {
+      "type": "string",
+      "value": "[variables('tenantId')]",
+      "metadata": {
+        "description": "Azure tenant ID for configuration"
+      }
+    },
+    "deploymentStatus": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts', variables('deploymentScriptName'))).outputs.text]",
+      "metadata": {
+        "description": "Status of the automated deployment"
+      }
+    },
+    "setupInstructions": {
+      "type": "string",
+      "value": "🎉 Automated Deployment Complete! The application has been automatically deployed from pre-built files. Next step: Run the MSAL configuration script to enable authentication.",
+      "metadata": {
+        "description": "Post-deployment setup instructions"
+      }
+    },
+    "configurationCommand": {
+      "type": "string",
+      "value": "[concat('Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1\" -OutFile \"configure-app.ps1\"; .\\configure-app.ps1 -StaticWebAppName \"', variables('staticWebAppName'), '\" -TenantId \"', variables('tenantId'), '\"')]",
+      "metadata": {
+        "description": "PowerShell command to download and run the configuration script"
+      }
+    },
+    "releaseInfo": {
+      "type": "object",
+      "value": {
+        "version": "[parameters('releaseVersion')]",
+        "downloadUrl": "[variables('downloadUrl')]",
+        "deploymentMethod": "Automated from Storage"
+      },
+      "metadata": {
+        "description": "Information about the deployed release"
+      }
+    }
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Fully automated deployment of Group Tree Membership Visualizer - Downloads pre-built files from storage and deploys automatically.",
+    "author": "Ofir Gavish",
+    "version": "1.2.0",
+    "lastUpdated": "2025-01-26"
+  },
+  "parameters": {
+    "staticWebAppName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 40,
+      "metadata": {
+        "description": "Name of the Static Web App. Must be globally unique."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US 2",
+      "allowedValues": [
+        "East US 2",
+        "Central US", 
+        "West US 2",
+        "West Europe",
+        "East Asia",
+        "Southeast Asia"
+      ],
+      "metadata": {
+        "description": "Azure region for the Static Web App."
+      }
+    },
+    "pricingTier": {
+      "type": "string",
+      "defaultValue": "Free",
+      "allowedValues": [
+        "Free",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Pricing tier. Free tier supports up to 100 requests/day."
+      }
+    },
+    "releaseVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Version of the application to deploy. Use 'latest' for the most recent version."
+      }
+    },
+    "sourceStorageAccount": {
+      "type": "string",
+      "defaultValue": "mscnstorage",
+      "metadata": {
+        "description": "Storage account name where pre-built files are stored."
+      }
+    },
+    "sourceStorageCustomDomain": {
+      "type": "string",
+      "defaultValue": "storage.mscloudninja.com",
+      "metadata": {
+        "description": "Custom domain for the storage account (optional)."
+      }
+    }
+  },
+  "variables": {
+    "staticWebAppName": "[if(empty(parameters('staticWebAppName')), concat('group-tree-visualizer-', uniqueString(resourceGroup().id)), parameters('staticWebAppName'))]",
+    "sourceStorageUrl": "[concat('https://', parameters('sourceStorageAccount'), '.blob.core.windows.net/$web/releases')]",
+    "sourceStorageCustomUrl": "[concat('https://', parameters('sourceStorageCustomDomain'), '/releases')]",
+    "sourceStorageStaticUrl": "[concat('https://', parameters('sourceStorageAccount'), '.z6.web.core.windows.net/releases')]",
+    "releaseFileName": "[if(equals(parameters('releaseVersion'), 'latest'), 'group-tree-visualizer-latest.zip', concat('group-tree-visualizer-', parameters('releaseVersion'), '.zip'))]",
+    "downloadUrl": "[concat(variables('sourceStorageUrl'), '/', variables('releaseFileName'))]",
+    "downloadUrlCustom": "[concat(variables('sourceStorageCustomUrl'), '/', variables('releaseFileName'))]",
+    "downloadUrlStatic": "[concat(variables('sourceStorageStaticUrl'), '/', variables('releaseFileName'))]",
+    "deploymentScriptName": "[concat('deploy-', variables('staticWebAppName'))]",
+    "identityName": "[concat('id-', variables('staticWebAppName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "[variables('identityName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('pricingTier')]",
+        "tier": "[parameters('pricingTier')]"
+      },
+      "properties": {
+        "provider": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('deploymentScriptName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ],
+      "kind": "AzureCLI",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]": {}
+        }
+      },
+      "properties": {
+        "azCliVersion": "2.40.0",
+        "timeout": "PT30M",
+        "retentionInterval": "P1D",
+        "environmentVariables": [
+          {
+            "name": "STATIC_WEB_APP_NAME",
+            "value": "[variables('staticWebAppName')]"
+          },
+          {
+            "name": "RESOURCE_GROUP_NAME",
+            "value": "[resourceGroup().name]"
+          },
+          {
+            "name": "DOWNLOAD_URL",
+            "value": "[variables('downloadUrl')]"
+          },
+          {
+            "name": "SUBSCRIPTION_ID",
+            "value": "[subscription().subscriptionId]"
+          }
+        ],
+        "scriptContent": "#!/bin/bash\nset -e\n\necho \"🌳 Starting automated deployment for $STATIC_WEB_APP_NAME\"\necho \"📦 Download URL: $DOWNLOAD_URL\"\n\n# Create temporary directory\nTEMP_DIR=$(mktemp -d)\necho \"📁 Created temp directory: $TEMP_DIR\"\n\n# Download the release package\necho \"⬇️  Downloading release package...\"\nwget -q \"$DOWNLOAD_URL\" -O \"$TEMP_DIR/release.zip\" || {\n    echo \"❌ Failed to download package from $DOWNLOAD_URL\"\n    echo \"Trying alternative storage locations...\"\n    \n    # Try GitHub releases as fallback\n    GITHUB_URL=\"https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/releases/latest/download/group-tree-visualizer-standalone.zip\"\n    echo \"⬇️  Trying GitHub: $GITHUB_URL\"\n    wget -q \"$GITHUB_URL\" -O \"$TEMP_DIR/release.zip\" || {\n        echo \"❌ Failed to download from GitHub as well\"\n        exit 1\n    }\n}\n\necho \"✅ Package downloaded successfully\"\n\n# Extract the package\necho \"📦 Extracting package...\"\nunzip -q \"$TEMP_DIR/release.zip\" -d \"$TEMP_DIR/extracted\"\n\n# Find the static files directory\nSTATIC_DIR=$(find \"$TEMP_DIR/extracted\" -name \"static\" -type d | head -1)\n\nif [ -z \"$STATIC_DIR\" ]; then\n    echo \"❌ Static files directory not found in package\"\n    echo \"Package contents:\"\n    find \"$TEMP_DIR/extracted\" -type d\n    exit 1\nfi\n\necho \"📂 Found static files at: $STATIC_DIR\"\n\n# Get deployment token\necho \"🔑 Getting deployment token...\"\nDEPLOYMENT_TOKEN=$(az staticwebapp secrets list --name \"$STATIC_WEB_APP_NAME\" --resource-group \"$RESOURCE_GROUP_NAME\" --query \"properties.apiKey\" -o tsv)\n\nif [ -z \"$DEPLOYMENT_TOKEN\" ]; then\n    echo \"❌ Failed to get deployment token\"\n    exit 1\nfi\n\necho \"✅ Deployment token obtained\"\n\n# Install SWA CLI\necho \"📦 Installing SWA CLI...\"\nnpm install -g @azure/static-web-apps-cli > /dev/null 2>&1\n\n# Deploy the static files\necho \"🚀 Deploying to Static Web App...\"\ncd \"$STATIC_DIR\"\nswa deploy . --deployment-token \"$DEPLOYMENT_TOKEN\" --verbose\n\nif [ $? -eq 0 ]; then\n    echo \"✅ Deployment completed successfully!\"\n    echo \"📱 Application URL: https://$STATIC_WEB_APP_NAME.azurestaticapps.net\"\n    echo \"🔧 Next step: Run MSAL configuration script\"\nelse\n    echo \"❌ Deployment failed\"\n    exit 1\nfi\n\n# Cleanup\nrm -rf \"$TEMP_DIR\"\necho \"🧹 Cleaned up temporary files\"\necho \"🎉 Automated deployment completed!\""
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName'))).defaultHostname)]",
+      "metadata": {
+        "description": "URL of the deployed application"
+      }
+    },
+    "staticWebAppName": {
+      "type": "string", 
+      "value": "[variables('staticWebAppName')]",
+      "metadata": {
+        "description": "Name of the Static Web App resource"
+      }
+    },
+    "tenantId": {
+      "type": "string",
+      "value": "[subscription().tenantId]",
+      "metadata": {
+        "description": "Azure tenant ID for configuration"
+      }
+    },
+    "setupInstructions": {
+      "type": "string",
+      "value": "🎉 Automated Deployment Complete! The application has been automatically deployed from pre-built files. Next step: Run the MSAL configuration script.",
+      "metadata": {
+        "description": "Post-deployment setup instructions"
+      }
+    },
+    "configurationCommand": {
+      "type": "string",
+      "value": "[concat('Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1\" -OutFile \"configure-app.ps1\"; .\\configure-app.ps1 -StaticWebAppName \"', variables('staticWebAppName'), '\" -TenantId \"', subscription().tenantId, '\"')]",
+      "metadata": {
+        "description": "PowerShell command to configure MSAL authentication"
+      }
+    },
+    "releaseInfo": {
+      "type": "object",
+      "value": {
+        "version": "[parameters('releaseVersion')]",
+        "downloadUrl": "[variables('downloadUrl')]",
+        "downloadUrlCustomDomain": "[variables('downloadUrlCustom')]",
+        "downloadUrlStaticWebsite": "[variables('downloadUrlStatic')]",
+        "storageAccount": "[parameters('sourceStorageAccount')]",
+        "customDomain": "[parameters('sourceStorageCustomDomain')]",
+        "container": "$web/releases",
+        "deploymentMethod": "Automated from Storage"
+      },
+      "metadata": {
+        "description": "Information about the deployed release"
+      }
+    }
+  }
+}

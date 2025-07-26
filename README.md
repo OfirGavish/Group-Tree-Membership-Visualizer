@@ -53,26 +53,88 @@
 
 ## 🚀 Quick Start
 
-### Option 1: One-Click Azure Deployment (Recommended)
+## 🚀 Quick Start
 
-**Perfect for end users - no technical setup required!**
+## 🚀 Quick Start
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+### Deployment Options Comparison
 
-1. **Click the Deploy to Azure button** above
+| Feature | Fully Automated | Standalone | GitHub-Integrated |
+|---------|----------------|------------|-------------------|
+| **GitHub Authorization** | ❌ Not required | ❌ Not required | ✅ Required |
+| **Manual Steps** | 0️⃣ Zero-touch | 1️⃣ One script | 1️⃣ One script |
+| **Public Distribution** | ✅ Perfect | ✅ Perfect | ❌ Not suitable |
+| **Setup Complexity** | � Simplest | � Simple | 🟡 Simple |
+| **Best For** | Everyone | IT Departments | Developers |
+
+### Option 1: Fully Automated Deployment (Recommended) 🆕
+
+**The ultimate one-click solution - no scripts, no manual steps!**
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-automated-simple.json)
+
+1. **Click the Deploy to Azure button** above (fully automated template)
 2. **Fill in the deployment parameters** (app name, location, etc.)
-3. **Wait for deployment** to complete (2-3 minutes)
-4. **Configure MSAL Authentication** by downloading and running:
+3. **Wait for complete deployment** (3-5 minutes)
+4. **Configure MSAL Authentication** (one final step):
    ```powershell
    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
    .\configure-app.ps1 -StaticWebAppName "your-app-name"
    ```
-5. **Access your application** and start exploring group memberships!
+5. **Done!** 🎉 Your app is ready at `https://your-app-name.azurestaticapps.net`
 
-> **Note**: The Deploy to Azure button uses manual workflow triggers, so it won't interfere with ongoing development. Perfect for organizational deployments!
+> **✨ Magic**: ARM template automatically downloads pre-built files from Azure Storage and deploys them - zero manual steps!
 
-1. **Deploy to Azure** - Click the button below:
+### Option 2: Standalone Deployment (For Custom Builds)
+
+**Perfect for organizations wanting control over the deployment process**
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-standalone.json)
+
+1. **Click the Deploy to Azure button** above (standalone template)
+2. **Fill in the deployment parameters** (app name, location, etc.)
+3. **Wait for infrastructure deployment** (1-2 minutes)
+4. **Copy the deployment token** from the ARM template outputs
+5. **Deploy the application** by downloading and running:
+   ```powershell
+   # Download deployment script
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-standalone.ps1" -OutFile "deploy-standalone.ps1"
    
+   # Deploy application (replace with your values)
+   .\deploy-standalone.ps1 -StaticWebAppName "your-app-name" -DeploymentToken "your-deployment-token"
+   ```
+6. **Configure MSAL Authentication**:
+   ```powershell
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
+   .\configure-app.ps1 -StaticWebAppName "your-app-name"
+   ```
+
+> **✅ Advantages**: No GitHub authorization required, works for public distribution, control over deployment timing
+
+### Option 3: GitHub-Integrated Deployment (For Developers)
+
+**Perfect for developers who want continuous deployment from GitHub**
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
+
+1. **Click the Deploy to Azure button** above (uses GitHub integration)
+2. **Authorize GitHub integration** when prompted
+3. **Fill in the deployment parameters** (app name, repository, etc.)
+4. **Wait for deployment** to complete (3-5 minutes)
+5. **Configure MSAL Authentication**:
+   ```powershell
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
+   .\configure-app.ps1 -StaticWebAppName "your-app-name"
+   ```
+
+> **⚠️ Note**: Requires GitHub authorization - not suitable for public distribution
+
+1. **Deploy to Azure** - Choose your deployment method:
+
+   **🆕 Standalone Deployment (Recommended for Organizations)**
+   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-standalone.json)
+   
+   **👨‍💻 GitHub-Integrated Deployment (For Developers)**
    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy.json)
 
 2. **Configure Deployment**:
@@ -83,6 +145,19 @@
    - Click "Review + Create"
 
 3. **Post-Deployment Setup**:
+   
+   **For Standalone Deployment:**
+   ```powershell
+   # Step 1: Deploy application files using the deployment token from ARM output
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/deploy-standalone.ps1" -OutFile "deploy-standalone.ps1"
+   .\deploy-standalone.ps1 -StaticWebAppName "your-app-name" -DeploymentToken "your-deployment-token"
+   
+   # Step 2: Configure MSAL authentication
+   Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
+   .\configure-app.ps1 -StaticWebAppName "your-app-name"
+   ```
+   
+   **For GitHub-Integrated Deployment:**
    ```powershell
    # Download and run the configuration script with your app name
    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"

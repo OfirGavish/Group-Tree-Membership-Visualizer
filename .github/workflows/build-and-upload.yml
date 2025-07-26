@@ -1,0 +1,250 @@
+name: Build and Upload to Storage
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for the release'
+        required: true
+        default: 'latest'
+
+env:
+  STORAGE_ACCOUNT: mscnstorage
+  CONTAINER_NAME: $web
+  RELEASES_FOLDER: releases
+  STORAGE_CUSTOM_DOMAIN: storage.mscloudninja.com
+  STORAGE_ENDPOINT: https://mscnstorage.z6.web.core.windows.net
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Create deployment package
+      run: |
+        # Determine version
+        if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          VERSION="${{ github.ref_name }}"
+        elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="latest"
+        fi
+        
+        echo "Building version: $VERSION"
+        
+        # Create package directory
+        PACKAGE_DIR="group-tree-visualizer-standalone-$VERSION"
+        mkdir -p $PACKAGE_DIR
+        
+        # Copy built static files
+        cp -r out $PACKAGE_DIR/static
+        
+        # Copy API functions
+        cp -r api $PACKAGE_DIR/api
+        
+        # Copy configuration files
+        cp staticwebapp.config.json $PACKAGE_DIR/
+        if [ -f "public/staticwebapp.config.json" ]; then
+          cp public/staticwebapp.config.json $PACKAGE_DIR/static/
+        fi
+        
+        # Copy documentation and scripts
+        cp README.md $PACKAGE_DIR/
+        cp CONFIGURATION.md $PACKAGE_DIR/ 2>/dev/null || true
+        cp TROUBLESHOOTING.md $PACKAGE_DIR/ 2>/dev/null || true
+        cp STANDALONE_DEPLOYMENT.md $PACKAGE_DIR/ 2>/dev/null || true
+        cp configure-app.ps1 $PACKAGE_DIR/ 2>/dev/null || true
+        cp deploy-standalone.ps1 $PACKAGE_DIR/ 2>/dev/null || true
+        
+        # Create deployment instructions
+        cat > $PACKAGE_DIR/DEPLOYMENT.md << EOF
+        # Group Tree Membership Visualizer - Deployment Package
+        
+        ## Quick Deployment
+        
+        1. **Deploy Infrastructure**:
+           [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-automated-simple.json)
+        
+        2. **Configure MSAL Authentication**:
+           \`\`\`powershell
+           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OfirGavish/Group-Tree-Membership-Visualizer/main/configure-app.ps1" -OutFile "configure-app.ps1"
+           .\\configure-app.ps1 -StaticWebAppName "your-app-name"
+           \`\`\`
+        
+        3. **Access Application**: 
+           Visit https://your-app-name.azurestaticapps.net
+        
+        ## Package Information
+        - Version: $VERSION
+        - Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        - Repository: ${{ github.repository }}
+        - Commit: ${{ github.sha }}
+        EOF
+        
+        # Create ZIP packages
+        zip -r "group-tree-visualizer-$VERSION.zip" $PACKAGE_DIR
+        
+        # Also create a "latest" version if this is a tagged release
+        if [[ "$VERSION" != "latest" ]]; then
+          cp "group-tree-visualizer-$VERSION.zip" "group-tree-visualizer-latest.zip"
+        fi
+        
+        # Display package info
+        echo "Packages created:"
+        ls -la group-tree-visualizer-*.zip
+        
+        # Set output for later steps
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "PACKAGE_FILE=group-tree-visualizer-$VERSION.zip" >> $GITHUB_ENV
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Upload to Azure Storage
+      run: |
+        echo "Uploading packages to Azure Storage..."
+        
+        # Configure Azure Storage account authentication using account key
+        export AZURE_STORAGE_ACCOUNT="${STORAGE_ACCOUNT}"
+        export AZURE_STORAGE_KEY="${{ secrets.AZURE_STORAGE_KEY }}"
+        
+        # Upload the versioned package
+        az storage blob upload \
+          --container-name $CONTAINER_NAME \
+          --name "$RELEASES_FOLDER/group-tree-visualizer-$VERSION.zip" \
+          --file "group-tree-visualizer-$VERSION.zip" \
+          --overwrite \
+          --content-type "application/zip"
+        
+        # If we have a latest package, upload that too
+        if [ -f "group-tree-visualizer-latest.zip" ]; then
+          az storage blob upload \
+            --container-name $CONTAINER_NAME \
+            --name "$RELEASES_FOLDER/group-tree-visualizer-latest.zip" \
+            --file "group-tree-visualizer-latest.zip" \
+            --overwrite \
+            --content-type "application/zip"
+        fi
+        
+        echo "✅ Upload completed successfully!"
+        
+        # List uploaded files
+        echo "Files in storage:"
+        az storage blob list \
+          --container-name $CONTAINER_NAME \
+          --prefix "$RELEASES_FOLDER/" \
+          --query "[?contains(name, 'group-tree-visualizer')].{Name:name, Size:properties.contentLength, LastModified:properties.lastModified}" \
+          --output table
+    
+    - name: Set blob access to public
+      run: |
+        echo "Setting public access for uploaded blobs..."
+        
+        # Configure Azure Storage account authentication using account key
+        export AZURE_STORAGE_ACCOUNT="${STORAGE_ACCOUNT}"
+        export AZURE_STORAGE_KEY="${{ secrets.AZURE_STORAGE_KEY }}"
+        
+        # Make the files publicly accessible
+        az storage blob update \
+          --container-name $CONTAINER_NAME \
+          --name "$RELEASES_FOLDER/group-tree-visualizer-$VERSION.zip" \
+          --content-type "application/zip"
+        
+        if [ -f "group-tree-visualizer-latest.zip" ]; then
+          az storage blob update \
+            --container-name $CONTAINER_NAME \
+            --name "$RELEASES_FOLDER/group-tree-visualizer-latest.zip" \
+            --content-type "application/zip"
+        fi
+        
+        echo "✅ Public access configured"
+    
+    - name: Create GitHub Release (if tagged)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: group-tree-visualizer-*.zip
+        name: Group Tree Visualizer ${{ github.ref_name }}
+        body: |
+          ## 🌳 Group Tree Membership Visualizer ${{ github.ref_name }}
+          
+          ### 🚀 Fully Automated Deployment
+          
+          This release supports **completely automated deployment** from Azure Storage!
+          
+          [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-automated-simple.json)
+          
+          ### ✨ What's New
+          
+          - ✅ **Zero-touch deployment**: ARM template automatically downloads and deploys files
+          - ✅ **Public storage**: Pre-built files hosted on Azure Storage with anonymous access
+          - ✅ **No GitHub authorization required**: Perfect for organizational deployment
+          - ✅ **One-click deployment**: Just click Deploy to Azure and wait
+          
+          ### 📦 Package Details
+          
+          - **Version**: ${{ github.ref_name }}
+          - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Package Size**: $(du -h group-tree-visualizer-${{ github.ref_name }}.zip | cut -f1)
+          - **Storage URL**: https://${{ env.STORAGE_ACCOUNT }}.blob.core.windows.net/${{ env.CONTAINER_NAME }}/${{ env.RELEASES_FOLDER }}/group-tree-visualizer-${{ github.ref_name }}.zip
+          - **Custom Domain URL**: https://${{ env.STORAGE_CUSTOM_DOMAIN }}/${{ env.RELEASES_FOLDER }}/group-tree-visualizer-${{ github.ref_name }}.zip
+          - **Static Website URL**: ${{ env.STORAGE_ENDPOINT }}/${{ env.RELEASES_FOLDER }}/group-tree-visualizer-${{ github.ref_name }}.zip
+          
+          ### 🔧 Deployment Process
+          
+          1. **Infrastructure + Application**: Click Deploy to Azure button above
+          2. **Authentication**: Run MSAL configuration script (provided in ARM outputs)
+          3. **Ready**: Access your application immediately
+          
+          ### 📚 Documentation
+          
+          - [Automated Deployment Guide](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/STANDALONE_DEPLOYMENT.md)
+          - [Configuration Guide](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/CONFIGURATION.md)
+          
+          ### 🆘 Support
+          
+          Create an issue in this repository for support.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update deployment URLs
+      run: |
+        echo "🔗 Deployment URLs:"
+        echo "📦 Storage Package: https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME/$RELEASES_FOLDER/group-tree-visualizer-$VERSION.zip"
+        echo "🌐 Custom Domain Package: https://$STORAGE_CUSTOM_DOMAIN/$RELEASES_FOLDER/group-tree-visualizer-$VERSION.zip"
+        echo "🌍 Static Website Package: $STORAGE_ENDPOINT/$RELEASES_FOLDER/group-tree-visualizer-$VERSION.zip"
+        echo "🚀 Deploy to Azure: https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-automated-simple.json"
+        echo "📱 Example App URL: https://your-app-name.azurestaticapps.net"
+        
+    - name: Post-deployment notification
+      if: success()
+      run: |
+        echo "🎉 Build and upload completed successfully!"
+        echo "The pre-built package is now available in Azure Storage and ready for automated deployment."
+        echo "Users can deploy the application using the Deploy to Azure button without any GitHub authorization."

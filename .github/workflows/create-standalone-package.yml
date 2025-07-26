@@ -1,0 +1,198 @@
+name: Create Standalone Release Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for the release'
+        required: true
+        default: 'v1.1.0'
+
+jobs:
+  build-standalone-package:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Create standalone package
+      run: |
+        # Create package directory
+        PACKAGE_DIR="group-tree-visualizer-standalone-${{ github.ref_name || github.event.inputs.version }}"
+        mkdir -p $PACKAGE_DIR
+        
+        # Copy built static files
+        cp -r out $PACKAGE_DIR/static
+        
+        # Copy API functions
+        cp -r api $PACKAGE_DIR/api
+        
+        # Copy configuration files
+        cp staticwebapp.config.json $PACKAGE_DIR/
+        if [ -f "public/staticwebapp.config.json" ]; then
+          cp public/staticwebapp.config.json $PACKAGE_DIR/static/
+        fi
+        
+        # Copy documentation
+        cp README.md $PACKAGE_DIR/
+        cp CONFIGURATION.md $PACKAGE_DIR/ 2>/dev/null || true
+        cp TROUBLESHOOTING.md $PACKAGE_DIR/ 2>/dev/null || true
+        cp STANDALONE_DEPLOYMENT.md $PACKAGE_DIR/ 2>/dev/null || true
+        
+        # Copy deployment scripts
+        cp configure-app.ps1 $PACKAGE_DIR/ 2>/dev/null || true
+        cp deploy-standalone.ps1 $PACKAGE_DIR/ 2>/dev/null || true
+        
+        # Create deployment instructions
+        cat > $PACKAGE_DIR/DEPLOYMENT.md << 'EOF'
+        # Group Tree Membership Visualizer - Standalone Deployment Package
+        
+        This package contains pre-built static files ready for deployment to Azure Static Web Apps.
+        
+        ## Quick Deployment
+        
+        1. **Deploy Infrastructure** (if not already done):
+           - Use the Deploy to Azure button: https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-standalone.json
+           - Or manually create an Azure Static Web App resource
+        
+        2. **Deploy Application Files**:
+           ```bash
+           # Get your deployment token from Azure portal or ARM template output
+           DEPLOYMENT_TOKEN="your-deployment-token-here"
+           
+           # Deploy using Azure CLI (recommended)
+           az staticwebapp deploy --source "./static" --deployment-token $DEPLOYMENT_TOKEN
+           
+           # OR use PowerShell deployment script
+           .\deploy-standalone.ps1 -StaticWebAppName "your-app-name" -DeploymentToken $DEPLOYMENT_TOKEN
+           ```
+        
+        3. **Configure MSAL Authentication**:
+           ```powershell
+           .\configure-app.ps1 -StaticWebAppName "your-app-name"
+           ```
+        
+        4. **Test the Application**:
+           - Visit your app URL: https://your-app-name.azurestaticapps.net
+           - Sign in with your organizational account
+           - Start exploring group memberships!
+        
+        ## Package Contents
+        
+        - `/static` - Pre-built Next.js static files ready for deployment
+        - `/api` - Azure Functions for backend API
+        - `staticwebapp.config.json` - Azure Static Web Apps configuration
+        - `configure-app.ps1` - MSAL configuration script
+        - `deploy-standalone.ps1` - Alternative deployment script
+        - Documentation files
+        
+        ## Version Information
+        
+        - Package Version: ${{ github.ref_name || github.event.inputs.version }}
+        - Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        - GitHub Repository: ${{ github.repository }}
+        - Commit SHA: ${{ github.sha }}
+        
+        ## Support
+        
+        For issues and documentation, see:
+        https://github.com/OfirGavish/Group-Tree-Membership-Visualizer
+        EOF
+        
+        # Create ZIP package
+        zip -r $PACKAGE_DIR.zip $PACKAGE_DIR
+        
+        # Display package info
+        echo "Package created: $PACKAGE_DIR.zip"
+        ls -la $PACKAGE_DIR.zip
+        du -h $PACKAGE_DIR.zip
+    
+    - name: Upload package as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: standalone-package-${{ github.ref_name || github.event.inputs.version }}
+        path: group-tree-visualizer-standalone-*.zip
+        retention-days: 90
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: group-tree-visualizer-standalone-*.zip
+        name: Group Tree Visualizer ${{ github.ref_name }}
+        body: |
+          ## 🌳 Group Tree Membership Visualizer ${{ github.ref_name }}
+          
+          ### 📦 Standalone Deployment Package
+          
+          This release includes a pre-built standalone deployment package that can be deployed to Azure Static Web Apps without requiring GitHub authorization.
+          
+          ### 🚀 Quick Deployment
+          
+          1. **Deploy Infrastructure**: 
+             [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fmain%2Fazuredeploy-standalone.json)
+          
+          2. **Download Package**: Download the `group-tree-visualizer-standalone-${{ github.ref_name }}.zip` file below
+          
+          3. **Deploy Application**: 
+             ```powershell
+             # Extract the package and deploy
+             .\deploy-standalone.ps1 -StaticWebAppName "your-app-name" -DeploymentToken "your-token"
+             ```
+          
+          4. **Configure MSAL**: 
+             ```powershell
+             .\configure-app.ps1 -StaticWebAppName "your-app-name"
+             ```
+          
+          ### 📋 What's Included
+          
+          - ✅ Pre-built Next.js static files
+          - ✅ Azure Functions API backend
+          - ✅ Deployment scripts and documentation
+          - ✅ Configuration templates
+          - ✅ Complete setup instructions
+          
+          ### 🔧 Technical Details
+          
+          - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Node.js Version**: 18.x
+          - **Next.js Version**: 15.x
+          - **Package Size**: ~2-5 MB (compressed)
+          
+          ### 📚 Documentation
+          
+          - [Standalone Deployment Guide](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/STANDALONE_DEPLOYMENT.md)
+          - [Configuration Guide](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/CONFIGURATION.md)
+          - [Troubleshooting](https://github.com/OfirGavish/Group-Tree-Membership-Visualizer/blob/main/TROUBLESHOOTING.md)
+          
+          ### 🆘 Support
+          
+          For issues or questions, please create an issue in this repository.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Comment on success
+      if: success()
+      run: |
+        echo "✅ Standalone package created successfully!"
+        echo "Package can be used for deployment without GitHub authorization."
+        echo "Perfect for organizational and public distribution."
