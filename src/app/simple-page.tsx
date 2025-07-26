@@ -780,12 +780,75 @@ export default function SimpleHomePage() {
           return
         }
         
-        // For move operation, we need to find the current group(s) and remove from them
-        // This is complex as we'd need to track the current context
-        // For now, let's just add to the new group (user can manually remove from old groups if needed)
-        await graphService.addGroupMember(targetGroupId, memberId)
+        // For move operation, we need to identify the source group from the tree context
+        console.log('🔄 Starting move operation - identifying source group from tree context')
         
-        setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}. Note: Move operation adds to new group - please manually remove from old groups if needed.`)
+        let sourceGroupId: string | null = null
+        
+        try {
+          // Parse the dragged node's ID to find the source group
+          // The ID format is typically: {source}-{type}-{memberId} or group-{groupId}
+          // Examples: "group-abc123-user-def456" or "user-123-group-456" 
+          
+          const nodeIdParts = draggedNode.id.split('-')
+          console.log('🔍 Analyzing dragged node ID:', draggedNode.id, 'Parts:', nodeIdParts)
+          
+          // Look for group IDs in the path - we want the immediate parent group
+          const guidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
+          
+          // Try to find the immediate parent group ID from the node path
+          // For user nodes under groups: "group-{groupId}-user-{userId}" or "{groupId}-user-{userId}"
+          // For device nodes under groups: "group-{groupId}-device-{deviceId}" or "{groupId}-device-{deviceId}"
+          
+          if (draggedNode.id.includes('-user-') || draggedNode.id.includes('-device-')) {
+            // Find the group ID that comes before the user/device part
+            for (let i = 0; i < nodeIdParts.length - 2; i++) {
+              if ((nodeIdParts[i + 1] === 'user' || nodeIdParts[i + 1] === 'device') && guidPattern.test(nodeIdParts[i])) {
+                sourceGroupId = nodeIdParts[i]
+                break
+              }
+            }
+            
+            // Also check for "group-{guid}" pattern at the beginning
+            if (!sourceGroupId && nodeIdParts[0] === 'group' && guidPattern.test(nodeIdParts[1])) {
+              sourceGroupId = nodeIdParts[1]
+            }
+          }
+          
+          console.log('🎯 Identified source group ID:', sourceGroupId)
+          
+          if (!sourceGroupId) {
+            console.warn('⚠️ Could not identify source group from tree context. Node ID:', draggedNode.id)
+            setError(`Cannot determine source group for move operation. Try using "Add to Group" instead.`)
+            return
+          }
+          
+          // Verify that the user is actually a member of the source group
+          const isSourceMember = await graphService.isGroupMember(sourceGroupId, memberId)
+          if (!isSourceMember) {
+            console.warn('⚠️ User is not a member of the identified source group:', sourceGroupId)
+            setError(`${draggedNode.name} is not a member of the source group. Using "Add to Group" instead.`)
+            // Fall back to add operation
+            await graphService.addGroupMember(targetGroupId, memberId)
+            setError(`Successfully added ${draggedNode.name} to ${dropTargetNode.name}`)
+            return
+          }
+          
+          // Remove from source group only
+          console.log(`🗑️ Removing ${draggedNode.name} from source group ${sourceGroupId}`)
+          await graphService.removeGroupMember(sourceGroupId, memberId)
+          
+          // Add to target group
+          console.log(`➕ Adding ${draggedNode.name} to target group ${targetGroupId}`)
+          await graphService.addGroupMember(targetGroupId, memberId)
+          
+          setError(`Successfully moved ${draggedNode.name} from source group to ${dropTargetNode.name}.`)
+          
+        } catch (moveError) {
+          console.error('❌ Error during move operation:', moveError)
+          setError(`Failed to complete move operation: ${moveError instanceof Error ? moveError.message : 'Unknown error'}`)
+          return
+        }
       } else {
         // Add to group - but only if not already a member
         if (isAlreadyMember) {

@@ -300,7 +300,7 @@ export default function TreeVisualization({
               
               // Add ghost label with background
               const labelGroup = ghost.append('g')
-                .attr('transform', 'translate(25, 0)')
+                .attr('transform', 'translate(40, 0)') // Move further to the right to avoid covering icon
               
               // Calculate label dimensions
               const labelText = d.data.name
@@ -368,7 +368,7 @@ export default function TreeVisualization({
               
               // Add ghost label with background
               const labelGroup = newGhost.append('g')
-                .attr('transform', 'translate(25, 0)')
+                .attr('transform', 'translate(40, 0)') // Move further to the right to avoid covering icon
               
               // Calculate label dimensions
               const labelText = d.data.name
