@@ -171,30 +171,53 @@ export default function TreeVisualization({
       })
       .call(d3.drag<SVGGElement, d3.HierarchyPointNode<TreeNode>>()
         .on('start', function(event, d) {
+          // Store the starting position to detect if it's a real drag or just a click
+          const startPos = { x: event.x, y: event.y }
+          d3.select(this).property('__dragStartPos', startPos)
+          
           // Only allow dragging users and devices
           if ((d.data.type === 'user' || d.data.type === 'device') && onDragStart) {
-            onDragStart(d.data)
-            
-            // Add visual feedback for the dragged item
-            d3.select(this).select('circle')
-              .style('stroke', '#fbbf24')
-              .style('stroke-width', 4)
-              .style('opacity', 0.8)
-            
-            // Highlight potential drop targets (groups)
-            g.selectAll('.tree-node')
-              .filter((dropTarget: any) => dropTarget.data.type === 'group')
-              .select('circle')
-              .style('stroke', '#10b981')
-              .style('stroke-width', 4)
-              .style('stroke-dasharray', '5,5')
+            // Don't start drag immediately, wait for actual movement
+            d3.select(this).property('__isDragging', false)
           } else {
-            // Prevent dragging for groups
-            event.sourceEvent.stopPropagation()
+            // Prevent dragging for groups but don't stop propagation (allow clicks)
+            event.subject.fx = null
+            event.subject.fy = null
+          }
+        })
+        .on('drag', function(event, d) {
+          // Only process drag for users and devices
+          if ((d.data.type === 'user' || d.data.type === 'device') && onDragStart) {
+            const startPos = d3.select(this).property('__dragStartPos')
+            const dragDistance = Math.sqrt(
+              Math.pow(event.x - startPos.x, 2) + Math.pow(event.y - startPos.y, 2)
+            )
+            
+            // Only start dragging if moved more than 5 pixels
+            if (dragDistance > 5 && !d3.select(this).property('__isDragging')) {
+              d3.select(this).property('__isDragging', true)
+              onDragStart(d.data)
+              
+              // Add visual feedback for the dragged item
+              d3.select(this).select('circle')
+                .style('stroke', '#fbbf24')
+                .style('stroke-width', 4)
+                .style('opacity', 0.8)
+              
+              // Highlight potential drop targets (groups)
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .select('circle')
+                .style('stroke', '#10b981')
+                .style('stroke-width', 4)
+                .style('stroke-dasharray', '5,5')
+            }
           }
         })
         .on('end', function(event, d) {
-          if ((d.data.type === 'user' || d.data.type === 'device') && onDrop) {
+          const isDragging = d3.select(this).property('__isDragging')
+          
+          if ((d.data.type === 'user' || d.data.type === 'device') && onDrop && isDragging) {
             // Remove visual feedback from dragged item
             d3.select(this).select('circle')
               .style('stroke', '#ffffff')
@@ -225,11 +248,15 @@ export default function TreeVisualization({
               const targetData = dropTargets[0] as d3.HierarchyPointNode<TreeNode>
               onDrop(d.data, targetData.data)
             }
+            
+            if (onDragEnd) {
+              onDragEnd()
+            }
           }
           
-          if (onDragEnd) {
-            onDragEnd()
-          }
+          // Clean up drag state
+          d3.select(this).property('__isDragging', false)
+          d3.select(this).property('__dragStartPos', null)
         })
       )
 

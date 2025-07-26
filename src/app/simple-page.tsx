@@ -8,6 +8,7 @@ import { CacheService } from '@/lib/cache-service'
 import { User, Group, TreeNode, TreeData, GroupMember, Device } from '@/types'
 import UserSearch from '@/components/UserSearch'
 import GroupSearch from '@/components/GroupSearch'
+import GroupFilters from '@/components/GroupFilters'
 import DeviceSearch from '@/components/DeviceSearch'
 import TreeVisualization from '@/components/TreeVisualization'
 import GroupDetails from '@/components/GroupDetails'
@@ -31,6 +32,9 @@ export default function SimpleHomePage() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [searchType, setSearchType] = useState<'user' | 'group' | 'device'>('user')
   const [cacheStats, setCacheStats] = useState({ totalItems: 0, totalSize: 0 })
+  
+  // Group filter state
+  const [showEmptyOnly, setShowEmptyOnly] = useState(false)
   
   // Drag and drop state
   const [draggedNode, setDraggedNode] = useState<TreeNode | null>(null)
@@ -529,7 +533,7 @@ export default function SimpleHomePage() {
                 name: member.displayName,
                 type: 'user' as const,
                 data: { ...user, originalId: user.id }, // Store original ID
-                children: undefined
+                children: [] // Always initialize with empty array for consistency
               }
             } else if (member['@odata.type'].includes('device')) {
               const device: Device = {
@@ -990,13 +994,29 @@ export default function SimpleHomePage() {
               </h2>
               
               {/* Search Box inline with title - fixed position and width for all types */}
-              <div className="flex-shrink-0" style={{ width: '450px' }}>
-                {searchType === 'user' ? (
-                  <UserSearch users={users} onUserSelect={handleUserSelect} />
-                ) : searchType === 'group' ? (
-                  <GroupSearch groups={groups} onGroupSelect={handleGroupSelect} />
-                ) : (
-                  <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0" style={{ width: '280px' }}>
+                  {searchType === 'user' ? (
+                    <UserSearch users={users} onUserSelect={handleUserSelect} />
+                  ) : searchType === 'group' ? (
+                    <GroupSearch 
+                      groups={groups.filter(group => showEmptyOnly ? group.isEmpty : true)} 
+                      onGroupSelect={handleGroupSelect} 
+                      showEmptyOnly={showEmptyOnly}
+                    />
+                  ) : (
+                    <DeviceSearch devices={devices} onDeviceSelect={handleDeviceSelect} />
+                  )}
+                </div>
+                
+                {/* Group Filters - Only show when group search is active */}
+                {searchType === 'group' && (
+                  <GroupFilters
+                    groups={groups}
+                    showEmptyOnly={showEmptyOnly}
+                    onShowEmptyOnlyChange={setShowEmptyOnly}
+                    filteredCount={groups.filter(group => showEmptyOnly ? group.isEmpty : true).length}
+                  />
                 )}
               </div>
             </div>
