@@ -1002,7 +1002,7 @@ export default function SimpleHomePage() {
               
               {/* Search Box inline with title - fixed position and width for all types */}
               <div className="flex items-center gap-4">
-                <div className="flex-shrink-0" style={{ width: '280px' }}>
+                <div className="flex-shrink-0" style={{ maxWidth: '300px' }}>
                   {searchType === 'user' ? (
                     <UserSearch users={users} onUserSelect={handleUserSelect} />
                   ) : searchType === 'group' ? (
@@ -1105,6 +1105,19 @@ export default function SimpleHomePage() {
           <div className="grid grid-cols-6 gap-4 w-full overflow-hidden min-h-0">
             {/* Tree Visualization */}
             <div className="col-span-4 min-w-0 h-[750px] relative">
+              {/* Drag & Drop Instructions */}
+              <div className="absolute top-4 left-4 z-20 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-md border border-white/20 rounded-xl p-3 shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🎯</span>
+                  <h4 className="text-sm font-semibold text-white">Drag & Drop</h4>
+                </div>
+                <div className="text-xs text-white/80 space-y-1">
+                  <div>1. Click <span className="text-blue-300">+</span> buttons to expand nodes</div>
+                  <div>2. Drag users/devices onto groups</div>
+                  <div>3. Choose to add or move membership</div>
+                </div>
+              </div>
+              
               <TreeVisualization
                 data={treeData}
                 onNodeSelect={handleNodeSelect}

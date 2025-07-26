@@ -234,6 +234,22 @@ export default function TreeVisualization({
                 .style('stroke-dasharray', '5,5')
                 .style('filter', 'drop-shadow(0 0 12px rgba(16, 185, 129, 0.6))')
               
+              // Add visual drop zones (circles showing detection radius)
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .append('circle')
+                .attr('class', 'drop-zone-radius')
+                .attr('r', 80) // Match the detection radius
+                .style('fill', 'rgba(16, 185, 129, 0.1)')
+                .style('stroke', 'rgba(16, 185, 129, 0.3)')
+                .style('stroke-width', 2)
+                .style('stroke-dasharray', '3,3')
+                .style('pointer-events', 'none')
+                .style('opacity', 0)
+                .transition()
+                .duration(200)
+                .style('opacity', 1)
+              
               // Add drop zone labels
               g.selectAll('.tree-node')
                 .filter((dropTarget: any) => dropTarget.data.type === 'group')
@@ -334,12 +350,32 @@ export default function TreeVisualization({
                 .style('stroke-dasharray', 'none')
                 .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
               
-              // Remove drop zone hints
+              // Remove drop zone hints and radius indicators
               g.selectAll('.drop-zone-hint').remove()
+              g.selectAll('.drop-zone-radius').remove()
               
               // Check if dropped on a valid target
               const [x, y] = d3.pointer(event.sourceEvent, g.node())
               console.log('🎯 Drop position:', { x, y })
+              console.log('🎯 Mouse event details:', { 
+                clientX: event.sourceEvent.clientX, 
+                clientY: event.sourceEvent.clientY,
+                pageX: event.sourceEvent.pageX,
+                pageY: event.sourceEvent.pageY
+              })
+              
+              // Get all group nodes for detailed distance checking
+              const allGroupNodes = g.selectAll('.tree-node')
+                .filter((node: any) => node.data.type === 'group')
+                .data()
+              
+              console.log('🎯 All groups in tree with positions:')
+              allGroupNodes.forEach((node: any, index) => {
+                const distance = Math.sqrt(
+                  Math.pow(x - (node.y || 0), 2) + Math.pow(y - (node.x || 0), 2)
+                )
+                console.log(`  ${index + 1}. ${node.data.name}: pos(${node.x}, ${node.y}) -> distance=${distance.toFixed(2)}px`)
+              })
               
               const dropTargets = g.selectAll('.tree-node')
                 .filter((dropTargetNode: any) => {
@@ -349,12 +385,11 @@ export default function TreeVisualization({
                   const distance = Math.sqrt(
                     Math.pow(x - (dropTargetNode.y || 0), 2) + Math.pow(y - (dropTargetNode.x || 0), 2)
                   )
-                  console.log(`🎯 Checking group ${dropTargetNode.data.name}: distance=${distance.toFixed(2)}, tree position=(${dropTargetNode.x}, ${dropTargetNode.y}), drop position=(${x}, ${y})`)
-                  return distance < 50 // Increased from 30 to 50 pixels for easier targeting
+                  return distance < 80 // Increased from 50 to 80 pixels for much easier targeting
                 })
                 .data()
               
-              console.log('🎯 Found drop targets:', dropTargets.length)
+              console.log('🎯 Found drop targets within 80px:', dropTargets.length)
               
               if (dropTargets.length > 0) {
                 const targetData = dropTargets[0] as d3.HierarchyPointNode<TreeNode>
@@ -384,12 +419,67 @@ export default function TreeVisualization({
                   }
                 }
                 
-                // Try a broader search for any groups in the tree
+                // Check if there are any groups in the tree at all
                 const allGroups = g.selectAll('.tree-node')
                   .filter((node: any) => node.data.type === 'group')
                   .data()
                 
                 console.log('🎯 All groups in tree:', allGroups.map((n: any) => ({ name: n.data.name, x: n.x, y: n.y })))
+                
+                // If no groups are found, show user guidance
+                if (allGroups.length === 0) {
+                  console.log('💡 No groups visible in tree - user needs to expand nodes first')
+                  
+                  // Show a helpful message to the user
+                  // Create a temporary notification element
+                  const notification = svg.append('g')
+                    .attr('class', 'drop-guidance')
+                    .style('pointer-events', 'none')
+                  
+                  // Background rectangle
+                  notification.append('rect')
+                    .attr('x', 50)
+                    .attr('y', 50)
+                    .attr('width', 400)
+                    .attr('height', 80)
+                    .attr('rx', 10)
+                    .style('fill', 'rgba(59, 130, 246, 0.95)')
+                    .style('stroke', '#3b82f6')
+                    .style('stroke-width', 2)
+                    .style('filter', 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))')
+                  
+                  // Icon
+                  notification.append('text')
+                    .attr('x', 70)
+                    .attr('y', 80)
+                    .style('font-size', '20px')
+                    .style('fill', 'white')
+                    .text('💡')
+                  
+                  // Message text
+                  notification.append('text')
+                    .attr('x', 100)
+                    .attr('y', 75)
+                    .style('font-size', '14px')
+                    .style('font-weight', 'bold')
+                    .style('fill', 'white')
+                    .text('No groups visible to drop on!')
+                  
+                  notification.append('text')
+                    .attr('x', 100)
+                    .attr('y', 95)
+                    .style('font-size', '12px')
+                    .style('fill', 'rgba(255, 255, 255, 0.9)')
+                    .text('Click the + button on nodes to expand and see groups')
+                  
+                  // Auto-remove the notification after 4 seconds
+                  setTimeout(() => {
+                    notification.transition()
+                      .duration(500)
+                      .style('opacity', 0)
+                      .remove()
+                  }, 4000)
+                }
               }
               
               if (onDragEnd) {
@@ -398,26 +488,50 @@ export default function TreeVisualization({
             }, 50) // 50ms delay to ensure D3 operations complete
           } else if (isDragging) {
             // Clean up visual feedback even if no drop occurred
-            svg.select('.drag-ghost').remove()
+            // But keep it visible for a moment if there are no groups to help with guidance
+            const allGroups = g.selectAll('.tree-node')
+              .filter((node: any) => node.data.type === 'group')
+              .data()
             
-            d3.select(this).select('circle')
-              .style('stroke', '#ffffff')
-              .style('stroke-width', 3)
-              .style('opacity', 1)
-              .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
-            
-            d3.select(this).selectAll('text')
-              .style('opacity', 1)
-            
-            g.selectAll('.tree-node')
-              .filter((dropTarget: any) => dropTarget.data.type === 'group')
-              .select('circle')
-              .style('stroke', '#ffffff')
-              .style('stroke-width', 3)
-              .style('stroke-dasharray', 'none')
-              .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
-            
-            g.selectAll('.drop-zone-hint').remove()
+            if (allGroups.length === 0) {
+              // Keep visual feedback for a bit longer to show the guidance message
+              setTimeout(() => {
+                svg.select('.drag-ghost').remove()
+                
+                d3.select(this).select('circle')
+                  .style('stroke', '#ffffff')
+                  .style('stroke-width', 3)
+                  .style('opacity', 1)
+                  .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+                
+                d3.select(this).selectAll('text')
+                  .style('opacity', 1)
+                
+                g.selectAll('.drop-zone-hint').remove()
+              }, 2000) // Keep for 2 seconds to read the guidance
+            } else {
+              // Clean up immediately if there were groups available
+              svg.select('.drag-ghost').remove()
+              
+              d3.select(this).select('circle')
+                .style('stroke', '#ffffff')
+                .style('stroke-width', 3)
+                .style('opacity', 1)
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+              
+              d3.select(this).selectAll('text')
+                .style('opacity', 1)
+              
+              g.selectAll('.tree-node')
+                .filter((dropTarget: any) => dropTarget.data.type === 'group')
+                .select('circle')
+                .style('stroke', '#ffffff')
+                .style('stroke-width', 3)
+                .style('stroke-dasharray', 'none')
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+              
+              g.selectAll('.drop-zone-hint').remove()
+            }
             
             if (onDragEnd) {
               onDragEnd()

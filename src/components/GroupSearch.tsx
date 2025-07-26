@@ -28,7 +28,7 @@ export default function GroupSearch({ onGroupSelect, groups, showEmptyOnly = fal
   }
 
   return (
-    <div className="relative" style={{ width: '280px' }}>
+    <div className="relative w-72 mx-auto" style={{ maxWidth: '300px' }}>
       <div className="relative group">
         <input
           type="text"
