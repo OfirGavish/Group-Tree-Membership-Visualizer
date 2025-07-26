@@ -1,4 +1,4 @@
-name: Build and Upload to Storage
+name: Build and Upload to Storage & GitHub
 
 on:
   push:
@@ -225,6 +225,71 @@ jobs:
           Create an issue in this repository for support.
         draft: false
         prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Delete existing latest release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      continue-on-error: true
+      run: |
+        # Delete the existing latest release if it exists  
+        gh release delete latest --yes || true
+        git push origin :refs/tags/latest || true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create/Update latest release (for develop/main branches)
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: latest
+        name: Latest Build (Automated Deployment Fallback)
+        files: group-tree-visualizer-latest.zip
+        body: |
+          ## 🚀 Latest Build - Automated Deployment Fallback
+          
+          This is an automatically updated release containing the latest build from the `${{ github.ref_name }}` branch.
+          
+          **⚡ Perfect as a fallback for automated deployment scripts!**
+          
+          ### 🎯 Primary vs Fallback Deployment
+          
+          - **🥇 Primary**: Azure Storage (faster, more reliable)
+          - **🥈 Fallback**: This GitHub release (if storage unavailable)
+          
+          [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FOfirGavish%2FGroup-Tree-Membership-Visualizer%2Fdevelop%2Fazuredeploy-automated-simple.json)
+          
+          ### 🔄 How the Fallback Works
+          
+          The automated deployment script tries multiple sources in order:
+          1. **Custom Domain**: `https://storage.mscloudninja.com/releases/`
+          2. **Blob Storage**: `https://mscnstorage.blob.core.windows.net/$web/releases/`
+          3. **Static Website**: `https://mscnstorage.z6.web.core.windows.net/releases/`
+          4. **GitHub Release**: This package (final fallback)
+          
+          ### 📋 Build Information
+          
+          - **Built From**: `${{ github.ref_name }}` branch
+          - **Commit**: `${{ github.sha }}`
+          - **Build Time**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Workflow Run**: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - **Storage URLs**: 
+            - Custom: https://${{ env.STORAGE_CUSTOM_DOMAIN }}/${{ env.RELEASES_FOLDER }}/group-tree-visualizer-latest.zip
+            - Blob: https://${{ env.STORAGE_ACCOUNT }}.blob.core.windows.net/${{ env.CONTAINER_NAME }}/${{ env.RELEASES_FOLDER }}/group-tree-visualizer-latest.zip
+          
+          ### 📦 Package Contents
+          
+          - ✅ **Static Files**: Pre-built Next.js application (`/static`)
+          - ✅ **API Functions**: Azure Functions backend (`/api`)  
+          - ✅ **Configuration**: Azure Static Web Apps config
+          - ✅ **Scripts**: MSAL setup and deployment utilities
+          - ✅ **Documentation**: Setup and troubleshooting guides
+          
+          ---
+          
+          *This release is automatically updated on every code change. For stable releases, see the [Releases page](../../releases).*
+        draft: false
+        prerelease: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
