@@ -70,7 +70,7 @@
     "sourceStorageCustomUrl": "[concat('https://', parameters('sourceStorageCustomDomain'), '/releases')]",
     "sourceStorageStaticUrl": "[concat('https://', parameters('sourceStorageAccount'), '.z6.web.core.windows.net/releases')]",
     "releaseFileName": "[if(equals(parameters('releaseVersion'), 'latest'), 'group-tree-visualizer-latest.zip', concat('group-tree-visualizer-', parameters('releaseVersion'), '.zip'))]",
-    "downloadUrl": "[concat(variables('sourceStorageUrl'), '/', variables('releaseFileName'))]",
+    "downloadUrl": "[concat(variables('sourceStorageCustomUrl'), '/', variables('releaseFileName'))]",
     "downloadUrlCustom": "[concat(variables('sourceStorageCustomUrl'), '/', variables('releaseFileName'))]",
     "downloadUrlStatic": "[concat(variables('sourceStorageStaticUrl'), '/', variables('releaseFileName'))]",
     "deploymentScriptName": "[concat('deploy-', variables('staticWebAppName'))]",
